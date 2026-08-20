@@ -1,94 +1,60 @@
-#include <WiFi.h>
-#include <WebServer.h>
-#include <ESPmDNS.h>
-#include <Preferences.h>
-#include "config.h"
-#include "webpage.h"
+/*
+  HomeGate — ESP32-S3 MQTT client (HiveMQ Cloud)
 
-WebServer server(80);
-Preferences prefs;
+  Library: PubSubClient by Nick O'Leary
+  Board: ESP32S3 Dev Module
+*/
+
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
+#include <ctype.h>
+#include <time.h>
+#include "config.h"
+
+WiFiClientSecure secureClient;
+PubSubClient mqtt(secureClient);
+
+// Let's Encrypt ISRG Root X1 (required by HiveMQ Cloud)
+static const char ROOT_CA[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
+rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
+hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
+ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
+3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
+NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
+ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
+TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
+jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
+oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
+4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
+mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
+emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
+-----END CERTIFICATE-----
+)EOF";
 
 String doorState = "closed";
-int lastPair = 0;  // 0 = up, 1 = down
+int lastPair = 0;
 unsigned long moveAt = 0;
-bool rebootSoon = false;
-unsigned long rebootAt = 0;
-
-String jsonEscape(const String &value) {
-  String out;
-  out.reserve(value.length());
-  for (size_t i = 0; i < value.length(); i++) {
-    const char c = value[i];
-    if (c == '"' || c == '\\') out += '\\';
-    if (c == '\n') {
-      out += "\\n";
-      continue;
-    }
-    out += c;
-  }
-  return out;
-}
-
-String jsonGet(const String &body, const char *key) {
-  const String pattern = String("\"") + key + "\"";
-  int i = body.indexOf(pattern);
-  if (i < 0) return "";
-  i = body.indexOf(':', i);
-  if (i < 0) return "";
-  i++;
-  while (i < static_cast<int>(body.length()) && (body[i] == ' ' || body[i] == '\t')) i++;
-  if (i < static_cast<int>(body.length()) && body[i] == '"') {
-    const int start = ++i;
-    int end = start;
-    while (end < static_cast<int>(body.length()) && body[end] != '"') {
-      if (body[end] == '\\' && end + 1 < static_cast<int>(body.length())) end++;
-      end++;
-    }
-    return body.substring(start, end);
-  }
-  const int start = i;
-  while (i < static_cast<int>(body.length()) && body[i] != ',' && body[i] != '}' && body[i] != ' ') i++;
-  return body.substring(start, i);
-}
-
-void cors() {
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  server.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Gate-Key");
-}
-
-void sendJson(int code, const String &body) {
-  cors();
-  server.send(code, "application/json", body);
-}
-
-void handleOptions() {
-  cors();
-  server.send(204);
-}
-
-bool checkAuth() {
-  String key = server.header("X-Gate-Key");
-  if (!key.length()) key = server.arg("key");
-  if (server.hasArg("plain")) {
-    const String bodyKey = jsonGet(server.arg("plain"), "key");
-    if (bodyKey.length()) key = bodyKey;
-  }
-  if (key == APP_PASSWORD) return true;
-  sendJson(401, "{\"ok\":false,\"error\":\"unauthorized\"}");
-  return false;
-}
-
-String currentIp() {
-  if (WiFi.status() == WL_CONNECTED) return WiFi.localIP().toString();
-  return WiFi.softAPIP().toString();
-}
-
-void updateMoveState() {
-  if ((doorState == "opening" || doorState == "closing") && millis() - moveAt >= MOVE_MS) {
-    doorState = (doorState == "opening") ? "open" : "closed";
-  }
-}
+unsigned long lastReconnectAttempt = 0;
+unsigned long lastStatusMs = 0;
 
 void releasePair(int a, int b) {
   pinMode(a, INPUT);
@@ -101,7 +67,6 @@ void allRelease() {
 }
 
 void shortPair(int a, int b) {
-  // Both pins LOW = the two remote pads are shorted through ESP GND
   pinMode(a, OUTPUT);
   pinMode(b, OUTPUT);
   digitalWrite(a, LOW);
@@ -150,152 +115,192 @@ void doStop() {
   doorState = "stopped";
 }
 
-void handleStatus() {
-  if (!checkAuth()) return;
+void updateMoveState() {
+  if ((doorState == "opening" || doorState == "closing") && millis() - moveAt >= MOVE_MS) {
+    doorState = (doorState == "opening") ? "open" : "closed";
+  }
+}
+
+void publishStatus() {
+  if (!mqtt.connected()) return;
   updateMoveState();
-  String body = "{\"ok\":true,\"state\":\"";
-  body += doorState;
-  body += "\",\"ip\":\"";
-  body += jsonEscape(currentIp());
-  body += "\",\"ssid\":\"";
-  body += jsonEscape(WiFi.SSID());
-  body += "\"}";
-  sendJson(200, body);
+  char payload[128];
+  snprintf(
+    payload,
+    sizeof(payload),
+    "{\"state\":\"%s\",\"online\":true,\"ip\":\"%s\"}",
+    doorState.c_str(),
+    WiFi.localIP().toString().c_str()
+  );
+  mqtt.publish(TOPIC_STATUS, payload, true);
 }
 
-void handleOpen() {
-  if (!checkAuth()) return;
-  doOpen();
-  sendJson(200, "{\"ok\":true,\"state\":\"opening\"}");
-}
-
-void handleClose() {
-  if (!checkAuth()) return;
-  doClose();
-  sendJson(200, "{\"ok\":true,\"state\":\"closing\"}");
-}
-
-void handleStop() {
-  if (!checkAuth()) return;
-  doStop();
-  sendJson(200, "{\"ok\":true,\"state\":\"stopped\"}");
-}
-
-void handleWifi() {
-  if (!checkAuth()) return;
-  String ssid = server.arg("ssid");
-  String pass = server.arg("password");
-  if (server.hasArg("plain")) {
-    const String body = server.arg("plain");
-    const String jsonSsid = jsonGet(body, "ssid");
-    const String jsonPass = jsonGet(body, "password");
-    if (jsonSsid.length()) ssid = jsonSsid;
-    if (jsonPass.length() || jsonSsid.length()) pass = jsonPass;
+String normalizeCommand(const char *raw, unsigned int len) {
+  String cmd;
+  cmd.reserve(len);
+  for (unsigned int i = 0; i < len; i++) {
+    const char c = raw[i];
+    if (c == '"' || c == '\'' || c == '{' || c == '}' || c == ' ') continue;
+    cmd += (char)toupper((unsigned char)c);
   }
-  ssid.trim();
-  if (!ssid.length()) {
-    sendJson(400, "{\"ok\":false,\"error\":\"ssid\"}");
+  const int key = cmd.indexOf("CMD:");
+  if (key >= 0) {
+    cmd = cmd.substring(key + 4);
+    int end = cmd.indexOf(',');
+    if (end < 0) end = cmd.indexOf('}');
+    if (end >= 0) cmd = cmd.substring(0, end);
+  }
+  return cmd;
+}
+
+void handleCommand(const String &cmd) {
+  Serial.print("MQTT command: ");
+  Serial.println(cmd);
+
+  if (cmd == "OPEN" || cmd == "UP" || cmd.startsWith("OPEN")) {
+    doOpen();
+  } else if (cmd == "CLOSE" || cmd == "DOWN" || cmd.startsWith("CLOSE")) {
+    doClose();
+  } else if (cmd == "STOP" || cmd.startsWith("STOP")) {
+    doStop();
+  } else {
+    Serial.println("Unknown command");
     return;
   }
-  prefs.putString("ssid", ssid);
-  prefs.putString("pass", pass);
-  sendJson(200, "{\"ok\":true}");
-  rebootSoon = true;
-  rebootAt = millis() + 800;
+  publishStatus();
 }
 
-void serveFile(const char *path, const char *type, const char *content) {
-  if (server.method() == HTTP_OPTIONS) {
-    handleOptions();
-    return;
+void onMqttMessage(char *topic, byte *payload, unsigned int length) {
+  if (strcmp(topic, TOPIC_COMMAND) != 0) return;
+  handleCommand(normalizeCommand((const char *)payload, length));
+}
+
+void syncTime() {
+  Serial.println("NTP time sync...");
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  time_t now = time(nullptr);
+  int tries = 0;
+  while (now < 1700000000 && tries < 40) {
+    delay(250);
+    now = time(nullptr);
+    tries++;
   }
-  cors();
-  server.sendHeader("Cache-Control", "no-cache");
-  server.send_P(200, type, content);
+  Serial.print("Unix time: ");
+  Serial.println((unsigned long)now);
 }
 
 void connectWifi() {
-  String ssid = prefs.getString("ssid", WIFI_SSID);
-  String pass = prefs.getString("pass", WIFI_PASS);
-  ssid.trim();
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.print("WiFi: ");
+  Serial.println(WIFI_SSID);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(400);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+  syncTime();
+}
 
-  if (ssid.length() && ssid != "YOUR_WIFI_NAME") {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid.c_str(), pass.c_str());
-    Serial.print("WiFi: ");
-    Serial.println(ssid);
-    for (int i = 0; i < 40 && WiFi.status() != WL_CONNECTED; i++) {
-      delay(250);
-      Serial.print(".");
-    }
-    Serial.println();
+const char *mqttStateText(int state) {
+  switch (state) {
+    case -4: return "timeout (TLS/network)";
+    case -3: return "connection lost";
+    case -2: return "connect failed (TLS/DNS/firewall)";
+    case -1: return "disconnected";
+    case 1: return "bad protocol";
+    case 2: return "bad client id";
+    case 3: return "broker unavailable";
+    case 4: return "bad username/password";
+    case 5: return "not authorized";
+    default: return "unknown";
+  }
+}
+
+bool connectMqtt() {
+  Serial.print("MQTT connect ");
+  Serial.println(MQTT_HOST);
+
+  IPAddress ip;
+  if (!WiFi.hostByName(MQTT_HOST, ip)) {
+    Serial.println("DNS failed");
+    return false;
+  }
+  Serial.print("DNS OK -> ");
+  Serial.println(ip);
+
+  secureClient.stop();
+  delay(200);
+
+  // HiveMQ Cloud + ESP32: insecure TLS is the most reliable first step.
+  // (SNI still uses the hostname; certificate pinning can be added later.)
+  secureClient.setInsecure();
+  secureClient.setHandshakeTimeout(30);
+  secureClient.setTimeout(30);
+
+  mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setCallback(onMqttMessage);
+  mqtt.setBufferSize(512);
+  mqtt.setKeepAlive(45);
+  mqtt.setSocketTimeout(30);
+
+  String clientId = String(MQTT_CLIENT_ID) + "-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+  Serial.print("User: ");
+  Serial.println(MQTT_USER);
+  Serial.print("ClientId: ");
+  Serial.println(clientId);
+  Serial.println("TCP/TLS+MQTT handshake (wait up to ~30s)...");
+  Serial.flush();
+
+  const bool ok = mqtt.connect(clientId.c_str(), MQTT_USER, MQTT_PASS);
+  if (!ok) {
+    const int st = mqtt.state();
+    Serial.print("MQTT failed, state=");
+    Serial.print(st);
+    Serial.print(" (");
+    Serial.print(mqttStateText(st));
+    Serial.println(")");
+    secureClient.stop();
+    return false;
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.print("IP: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP(AP_NAME, AP_PASS);
-    Serial.print("AP IP: ");
-    Serial.println(WiFi.softAPIP());
-    Serial.println("Connect the phone to Wi-Fi HomeGate / password homegate");
-    Serial.println("Then open http://192.168.4.1");
-  }
+  mqtt.subscribe(TOPIC_COMMAND, 1);
+  Serial.println("MQTT connected + subscribed " TOPIC_COMMAND);
+  publishStatus();
+  return true;
+}
 
-  if (MDNS.begin(MDNS_NAME)) {
-    MDNS.addService("http", "tcp", 80);
-    Serial.println("mDNS: http://homegate.local");
-  }
+void ensureMqtt() {
+  if (mqtt.connected()) return;
+  const unsigned long now = millis();
+  if (now - lastReconnectAttempt < 5000) return;
+  lastReconnectAttempt = now;
+  connectMqtt();
 }
 
 void setup() {
   allRelease();
-
   Serial.begin(115200);
-  delay(200);
-  Serial.println("HomeGate ESP32-S3");
+  delay(300);
+  Serial.println("HomeGate ESP32-S3 MQTT");
 
-  prefs.begin("homegate", false);
   connectWifi();
-
-  server.on("/api/status", HTTP_OPTIONS, handleOptions);
-  server.on("/api/open", HTTP_OPTIONS, handleOptions);
-  server.on("/api/close", HTTP_OPTIONS, handleOptions);
-  server.on("/api/stop", HTTP_OPTIONS, handleOptions);
-  server.on("/api/wifi", HTTP_OPTIONS, handleOptions);
-
-  server.on("/api/status", HTTP_GET, handleStatus);
-  server.on("/api/open", HTTP_GET, handleOpen);
-  server.on("/api/open", HTTP_POST, handleOpen);
-  server.on("/api/close", HTTP_GET, handleClose);
-  server.on("/api/close", HTTP_POST, handleClose);
-  server.on("/api/stop", HTTP_GET, handleStop);
-  server.on("/api/stop", HTTP_POST, handleStop);
-  server.on("/api/wifi", HTTP_POST, handleWifi);
-
-  server.on("/", []() { serveFile("/", "text/html", APP_INDEX); });
-  server.on("/index.html", []() { serveFile("/index.html", "text/html", APP_INDEX); });
-  server.on("/css/styles.css", []() { serveFile("/css/styles.css", "text/css", APP_CSS); });
-  server.on("/js/app.js", []() { serveFile("/js/app.js", "application/javascript", APP_JS); });
-  server.on("/manifest.json", []() { serveFile("/manifest.json", "application/manifest+json", APP_MANIFEST); });
-
-  server.onNotFound([]() {
-    if (server.method() == HTTP_OPTIONS) {
-      handleOptions();
-      return;
-    }
-    cors();
-    server.send(404, "text/plain", "Not found");
-  });
-
-  server.begin();
+  connectMqtt();
 }
 
 void loop() {
-  server.handleClient();
+  if (WiFi.status() != WL_CONNECTED) {
+    connectWifi();
+  }
+
+  ensureMqtt();
+  mqtt.loop();
   updateMoveState();
-  if (rebootSoon && millis() >= rebootAt) {
-    ESP.restart();
+
+  if (mqtt.connected() && millis() - lastStatusMs > 30000) {
+    lastStatusMs = millis();
+    publishStatus();
   }
 }

@@ -12,6 +12,7 @@ Thumbs.db
 *.hex
 *.map
 
-# Local secrets (optional)
+# Local secrets
 firmware/HomeGate/config.local.h
+js/mqtt-config.js
 .env

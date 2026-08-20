@@ -16,7 +16,6 @@ const char APP_INDEX[] PROGMEM = R"====(<!DOCTYPE html>
     <meta name="format-detection" content="telephone=no" />
     <title>Տան դուռ</title>
     <meta name="description" content="Փաթաթվող դռան բացում և փակում ESP32-ով" />
-    <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111114'/%3E%3Cpath d='M12 48V20l20-10 20 10v28H12z' fill='none' stroke='%23d4a574' stroke-width='3'/%3E%3Cpath d='M32 22v26' stroke='%23d4a574' stroke-width='3'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,19 +23,406 @@ const char APP_INDEX[] PROGMEM = R"====(<!DOCTYPE html>
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+:root {
+  --bg: #0b0c0f;
+  --bg-elevated: #15171c;
+  --ink: #f4efe6;
+  --muted: #b7b0a4;
+  --line: rgba(244, 239, 230, 0.12);
+  --gold: #d4a574;
+  --gold-strong: #e8c49a;
+  --danger: #e07a6a;
+  --ok: #7dcaa4;
+  --waiting: #c9b06a;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+  --radius: 28px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans Armenian", "Segoe UI", sans-serif;
+  overscroll-behavior: none;
+}
+
+body {
+  min-height: 100dvh;
+  user-select: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.app {
+  min-height: 100dvh;
+  padding: calc(14px + var(--safe-top)) 20px calc(24px + var(--safe-bottom));
+  max-width: 480px;
+  margin: 0 auto;
+  background:
+    radial-gradient(120% 70% at 50% -10%, rgba(212, 165, 116, 0.16), transparent 55%),
+    radial-gradient(90% 50% at 100% 100%, rgba(125, 202, 164, 0.06), transparent 50%),
+    var(--bg);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--waiting);
+  box-shadow: 0 0 0 4px rgba(201, 176, 106, 0.15);
+}
+
+.status-pill[data-state="online"] {
+  color: #d7efe4;
+}
+
+.status-pill[data-state="online"] .status-dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 4px rgba(125, 202, 164, 0.16);
+}
+
+.status-pill[data-state="offline"] {
+  color: #f3d2cc;
+}
+
+.status-pill[data-state="offline"] .status-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 4px rgba(224, 122, 106, 0.16);
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-btn:active,
+.action:active,
+.stop-btn:active,
+.save-btn:active {
+  transform: scale(0.98);
+}
+
+.stage {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.kicker {
+  margin: 0;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--gold);
+}
+
+h1 {
+  margin: 6px 0 22px;
+  font-size: clamp(2.1rem, 8vw, 2.7rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.gate-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  padding: 8px 8px 22px;
+}
+
+.sky {
+  position: absolute;
+  inset: 0 0 42%;
+  background: linear-gradient(180deg, #1d2430 0%, #15171c 100%);
+  pointer-events: none;
+}
+
+.gate-art {
+  position: relative;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.curtain {
+  transform-box: fill-box;
+  transform-origin: top center;
+  transition: transform 2.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gate-card[data-state="open"] .curtain,
+.gate-card[data-state="opening"] .curtain {
+  transform: translateY(-6px) scaleY(0.14);
+}
+
+.gate-card[data-state="opening"] .curtain,
+.gate-card[data-state="closing"] .curtain {
+  transition-duration: 2.6s;
+}
+
+.gate-card[data-state="open"] .sky,
+.gate-card[data-state="opening"] .sky {
+  background: linear-gradient(180deg, #2a2418 0%, #15171c 100%);
+}
+
+.gate-state {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.gate-hint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.actions {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.action {
+  min-height: 92px;
+  border: 0;
+  border-radius: 24px;
+  color: #1a140e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.12rem;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+.action.open {
+  background: linear-gradient(180deg, var(--gold-strong), var(--gold));
+}
+
+.action.close {
+  color: var(--ink);
+  background: #1d2027;
+  border: 1px solid var(--line);
+}
+
+.action:disabled,
+.stop-btn:disabled {
+  opacity: 0.45;
+}
+
+.action-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.stop-btn {
+  width: 100%;
+  margin-top: 12px;
+  min-height: 56px;
+  border-radius: 18px;
+  border: 1px solid rgba(224, 122, 106, 0.35);
+  background: rgba(224, 122, 106, 0.1);
+  color: #f0c2ba;
+  font-weight: 600;
+}
+
+.toast {
+  position: fixed;
+  left: 20px;
+  right: 20px;
+  bottom: calc(18px + var(--safe-bottom));
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #23262e;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.sheet[hidden],
+.toast[hidden] {
+  display: none;
+}
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.sheet-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 20px calc(24px + var(--safe-bottom));
+  border-radius: 28px 28px 0 0;
+  background: #16181d;
+  border-top: 1px solid var(--line);
+  max-height: 85dvh;
+  overflow: auto;
+}
+
+.sheet-handle {
+  width: 42px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.18);
+  margin: 6px auto 16px;
+}
+
+.sheet h2 {
+  margin: 0 0 16px;
+  font-size: 1.3rem;
+}
+
+label {
+  display: block;
+  text-align: left;
+  margin: 14px 0 8px;
+  color: var(--muted);
+}
+
+input {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #101217;
+  color: var(--ink);
+  padding: 0 14px;
+  user-select: text;
+}
+
+.help {
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.save-btn {
+  width: 100%;
+  min-height: 54px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--gold);
+  color: #1a140e;
+  font-weight: 700;
+}
+
+@media (min-width: 720px) {
+  .app {
+    padding-top: 36px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .app {
+    padding-top: calc(8px + var(--safe-top));
+  }
+
+  .stage {
+    margin-top: 10px;
+  }
+
+  h1 {
+    margin-bottom: 10px;
+    font-size: 1.6rem;
+  }
+
+  .gate-art {
+    max-height: 120px;
+    margin: 0 auto;
+  }
+
+  .action {
+    min-height: 68px;
+    flex-direction: row;
+    font-size: 1.05rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaf,
+  .curtain,
+  .icon-btn,
+  .action,
+  .stop-btn,
+  .save-btn {
+    transition: none;
+    transform: none;
+  }
+}
+
+</style>
   </head>
   <body>
-    <div class="lock" id="lockScreen">
-      <p class="kicker">Տան դուռ</p>
-      <h1>Մուտք</h1>
-      <label for="appPass">Գաղտնաբառ</label>
-      <input id="appPass" type="password" autocomplete="current-password" inputmode="text" />
-      <button class="save-btn" id="unlockBtn" type="button">Մտնել</button>
-      <p class="help lock-help">Նույն գաղտնաբառը, ինչ ESP32-ի <code>APP_PASSWORD</code>-ում։</p>
-    </div>
-
-    <div class="app" id="appRoot" hidden>
+    <div class="app">
       <header class="topbar">
         <div class="status-pill" id="connectionPill" data-state="waiting">
           <span class="status-dot" aria-hidden="true"></span>
@@ -131,10 +517,8 @@ const char APP_INDEX[] PROGMEM = R"====(<!DOCTYPE html>
         <label for="espUrl">ESP32 հասցե</label>
         <input id="espUrl" type="url" inputmode="url" autocomplete="off" placeholder="http://10.0.1.8" />
         <p class="help">
-          Vercel-ից բացելիս պարտադիր գրեք ESP32-ի IP-ն, օրինակ http://10.0.1.8
+          Եթե բացում եք հենց ESP32-ի կայքը, թողեք դատարկ։ Հակառակ դեպքում գրեք IP հասցեն։
         </p>
-        <label for="appKeyInput">Հավելվածի գաղտնաբառ</label>
-        <input id="appKeyInput" type="password" autocomplete="off" />
         <label for="wifiSsid">Wi‑Fi անուն</label>
         <input id="wifiSsid" type="text" autocomplete="off" placeholder="HomeWiFi" />
         <label for="wifiPass">Wi‑Fi գաղտնաբառ</label>
@@ -144,7 +528,184 @@ const char APP_INDEX[] PROGMEM = R"====(<!DOCTYPE html>
       </div>
     </div>
 
-    <script src="js/app.js"></script>
+    <script>
+const STORAGE_KEY = "homegate.espUrl";
+
+const labels = {
+  waiting: "Սպասում է…",
+  online: "Միացված է",
+  offline: "Անջատված է",
+  unknown: "Կարգավիճակը ստուգվում է",
+  open: "Բաց է",
+  closed: "Փակ է",
+  opening: "Բարձրանում է…",
+  closing: "Իջնում է…",
+  stopped: "Կանգնեցված է",
+  hintIdle: "Սեղմեք կոճակը՝ դուռը բարձրացնելու կամ իջեցնելու համար",
+  hintOpening: "Դուռը բարձրանում է",
+  hintClosing: "Դուռը իջնում է",
+  hintStopped: "Շարժումը կանգնեցվեց",
+  commandSent: "Հրամանն ուղարկվեց",
+  saved: "Պահպանվեց",
+  wifiSaved: "Wi‑Fi-ը պահպանվեց, սարքը վերագործարկվում է",
+  error: "Չհաջողվեց կապվել ESP32-ի հետ",
+};
+
+const connectionPill = document.getElementById("connectionPill");
+const connectionLabel = document.getElementById("connectionLabel");
+const gateCard = document.querySelector(".gate-card");
+const gateStateLabel = document.getElementById("gateStateLabel");
+const gateHint = document.getElementById("gateHint");
+const openBtn = document.getElementById("openBtn");
+const closeBtn = document.getElementById("closeBtn");
+const stopBtn = document.getElementById("stopBtn");
+const toast = document.getElementById("toast");
+const settingsSheet = document.getElementById("settingsSheet");
+const settingsBtn = document.getElementById("settingsBtn");
+const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+const espUrlInput = document.getElementById("espUrl");
+const wifiSsidInput = document.getElementById("wifiSsid");
+const wifiPassInput = document.getElementById("wifiPass");
+
+let busy = false;
+let toastTimer;
+
+function getBaseUrl() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) return saved.replace(/\/$/, "");
+  return "";
+}
+
+function apiUrl(path) {
+  return `${getBaseUrl()}${path}`;
+}
+
+function showToast(message) {
+  toast.hidden = false;
+  toast.textContent = message;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.hidden = true;
+  }, 2600);
+}
+
+function setConnection(state, extra = "") {
+  connectionPill.dataset.state = state;
+  connectionLabel.textContent = extra ? `${labels[state]} · ${extra}` : labels[state];
+}
+
+function setGateState(state) {
+  const normalized = labels[state] ? state : "unknown";
+  gateCard.dataset.state = normalized === "unknown" ? "closed" : normalized;
+  gateStateLabel.textContent = labels[normalized];
+
+  if (normalized === "opening") gateHint.textContent = labels.hintOpening;
+  else if (normalized === "closing") gateHint.textContent = labels.hintClosing;
+  else if (normalized === "stopped") gateHint.textContent = labels.hintStopped;
+  else gateHint.textContent = labels.hintIdle;
+
+  openBtn.disabled = busy;
+  closeBtn.disabled = busy;
+  stopBtn.disabled = busy;
+}
+
+function buzz() {
+  if (navigator.vibrate) navigator.vibrate(18);
+}
+
+async function request(path, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(apiUrl(path), {
+      cache: "no-store",
+      signal: controller.signal,
+      ...options,
+    });
+    if (!response.ok) throw new Error("bad status");
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) return response.json();
+    return { ok: true };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function refreshStatus() {
+  try {
+    const data = await request("/api/status");
+    setConnection("online", data.ip || "");
+    setGateState(data.state || "unknown");
+    if (data.ssid && !wifiSsidInput.value) wifiSsidInput.value = data.ssid;
+  } catch {
+    setConnection("offline");
+    setGateState("unknown");
+  }
+}
+
+async function sendCommand(path, optimisticState) {
+  if (busy) return;
+  busy = true;
+  buzz();
+  setGateState(optimisticState);
+  try {
+    await request(path, { method: "POST" });
+    showToast(labels.commandSent);
+  } catch {
+    showToast(labels.error);
+  } finally {
+    busy = false;
+    await refreshStatus();
+  }
+}
+
+openBtn.addEventListener("click", () => sendCommand("/api/open", "opening"));
+closeBtn.addEventListener("click", () => sendCommand("/api/close", "closing"));
+stopBtn.addEventListener("click", () => sendCommand("/api/stop", "stopped"));
+
+settingsBtn.addEventListener("click", () => {
+  espUrlInput.value = localStorage.getItem(STORAGE_KEY) || "";
+  settingsSheet.hidden = false;
+});
+
+settingsSheet.addEventListener("click", (event) => {
+  if (event.target.dataset.closeSheet !== undefined) {
+    settingsSheet.hidden = true;
+  }
+});
+
+saveSettingsBtn.addEventListener("click", async () => {
+  const value = espUrlInput.value.trim().replace(/\/$/, "");
+  if (value) localStorage.setItem(STORAGE_KEY, value);
+  else localStorage.removeItem(STORAGE_KEY);
+
+  const ssid = wifiSsidInput.value.trim();
+  const pass = wifiPassInput.value;
+  if (ssid) {
+    try {
+      await request("/api/wifi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ssid, password: pass }),
+      });
+      showToast(labels.wifiSaved);
+    } catch {
+      showToast(labels.saved);
+    }
+  } else {
+    showToast(labels.saved);
+  }
+
+  settingsSheet.hidden = true;
+  refreshStatus();
+});
+
+setGateState("unknown");
+setConnection("waiting");
+refreshStatus();
+setInterval(refreshStatus, 2500);
+
+</script>
   </body>
 </html>
 )====";
@@ -407,43 +968,6 @@ h1 {
   font-weight: 600;
 }
 
-.lock {
-  min-height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: calc(48px + var(--safe-top)) 20px calc(24px + var(--safe-bottom));
-  text-align: center;
-  background:
-    radial-gradient(120% 70% at 50% -10%, rgba(212, 165, 116, 0.16), transparent 55%),
-    var(--bg);
-}
-
-.lock h1 {
-  margin: 8px 0 28px;
-}
-
-.lock label {
-  margin-top: 0;
-}
-
-.lock .save-btn {
-  margin-top: 18px;
-}
-
-.lock-help {
-  margin-top: 16px;
-  text-align: center;
-}
-
-.lock code {
-  color: var(--gold);
-}
-
-.app[hidden],
-.lock[hidden] {
-  display: none;
-}
-
 .toast {
   position: fixed;
   left: 20px;
@@ -583,7 +1107,6 @@ input {
 )====";
 
 const char APP_JS[] PROGMEM = R"====(const STORAGE_KEY = "homegate.espUrl";
-const KEY_STORAGE = "homegate.appKey";
 
 const labels = {
   waiting: "Սպասում է…",
@@ -603,15 +1126,8 @@ const labels = {
   saved: "Պահպանվեց",
   wifiSaved: "Wi‑Fi-ը պահպանվեց, սարքը վերագործարկվում է",
   error: "Չհաջողվեց կապվել ESP32-ի հետ",
-  badPass: "Սխալ գաղտնաբառ",
-  needPass: "Մուտքագրեք գաղտնաբառը",
-  needEsp: "Գրեք ESP32 հասցեն կարգավորումներում",
 };
 
-const lockScreen = document.getElementById("lockScreen");
-const appRoot = document.getElementById("appRoot");
-const appPass = document.getElementById("appPass");
-const unlockBtn = document.getElementById("unlockBtn");
 const connectionPill = document.getElementById("connectionPill");
 const connectionLabel = document.getElementById("connectionLabel");
 const gateCard = document.querySelector(".gate-card");
@@ -625,26 +1141,16 @@ const settingsSheet = document.getElementById("settingsSheet");
 const settingsBtn = document.getElementById("settingsBtn");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
 const espUrlInput = document.getElementById("espUrl");
-const appKeyInput = document.getElementById("appKeyInput");
 const wifiSsidInput = document.getElementById("wifiSsid");
 const wifiPassInput = document.getElementById("wifiPass");
 
 let busy = false;
 let toastTimer;
-let unlocked = false;
 
 function getBaseUrl() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) return saved.replace(/\/$/, "");
-  // Same host as the page (ESP32-served UI)
-  if (location.protocol.startsWith("http") && !location.hostname.includes("vercel")) {
-    return "";
-  }
   return "";
-}
-
-function getAppKey() {
-  return sessionStorage.getItem(KEY_STORAGE) || localStorage.getItem(KEY_STORAGE) || "";
 }
 
 function apiUrl(path) {
@@ -687,22 +1193,12 @@ function buzz() {
 async function request(path, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
-  const headers = {
-    "X-Gate-Key": getAppKey(),
-    ...(options.headers || {}),
-  };
   try {
     const response = await fetch(apiUrl(path), {
       cache: "no-store",
       signal: controller.signal,
       ...options,
-      headers,
     });
-    if (response.status === 401) {
-      const err = new Error("unauthorized");
-      err.code = 401;
-      throw err;
-    }
     if (!response.ok) throw new Error("bad status");
     const contentType = response.headers.get("content-type") || "";
     if (contentType.includes("application/json")) return response.json();
@@ -713,92 +1209,32 @@ async function request(path, options = {}) {
 }
 
 async function refreshStatus() {
-  if (!unlocked) return;
   try {
     const data = await request("/api/status");
     setConnection("online", data.ip || "");
     setGateState(data.state || "unknown");
     if (data.ssid && !wifiSsidInput.value) wifiSsidInput.value = data.ssid;
-  } catch (err) {
-    if (err && err.code === 401) {
-      showToast(labels.badPass);
-      lockApp();
-      return;
-    }
+  } catch {
     setConnection("offline");
     setGateState("unknown");
   }
 }
 
 async function sendCommand(path, optimisticState) {
-  if (busy || !unlocked) return;
-  if (!getBaseUrl() && location.hostname.includes("vercel")) {
-    showToast(labels.needEsp);
-    return;
-  }
+  if (busy) return;
   busy = true;
   buzz();
   setGateState(optimisticState);
   try {
     await request(path, { method: "POST" });
     showToast(labels.commandSent);
-  } catch (err) {
-    showToast(err && err.code === 401 ? labels.badPass : labels.error);
+  } catch {
+    showToast(labels.error);
   } finally {
     busy = false;
     await refreshStatus();
   }
 }
-
-function lockApp() {
-  unlocked = false;
-  sessionStorage.removeItem(KEY_STORAGE);
-  appRoot.hidden = true;
-  lockScreen.hidden = false;
-  appPass.value = "";
-  appPass.focus();
-}
-
-function unlockApp(key) {
-  sessionStorage.setItem(KEY_STORAGE, key);
-  localStorage.setItem(KEY_STORAGE, key);
-  unlocked = true;
-  lockScreen.hidden = true;
-  appRoot.hidden = false;
-  refreshStatus();
-}
-
-async function tryUnlock() {
-  const key = appPass.value.trim();
-  if (!key) {
-    showToast(labels.needPass);
-    return;
-  }
-  sessionStorage.setItem(KEY_STORAGE, key);
-  localStorage.setItem(KEY_STORAGE, key);
-  try {
-    await request("/api/status");
-    unlockApp(key);
-  } catch (err) {
-    sessionStorage.removeItem(KEY_STORAGE);
-    if (err && err.code === 401) showToast(labels.badPass);
-    else {
-      // ESP offline or Vercel without ESP URL yet — still unlock UI so settings work
-      unlockApp(key);
-      if (location.hostname.includes("vercel") && !localStorage.getItem(STORAGE_KEY)) {
-        showToast(labels.needEsp);
-        settingsSheet.hidden = false;
-      } else {
-        showToast(labels.error);
-      }
-    }
-  }
-}
-
-unlockBtn.addEventListener("click", tryUnlock);
-appPass.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") tryUnlock();
-});
 
 openBtn.addEventListener("click", () => sendCommand("/api/open", "opening"));
 closeBtn.addEventListener("click", () => sendCommand("/api/close", "closing"));
@@ -806,7 +1242,6 @@ stopBtn.addEventListener("click", () => sendCommand("/api/stop", "stopped"));
 
 settingsBtn.addEventListener("click", () => {
   espUrlInput.value = localStorage.getItem(STORAGE_KEY) || "";
-  appKeyInput.value = getAppKey();
   settingsSheet.hidden = false;
 });
 
@@ -820,12 +1255,6 @@ saveSettingsBtn.addEventListener("click", async () => {
   const value = espUrlInput.value.trim().replace(/\/$/, "");
   if (value) localStorage.setItem(STORAGE_KEY, value);
   else localStorage.removeItem(STORAGE_KEY);
-
-  const key = appKeyInput.value.trim();
-  if (key) {
-    sessionStorage.setItem(KEY_STORAGE, key);
-    localStorage.setItem(KEY_STORAGE, key);
-  }
 
   const ssid = wifiSsidInput.value.trim();
   const pass = wifiPassInput.value;
@@ -850,15 +1279,7 @@ saveSettingsBtn.addEventListener("click", async () => {
 
 setGateState("unknown");
 setConnection("waiting");
-
-const existing = getAppKey();
-if (existing) {
-  appPass.value = existing;
-  tryUnlock();
-} else {
-  appPass.focus();
-}
-
+refreshStatus();
 setInterval(refreshStatus, 2500);
 )====";
 

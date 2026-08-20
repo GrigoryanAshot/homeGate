@@ -256,43 +256,6 @@ h1 {
   font-weight: 600;
 }
 
-.lock {
-  min-height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: calc(48px + var(--safe-top)) 20px calc(24px + var(--safe-bottom));
-  text-align: center;
-  background:
-    radial-gradient(120% 70% at 50% -10%, rgba(212, 165, 116, 0.16), transparent 55%),
-    var(--bg);
-}
-
-.lock h1 {
-  margin: 8px 0 28px;
-}
-
-.lock label {
-  margin-top: 0;
-}
-
-.lock .save-btn {
-  margin-top: 18px;
-}
-
-.lock-help {
-  margin-top: 16px;
-  text-align: center;
-}
-
-.lock code {
-  color: var(--gold);
-}
-
-.app[hidden],
-.lock[hidden] {
-  display: none;
-}
-
 .toast {
   position: fixed;
   left: 20px;

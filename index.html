@@ -24,16 +24,7 @@
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <div class="lock" id="lockScreen">
-      <p class="kicker">Տան դուռ</p>
-      <h1>Մուտք</h1>
-      <label for="appPass">Գաղտնաբառ</label>
-      <input id="appPass" type="password" autocomplete="current-password" inputmode="text" />
-      <button class="save-btn" id="unlockBtn" type="button">Մտնել</button>
-      <p class="help lock-help">Նույն գաղտնաբառը, ինչ ESP32-ի <code>APP_PASSWORD</code>-ում։</p>
-    </div>
-
-    <div class="app" id="appRoot" hidden>
+    <div class="app">
       <header class="topbar">
         <div class="status-pill" id="connectionPill" data-state="waiting">
           <span class="status-dot" aria-hidden="true"></span>
@@ -124,23 +115,22 @@
       <div class="sheet-backdrop" data-close-sheet></div>
       <div class="sheet-panel" role="dialog" aria-labelledby="settingsTitle">
         <div class="sheet-handle" aria-hidden="true"></div>
-        <h2 id="settingsTitle">Կարգավորումներ</h2>
-        <label for="espUrl">ESP32 հասցե</label>
-        <input id="espUrl" type="url" inputmode="url" autocomplete="off" placeholder="http://10.0.1.8" />
+        <h2 id="settingsTitle">MQTT կարգավորումներ</h2>
+        <label for="mqttHost">Broker host</label>
+        <input id="mqttHost" type="text" autocomplete="off" placeholder="xxxxxxxx.s1.eu.hivemq.cloud" />
+        <label for="mqttUser">Username</label>
+        <input id="mqttUser" type="text" autocomplete="username" />
+        <label for="mqttPass">Password</label>
+        <input id="mqttPass" type="password" autocomplete="current-password" />
         <p class="help">
-          Vercel-ից բացելիս պարտադիր գրեք ESP32-ի IP-ն, օրինակ http://10.0.1.8
+          HiveMQ Cloud → WebSocket port <strong>8884</strong> (WSS). Նույն հաշիվը, ինչ ESP32-ում։
         </p>
-        <label for="appKeyInput">Հավելվածի գաղտնաբառ</label>
-        <input id="appKeyInput" type="password" autocomplete="off" />
-        <label for="wifiSsid">Wi‑Fi անուն</label>
-        <input id="wifiSsid" type="text" autocomplete="off" placeholder="HomeWiFi" />
-        <label for="wifiPass">Wi‑Fi գաղտնաբառ</label>
-        <input id="wifiPass" type="password" autocomplete="off" />
-        <p class="help">Wi‑Fi-ը փոխելուց հետո ESP32-ը կվերագործարկվի։</p>
-        <button class="save-btn" id="saveSettingsBtn" type="button">Պահպանել</button>
+        <button class="save-btn" id="saveSettingsBtn" type="button">Պահպանել և միանալ</button>
       </div>
     </div>
 
+    <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+    <script src="js/mqtt-config.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

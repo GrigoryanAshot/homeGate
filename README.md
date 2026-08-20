@@ -1,44 +1,73 @@
-# HomeGate
+# HomeGate (Cloud MQTT)
 
-Mobile-friendly Armenian web UI + ESP32-S3 firmware to open/close a rollup door by shorting the original RF remote button pads.
+ESP32-S3 keeps an **outbound TLS MQTT** connection to a free cloud broker (HiveMQ Cloud).  
+Phone / Vercel page publishes commands over **Secure WebSockets** from anywhere.
 
-## Hardware
+**No PC tunnel. No local MQTT broker. No Raspberry Pi.**
 
-- ESP32-S3
-- Existing rollup-door RF remote (keep CR2032)
-- 5V USB-C power for the ESP32 only (door 220V stays unchanged)
+```
+Phone / Vercel (mqtt.js WSS :8884)
+        ↕
+  HiveMQ Cloud (free)
+        ↕
+ESP32 on home Wi‑Fi (MQTT TLS :8883)
+        → shorts remote OPEN/CLOSE pads
+```
 
-### Wiring
+## 1. Create HiveMQ Cloud (free)
+
+1. Sign up: https://console.hivemq.cloud/
+2. Create a cluster
+3. Create MQTT credentials (username + password)
+4. Copy the cluster hostname, e.g. `xxxx.s1.eu.hivemq.cloud`
+
+## 2. ESP32 firmware
+
+Arduino Library Manager → install **PubSubClient** (Nick O'Leary).
+
+Edit `firmware/HomeGate/config.h`:
+
+```c
+#define WIFI_SSID "your-wifi"
+#define WIFI_PASS "your-wifi-password"
+#define MQTT_HOST "xxxx.s1.eu.hivemq.cloud"
+#define MQTT_USER "..."
+#define MQTT_PASS "..."
+```
+
+Board: **ESP32S3 Dev Module** → Upload.
+
+Serial (115200) should show `MQTT connected, subscribed to home/gate/command`.
+
+### Topics
+
+| Topic | Direction | Payload |
+|-------|-----------|---------|
+| `home/gate/command` | web → ESP | `OPEN` / `CLOSE` / `STOP` |
+| `home/gate/status` | ESP → web | `{"state":"opening","online":true}` |
+
+### Wiring (unchanged)
 
 | ESP32 | Remote |
 |-------|--------|
-| GPIO 4 | Open pad 1 |
-| GPIO 5 | Open pad 2 |
-| GPIO 6 | Close pad 1 |
-| GPIO 7 | Close pad 2 |
+| GPIO 4 + 5 | Open pads |
+| GPIO 6 + 7 | Close pads |
 
-On press, each pair is briefly shorted (both pins LOW).
+## 3. Web app (anywhere / Vercel)
 
-## Firmware
+1. Copy `js/mqtt-config.example.js` → `js/mqtt-config.js` and fill host/user/pass  
+   **or** open the page → gear icon → enter broker details (saved in the browser)
+2. Deploy the static folder to Vercel, or open `index.html` locally
+3. Tap **Բարձրացնել** → publishes `OPEN`
 
-1. Open `firmware/HomeGate/HomeGate.ino` in Arduino IDE
-2. Install **esp32** by Espressif
-3. Set Wi‑Fi in `firmware/HomeGate/config.h`
-4. Board: **ESP32S3 Dev Module**, USB CDC On Boot: **Enabled**
-5. Upload (use BOOT + RESET if needed)
-6. Open the printed IP on your phone, e.g. `http://10.0.1.8`
+Uses [mqtt.js](https://github.com/mqttjs/MQTT.js) over `wss://HOST:8884/mqtt`.
 
-If Wi‑Fi fails, the board opens AP `HomeGate` / `homegate` at `http://192.168.4.1`.
+### React
 
-## App password
+See `examples/GateMqttControl.jsx` (`npm i mqtt`).
 
-Set `APP_PASSWORD` in `firmware/HomeGate/config.h` (default `homegate`), flash the board, then enter the same password on the phone lock screen.
+## Security notes
 
-## Deploy UI to Vercel
-
-1. Import the GitHub repo in Vercel (static site, root directory `.`)
-2. Open the live URL on your phone (home Wi‑Fi)
-3. Enter the app password
-4. Settings → ESP32 address → `http://YOUR_ESP_IP`
-
-The door API stays on the ESP32; Vercel only hosts the UI.
+- Anyone with your MQTT user/password can open the door — use a strong password.
+- Prefer unique credentials only for this gate.
+- ESP uses `setInsecure()` for TLS bootstrap; you can pin ISRG Root X1 later.
