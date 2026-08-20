@@ -54,7 +54,7 @@ String jsonGet(const String &body, const char *key) {
 void cors() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+  server.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Gate-Key");
 }
 
 void sendJson(int code, const String &body) {
@@ -65,6 +65,18 @@ void sendJson(int code, const String &body) {
 void handleOptions() {
   cors();
   server.send(204);
+}
+
+bool checkAuth() {
+  String key = server.header("X-Gate-Key");
+  if (!key.length()) key = server.arg("key");
+  if (server.hasArg("plain")) {
+    const String bodyKey = jsonGet(server.arg("plain"), "key");
+    if (bodyKey.length()) key = bodyKey;
+  }
+  if (key == APP_PASSWORD) return true;
+  sendJson(401, "{\"ok\":false,\"error\":\"unauthorized\"}");
+  return false;
 }
 
 String currentIp() {
@@ -139,6 +151,7 @@ void doStop() {
 }
 
 void handleStatus() {
+  if (!checkAuth()) return;
   updateMoveState();
   String body = "{\"ok\":true,\"state\":\"";
   body += doorState;
@@ -151,21 +164,25 @@ void handleStatus() {
 }
 
 void handleOpen() {
+  if (!checkAuth()) return;
   doOpen();
   sendJson(200, "{\"ok\":true,\"state\":\"opening\"}");
 }
 
 void handleClose() {
+  if (!checkAuth()) return;
   doClose();
   sendJson(200, "{\"ok\":true,\"state\":\"closing\"}");
 }
 
 void handleStop() {
+  if (!checkAuth()) return;
   doStop();
   sendJson(200, "{\"ok\":true,\"state\":\"stopped\"}");
 }
 
 void handleWifi() {
+  if (!checkAuth()) return;
   String ssid = server.arg("ssid");
   String pass = server.arg("password");
   if (server.hasArg("plain")) {

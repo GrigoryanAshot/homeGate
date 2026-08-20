@@ -24,7 +24,16 @@
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <div class="app">
+    <div class="lock" id="lockScreen">
+      <p class="kicker">Տան դուռ</p>
+      <h1>Մուտք</h1>
+      <label for="appPass">Գաղտնաբառ</label>
+      <input id="appPass" type="password" autocomplete="current-password" inputmode="text" />
+      <button class="save-btn" id="unlockBtn" type="button">Մտնել</button>
+      <p class="help lock-help">Նույն գաղտնաբառը, ինչ ESP32-ի <code>APP_PASSWORD</code>-ում։</p>
+    </div>
+
+    <div class="app" id="appRoot" hidden>
       <header class="topbar">
         <div class="status-pill" id="connectionPill" data-state="waiting">
           <span class="status-dot" aria-hidden="true"></span>
@@ -117,10 +126,12 @@
         <div class="sheet-handle" aria-hidden="true"></div>
         <h2 id="settingsTitle">Կարգավորումներ</h2>
         <label for="espUrl">ESP32 հասցե</label>
-        <input id="espUrl" type="url" inputmode="url" autocomplete="off" placeholder="http://192.168.1.50" />
+        <input id="espUrl" type="url" inputmode="url" autocomplete="off" placeholder="http://10.0.1.8" />
         <p class="help">
-          Եթե հեռախոսով բացում եք հենց ESP32-ի կայքը, թողեք դատարկ։ Հակառակ դեպքում գրեք IP հասցեն։
+          Vercel-ից բացելիս պարտադիր գրեք ESP32-ի IP-ն, օրինակ http://10.0.1.8
         </p>
+        <label for="appKeyInput">Հավելվածի գաղտնաբառ</label>
+        <input id="appKeyInput" type="password" autocomplete="off" />
         <label for="wifiSsid">Wi‑Fi անուն</label>
         <input id="wifiSsid" type="text" autocomplete="off" placeholder="HomeWiFi" />
         <label for="wifiPass">Wi‑Fi գաղտնաբառ</label>

@@ -11,6 +11,9 @@
 
 #define MDNS_NAME "homegate"
 
+// App / API password (sent as X-Gate-Key header)
+#define APP_PASSWORD "homegate"
+
 // -----------------------------------------------------------------------------
 // Each remote button uses 2 ESP pins. On press, both pins go LOW = shorted.
 // Open  = short pin 4 with pin 5

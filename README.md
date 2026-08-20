@@ -30,13 +30,15 @@ On press, each pair is briefly shorted (both pins LOW).
 
 If Wi‑Fi fails, the board opens AP `HomeGate` / `homegate` at `http://192.168.4.1`.
 
-## Web UI
+## App password
 
-Frontend files live in the project root (`index.html`, `css/`, `js/`).  
-After editing them, rebuild the packed header:
+Set `APP_PASSWORD` in `firmware/HomeGate/config.h` (default `homegate`), flash the board, then enter the same password on the phone lock screen.
 
-```bash
-node tools/pack_web.js
-```
+## Deploy UI to Vercel
 
-Then re-upload the firmware.
+1. Import the GitHub repo in Vercel (static site, root directory `.`)
+2. Open the live URL on your phone (home Wi‑Fi)
+3. Enter the app password
+4. Settings → ESP32 address → `http://YOUR_ESP_IP`
+
+The door API stays on the ESP32; Vercel only hosts the UI.
