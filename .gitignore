@@ -1,0 +1,17 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Arduino build
+**/build/
+*.elf
+*.bin
+*.hex
+*.map
+
+# Local secrets (optional)
+firmware/HomeGate/config.local.h
+.env
