@@ -9,6 +9,7 @@ import { GateControlPanel } from "./GateControlPanel";
 import { InviteLocaleBar } from "./InviteLocaleBar";
 import { PresentationBadge } from "./GateSelector";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
+import { AppLogo } from "@/components/ui/AppLogo";
 
 function DemoGuestInner() {
   const searchParams = useSearchParams();
@@ -50,11 +51,16 @@ function DemoGuestInner() {
       <PresentationBadge />
       <header className="shrink-0 border-b border-gate-line bg-white/90 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-base font-bold text-gate-ink">
-              {t.inviteWelcome(guestName)}
-            </p>
-            <p className="text-xs text-gate-muted">{t.guestViewSubtitle}</p>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gate-line bg-white p-1 shadow-sm">
+              <AppLogo size={36} />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold text-gate-ink">
+                {t.inviteWelcome(guestName)}
+              </p>
+              <p className="text-xs text-gate-muted">{t.guestViewSubtitle}</p>
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <ConnectionBadge status={connectionForUi} mockMode />

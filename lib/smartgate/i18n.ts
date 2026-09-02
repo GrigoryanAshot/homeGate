@@ -123,7 +123,7 @@ export type SmartGateMessages = {
 };
 
 const en: SmartGateMessages = {
-  appTitle: "Smart Gate",
+  appTitle: "Touch SmartGate",
   presentationBadge: "Live demo — simulated gate",
   selectGate: "Gate",
   myGates: "My gates",
@@ -258,7 +258,7 @@ const en: SmartGateMessages = {
 };
 
 const hy: SmartGateMessages = {
-  appTitle: "Տան դուռ",
+  appTitle: "Touch SmartGate",
   presentationBadge: "Ցուցադրական ռեժիմ",
   selectGate: "Դարպաս",
   myGates: "Իմ դարպասները",
@@ -301,7 +301,7 @@ const hy: SmartGateMessages = {
   controllerNamePlaceholder: "օր. Անի, առաքիչ, հյուր",
   saveController: "Պահպանել",
   accessDurationLabel: "Որքան ժամանակ?",
-  ruleUnlimited: "Անսահմանա",
+  ruleUnlimited: "Անսահմանափակ",
   ruleUnlimitedHint: "Կին, ընտանիք — միշտ",
   ruleOnce: "Մեկ անգամ",
   ruleOnceHint: "Մեկ անգամ, հետո ավարտ",
@@ -393,7 +393,7 @@ const hy: SmartGateMessages = {
 };
 
 const ru: SmartGateMessages = {
-  appTitle: "Умные ворота",
+  appTitle: "Touch SmartGate",
   presentationBadge: "Демо — имитация ворот",
   selectGate: "Ворота",
   myGates: "Мои ворота",

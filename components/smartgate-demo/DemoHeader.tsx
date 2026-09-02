@@ -1,7 +1,7 @@
 import { ConnectionBadge } from "./ConnectionBadge";
 import { SettingsMenu } from "./SettingsMenu";
 import { useLocale } from "./LocaleProvider";
-import { IconGate } from "@/components/ui/icons";
+import { AppLogo } from "@/components/ui/AppLogo";
 import type { ConnectionStatus, GateState } from "@/lib/smartgate/types";
 
 export function DemoHeader({
@@ -33,8 +33,8 @@ export function DemoHeader({
     <header className="relative z-10 shrink-0 border-b border-gate-line bg-white/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-gate-gold">
-            <IconGate className="h-5 w-5" />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gate-line bg-white p-1.5 shadow-sm">
+            <AppLogo size={40} />
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-base font-bold text-gate-ink">

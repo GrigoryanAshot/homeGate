@@ -12,7 +12,7 @@ type AccessLabels = {
 };
 
 const hyLabels: AccessLabels = {
-  unlimited: "Անսահմանա",
+  unlimited: "Անսահմանափակ",
   once: "Մեկ անգամ",
   until: (d) => `Մինչև ${d}`,
   range: (a, b) => `${a} – ${b}`,

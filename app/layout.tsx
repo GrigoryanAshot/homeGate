@@ -10,6 +10,13 @@ const noto = Noto_Sans_Armenian({
 export const metadata: Metadata = {
   title: "HomeGate",
   description: "Smart rollup gate control",
+  icons: {
+    icon: [
+      { url: "/app-icon.png", sizes: "32x32", type: "image/png" },
+      { url: "/img/logo-icon.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/img/logo-icon.png",
+  },
 };
 
 export default function RootLayout({

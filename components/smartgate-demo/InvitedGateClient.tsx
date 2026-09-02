@@ -8,6 +8,7 @@ import { ConnectionBadge } from "./ConnectionBadge";
 import { GateControlPanel } from "./GateControlPanel";
 import { InviteLocaleBar } from "./InviteLocaleBar";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
+import { AppLogo } from "@/components/ui/AppLogo";
 
 type InviteData = {
   name: string;
@@ -136,11 +137,16 @@ function InvitedGateInner({ token }: { token: string }) {
     <>
       <header className="shrink-0 border-b border-gate-line bg-white/90 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-base font-bold text-gate-ink">
-              {t.inviteWelcome(invite.name)}
-            </p>
-            <p className="text-xs text-gate-muted">{t.appTitle}</p>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gate-line bg-white p-1 shadow-sm">
+              <AppLogo size={36} />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold text-gate-ink">
+                {t.inviteWelcome(invite.name)}
+              </p>
+              <p className="text-xs text-gate-muted">{t.appTitle}</p>
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <ConnectionBadge status={connectionForUi} mockMode={mockMode} />
