@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
-/** Logo with visible dark lines (derived from logo3.png alpha mask) */
-export const APP_LOGO_SRC = "/img/logo-app.png";
+/** Header logo */
+export const APP_LOGO_SRC = "/img/logo5.png";
 
 export function AppLogo({
   className,
