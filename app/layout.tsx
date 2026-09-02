@@ -13,9 +13,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/app-icon.png", sizes: "32x32", type: "image/png" },
-      { url: "/img/logo-icon.png", sizes: "192x192", type: "image/png" },
+      { url: "/img/logo4-icon.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: "/img/logo-icon.png",
+    apple: "/img/logo4-icon.png",
   },
 };
 
