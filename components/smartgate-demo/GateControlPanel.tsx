@@ -29,7 +29,6 @@ export function GateControlPanel({
   onCommand: (command: GateCommand) => void;
 }) {
   const { t } = useLocale();
-  const moving = gateState === "opening" || gateState === "closing";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -46,15 +45,6 @@ export function GateControlPanel({
           </div>
           <RollupDoorVisualizer state={gateState} />
         </div>
-        <p
-          className={`h-5 shrink-0 text-center text-sm font-medium text-gate-waiting transition-opacity duration-300 ${
-            moving ? "opacity-100" : "opacity-0"
-          }`}
-          aria-live="polite"
-          aria-hidden={!moving}
-        >
-          {t.pleaseWait}
-        </p>
       </div>
 
       <div className="flex shrink-0 flex-col gap-2.5 pb-1">
@@ -89,10 +79,6 @@ export function GateControlPanel({
           <IconStop className="h-5 w-5" />
           <span className="text-base font-bold">{t.stop}</span>
         </button>
-
-        {mockMode && (
-          <p className="text-center text-xs text-blue-700">{t.mockModeHint}</p>
-        )}
       </div>
     </div>
   );

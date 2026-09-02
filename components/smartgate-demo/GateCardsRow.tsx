@@ -11,7 +11,8 @@ export function GateCardsRow({ onAddGate }: { onAddGate: () => void }) {
 
   return (
     <div className="shrink-0 pb-3">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gate-muted">
+      <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gate-muted">
+        <IconGate className="h-4 w-4 shrink-0" />
         {t.myGates}
       </p>
       <div className="grid grid-cols-2 gap-2">

@@ -119,6 +119,7 @@ export type SmartGateMessages = {
   language: string;
   mockMode: string;
   mockModeDescription: string;
+  resetDevice: string;
   gateStates: Record<GateState, string>;
 };
 
@@ -247,6 +248,7 @@ const en: SmartGateMessages = {
   mockMode: "Try without real gate (mock mode)",
   mockModeDescription:
     "Use this to practice. Buttons will not control your real gate.",
+  resetDevice: "Restart device (reset)",
   gateStates: {
     closed: "Gate is closed",
     open: "Gate is open",
@@ -283,7 +285,7 @@ const hy: SmartGateMessages = {
   connected: "Միացված է",
   connecting: "Միանում է…",
   offline: "Անջատված",
-  tabControl: "Իմ դուռը",
+  tabControl: "Իմ դարպասները",
   tabControlHint: "Բացել, փակել, կանգ",
   tabShare: "Այլ կառավարողներ",
   tabShareHint: "Ով կարող է կառավարել",
@@ -292,7 +294,7 @@ const hy: SmartGateMessages = {
     "Մարդիկ, ովքեր կարող են բացել կամ փակել դուռը իրենց հ telefoniից։",
   addController: "Ավելացնել",
   removeController: "Հեռացնել",
-  viewHistory: "Բացել/փակել պատմություն",
+  viewHistory: "Բացելու/Փակելու պատմություն",
   historyTitle: "Ով երբ բացեց կամ փակեց",
   historyEmpty: "Դեռ պատմություն չկա",
   historyOpen: "Բացեց",
@@ -382,6 +384,7 @@ const hy: SmartGateMessages = {
   mockMode: "Փորձարկել առանց իրական դռի",
   mockModeDescription:
     "Օգտագործեք սովորելու համար։ Կոճակները չեն կառավարի իրական դուռը։",
+  resetDevice: "Վերագործարկել սարքը (reset)",
   gateStates: {
     closed: "Դարպասը փակ է",
     open: "Դարպասը բաց է",
@@ -517,6 +520,7 @@ const ru: SmartGateMessages = {
   mockMode: "Пробовать без реальных ворот (демо)",
   mockModeDescription:
     "Для обучения. Кнопки не будут управлять реальными воротами.",
+  resetDevice: "Перезапустить устройство (reset)",
   gateStates: {
     closed: "Ворота закрыты",
     open: "Ворота открыты",

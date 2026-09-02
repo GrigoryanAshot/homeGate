@@ -74,10 +74,6 @@ function InvitedGateInner({ token }: { token: string }) {
 
   const onCommandSent = useCallback(
     async (command: GateCommand) => {
-      if (command === "OPEN") showToast(t.toastOpening);
-      else if (command === "CLOSE") showToast(t.toastClosing);
-      else showToast(t.toastStopped);
-
       if (invite?.rule.type === "once") {
         await fetch("/api/invites/consume", {
           method: "POST",
@@ -89,7 +85,7 @@ function InvitedGateInner({ token }: { token: string }) {
         });
       }
     },
-    [invite?.rule.type, showToast, t, token],
+    [invite?.rule.type, token],
   );
 
   const { connection, gateState, busy, sendCommand, mqttConfigured } =

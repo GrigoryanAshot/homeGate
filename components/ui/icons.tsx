@@ -37,8 +37,24 @@ export function IconStop({ className = "w-6 h-6" }: { className?: string }) {
 export function IconGate({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden>
-      <rect x="4" y="6" width="24" height="20" rx="3" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M16 10v12M10 14h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M16 3.5 27.5 11v16H4.5V11L16 3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.5 12.5v13.5M23.5 12.5v13.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10 15h12M10 18h12M10 21h12M10 24h12"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

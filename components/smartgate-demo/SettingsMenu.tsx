@@ -104,7 +104,7 @@ export function SettingsMenu({
           </section>
 
           {!presentationMode && (
-            <section className="rounded-2xl border border-gate-line bg-slate-50 p-4">
+            <section className="mb-5 rounded-2xl border border-gate-line bg-slate-50 p-4">
               <Toggle
                 checked={mockMode}
                 onChange={onToggleMock}
@@ -115,6 +115,17 @@ export function SettingsMenu({
               </p>
             </section>
           )}
+
+          <section>
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              className="w-full rounded-2xl border border-gate-line bg-white py-3.5 text-sm font-bold text-gate-muted opacity-60"
+            >
+              {t.resetDevice}
+            </button>
+          </section>
         </div>
       </div>
     ) : null;

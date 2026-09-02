@@ -36,22 +36,12 @@ function SmartGateDemoInner() {
     window.setTimeout(() => setToast(null), 2400);
   }, []);
 
-  const onCommandSent = useCallback(
-    (command: GateCommand) => {
-      if (command === "OPEN") showToast(t.toastOpening);
-      else if (command === "CLOSE") showToast(t.toastClosing);
-      else showToast(t.toastStopped);
-    },
-    [showToast, t],
-  );
-
   const effectiveMock = presentationMode || mockMode;
 
   const { connection, gateState, setGateState, busy, sendCommand, mqttConfigured } =
     useSmartGateMqtt({
       mockMode: effectiveMock,
       gateId: selectedGateId,
-      onCommandSent,
     });
 
   useEffect(() => {

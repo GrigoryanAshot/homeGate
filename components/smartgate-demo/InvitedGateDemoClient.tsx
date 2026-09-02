@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
 import type { GateCommand } from "@/lib/smartgate/types";
@@ -15,26 +15,10 @@ function DemoGuestInner() {
   const searchParams = useSearchParams();
   const { t } = useLocale();
   const guestName = searchParams.get("guest")?.trim() || "Անի";
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = useCallback((message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(null), 2400);
-  }, []);
-
-  const onCommandSent = useCallback(
-    (command: GateCommand) => {
-      if (command === "OPEN") showToast(t.toastOpening);
-      else if (command === "CLOSE") showToast(t.toastClosing);
-      else showToast(t.toastStopped);
-    },
-    [showToast, t],
-  );
 
   const { gateState, busy, sendCommand } = useSmartGateMqtt({
     mockMode: true,
     gateId: "gate-home",
-    onCommandSent,
   });
 
   const handleCommand = useCallback(
@@ -77,15 +61,6 @@ function DemoGuestInner() {
           onCommand={handleCommand}
         />
       </main>
-
-      {toast && (
-        <div
-          role="status"
-          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-[60] w-[min(88vw,320px)] -translate-x-1/2 rounded-2xl border border-blue-200 bg-white px-4 py-3 text-center text-sm font-semibold text-gate-ink shadow-gate"
-        >
-          {toast}
-        </div>
-      )}
     </>
   );
 }
