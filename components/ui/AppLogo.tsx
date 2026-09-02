@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
-/** Header logo */
-export const APP_LOGO_SRC = "/img/logo5.png";
+/** Header logo — logo3 (logo-app.png = visible render for light backgrounds) */
+export const APP_LOGO_SRC = "/img/logo-app.png";
 
 export function AppLogo({
   className,
