@@ -1,0 +1,99 @@
+import type { GateCommand, GateState } from "@/lib/smartgate/types";
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconStop,
+} from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
+import { useLocale } from "./LocaleProvider";
+import { RollupDoorVisualizer } from "./RollupDoorVisualizer";
+
+const stateBadgeStyle: Record<GateState, string> = {
+  closed: "border-slate-300 bg-slate-100 text-slate-800",
+  open: "border-green-300 bg-green-50 text-green-800",
+  opening: "border-amber-300 bg-amber-50 text-amber-800",
+  closing: "border-amber-300 bg-amber-50 text-amber-800",
+  stopped: "border-red-300 bg-red-50 text-red-800",
+  unknown: "border-slate-300 bg-slate-50 text-slate-600",
+};
+
+export function GateControlPanel({
+  busy,
+  mockMode,
+  gateState,
+  onCommand,
+}: {
+  busy: boolean;
+  mockMode: boolean;
+  gateState: GateState;
+  onCommand: (command: GateCommand) => void;
+}) {
+  const { t } = useLocale();
+  const moving = gateState === "opening" || gateState === "closing";
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col px-2 py-1">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+          <div
+            className={cn(
+              "mb-2 w-full max-w-[min(78vw,280px)] shrink-0 rounded-lg border px-3 py-2 text-center text-sm font-bold",
+              stateBadgeStyle[gateState],
+            )}
+            aria-live="polite"
+          >
+            {t.gateStates[gateState]}
+          </div>
+          <RollupDoorVisualizer state={gateState} />
+        </div>
+        <p
+          className={`h-5 shrink-0 text-center text-sm font-medium text-gate-waiting transition-opacity duration-300 ${
+            moving ? "opacity-100" : "opacity-0"
+          }`}
+          aria-live="polite"
+          aria-hidden={!moving}
+        >
+          {t.pleaseWait}
+        </p>
+      </div>
+
+      <div className="flex shrink-0 flex-col gap-2.5 pb-1">
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onCommand("OPEN")}
+            className="control-btn-primary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 disabled:opacity-40"
+          >
+            <IconChevronUp className="h-8 w-8" />
+            <span className="text-base font-bold">{t.open}</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onCommand("CLOSE")}
+            className="control-btn-secondary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 disabled:opacity-40"
+          >
+            <IconChevronDown className="h-8 w-8" />
+            <span className="text-base font-bold">{t.close}</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onCommand("STOP")}
+          className="control-btn-danger flex min-h-[52px] w-full items-center justify-center gap-2 px-4 disabled:opacity-40"
+        >
+          <IconStop className="h-5 w-5" />
+          <span className="text-base font-bold">{t.stop}</span>
+        </button>
+
+        {mockMode && (
+          <p className="text-center text-xs text-blue-700">{t.mockModeHint}</p>
+        )}
+      </div>
+    </div>
+  );
+}

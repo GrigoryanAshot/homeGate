@@ -16,3 +16,10 @@ Thumbs.db
 firmware/HomeGate/config.local.h
 js/mqtt-config.js
 .env
+.env.local
+
+# Next.js
+node_modules/
+.next/
+out/
+tsconfig.tsbuildinfo

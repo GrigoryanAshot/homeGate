@@ -3,18 +3,18 @@
 // -----------------------------------------------------------------------------
 // Home Wi-Fi (ESP32 outbound only — no local server required)
 // -----------------------------------------------------------------------------
-#define WIFI_SSID "YOUR_WIFI_NAME"
-#define WIFI_PASS "YOUR_WIFI_PASSWORD"
+#define WIFI_SSID "free Wi-Fi"
+#define WIFI_PASS "31415926"
 
 // -----------------------------------------------------------------------------
 // HiveMQ Cloud (free) — MQTT over TLS
 // Console: https://console.hivemq.cloud/
 // Cluster → MQTT Credentials + Cluster URL
 // -----------------------------------------------------------------------------
-#define MQTT_HOST "xxxxxxxx.s1.eu.hivemq.cloud"
+#define MQTT_HOST "3c391676ced3426b8300afc7d6b4961e.s1.eu.hivemq.cloud"
 #define MQTT_PORT 8883
-#define MQTT_USER "your-mqtt-username"
-#define MQTT_PASS "your-mqtt-password"
+#define MQTT_USER "Gate1"
+#define MQTT_PASS "Ash7289..."
 #define MQTT_CLIENT_ID "homegate-esp32"
 
 // Topics

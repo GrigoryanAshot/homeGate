@@ -55,14 +55,33 @@ Serial (115200) should show `MQTT connected, subscribed to home/gate/command`.
 
 ## 3. Web app (anywhere / Vercel)
 
+### Next.js pilot demo (recommended for partners)
+
+```bash
+npm install
+npm run dev
+```
+
+Open **`/smartgate-demo`** — unlisted route (no nav/sitemap), `robots: noindex`.
+
+Set Vercel env vars from `.env.example`:
+
+- `NEXT_PUBLIC_MQTT_HOST`
+- `NEXT_PUBLIC_MQTT_USER`
+- `NEXT_PUBLIC_MQTT_PASS`
+
+Features: live MQTT control, mock mode, guest QR passes, permissions table, activity log.
+
+### Legacy static UI
+
 1. Copy `js/mqtt-config.example.js` → `js/mqtt-config.js` and fill host/user/pass  
    **or** open the page → gear icon → enter broker details (saved in the browser)
-2. Deploy the static folder to Vercel, or open `index.html` locally
+2. Open `index.html` locally or serve from ESP firmware
 3. Tap **Բարձրացնել** → publishes `OPEN`
 
 Uses [mqtt.js](https://github.com/mqttjs/MQTT.js) over `wss://HOST:8884/mqtt`.
 
-### React
+### React snippet
 
 See `examples/GateMqttControl.jsx` (`npm i mqtt`).
 
