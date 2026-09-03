@@ -1,10 +1,9 @@
 "use client";
 
-import { Suspense, useCallback, useMemo } from "react";
+import { Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
 import type { GateCommand } from "@/lib/smartgate/types";
-import { ConnectionBadge } from "./ConnectionBadge";
 import { GateControlPanel } from "./GateControlPanel";
 import { InviteLocaleBar } from "./InviteLocaleBar";
 import { PresentationBadge } from "./GateSelector";
@@ -28,8 +27,6 @@ function DemoGuestInner() {
     [sendCommand],
   );
 
-  const connectionForUi = useMemo(() => "online" as const, []);
-
   return (
     <>
       <PresentationBadge />
@@ -47,7 +44,6 @@ function DemoGuestInner() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ConnectionBadge status={connectionForUi} mockMode />
             <InviteLocaleBar />
           </div>
         </div>

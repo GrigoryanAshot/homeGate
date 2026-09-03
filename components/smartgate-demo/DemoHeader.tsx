@@ -1,11 +1,9 @@
-import { ConnectionBadge } from "./ConnectionBadge";
 import { SettingsMenu } from "./SettingsMenu";
 import { useLocale } from "./LocaleProvider";
 import { AppLogo } from "@/components/ui/AppLogo";
-import type { ConnectionStatus, GateState } from "@/lib/smartgate/types";
+import type { GateState } from "@/lib/smartgate/types";
 
 export function DemoHeader({
-  connection,
   mockMode,
   presentationMode,
   gateState,
@@ -14,7 +12,6 @@ export function DemoHeader({
   onToggleMock,
   onToast,
 }: {
-  connection: ConnectionStatus;
   mockMode: boolean;
   presentationMode?: boolean;
   gateState: GateState;
@@ -47,11 +44,6 @@ export function DemoHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          <ConnectionBadge
-            status={connection}
-            mockMode={mockMode}
-            presentationMode={presentationMode}
-          />
           <SettingsMenu
             open={settingsOpen}
             onOpenChange={onSettingsOpenChange}

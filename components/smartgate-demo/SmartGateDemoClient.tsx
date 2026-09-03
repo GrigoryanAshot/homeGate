@@ -76,7 +76,6 @@ function SmartGateDemoInner() {
         {presentationMode && <PresentationBadge />}
 
         <DemoHeader
-          connection={connectionForUi}
           mockMode={effectiveMock}
           presentationMode={presentationMode}
           gateState={gateState}
@@ -95,7 +94,10 @@ function SmartGateDemoInner() {
         <main className="min-h-0 flex-1 overflow-hidden px-4 py-3">
           {view === "control" ? (
             <div className="flex h-full min-h-0 flex-col">
-              <GateCardsRow onAddGate={() => setScanOpen(true)} />
+              <GateCardsRow
+                onAddGate={() => setScanOpen(true)}
+                connection={connectionForUi}
+              />
               <GateControlPanel
                 busy={busy}
                 mockMode={effectiveMock}

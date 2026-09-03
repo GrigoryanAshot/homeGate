@@ -44,6 +44,7 @@ const config: Config = {
       },
       animation: {
         "pulse-soft": "pulse-soft 2.5s ease-in-out infinite",
+        "led-blink": "led-blink 1.15s ease-in-out infinite",
         shimmer: "shimmer 2.5s linear infinite",
         float: "float 6s ease-in-out infinite",
       },
@@ -51,6 +52,10 @@ const config: Config = {
         "pulse-soft": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.55" },
+        },
+        "led-blink": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.22" },
         },
         shimmer: {
           "0%": { backgroundPosition: "200% 0" },

@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
 import { getOrCreateInviteDeviceId } from "@/lib/smartgate/invite-device-client";
 import type { ControllerAccessRule, GateCommand } from "@/lib/smartgate/types";
-import { ConnectionBadge } from "./ConnectionBadge";
 import { GateControlPanel } from "./GateControlPanel";
 import { InviteLocaleBar } from "./InviteLocaleBar";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
@@ -88,7 +87,7 @@ function InvitedGateInner({ token }: { token: string }) {
     [invite?.rule.type, token],
   );
 
-  const { connection, gateState, busy, sendCommand, mqttConfigured } =
+  const { gateState, busy, sendCommand, mqttConfigured } =
     useSmartGateMqtt({
       mockMode,
       gateId: invite?.gateId,
@@ -98,11 +97,6 @@ function InvitedGateInner({ token }: { token: string }) {
   useEffect(() => {
     if (mqttConfigured) setMockMode(false);
   }, [mqttConfigured]);
-
-  const connectionForUi = useMemo(() => {
-    if (mockMode) return "online" as const;
-    return connection;
-  }, [connection, mockMode]);
 
   const handleCommand = useCallback(
     (command: GateCommand) => {
@@ -145,7 +139,6 @@ function InvitedGateInner({ token }: { token: string }) {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ConnectionBadge status={connectionForUi} mockMode={mockMode} />
             <InviteLocaleBar />
           </div>
         </div>
