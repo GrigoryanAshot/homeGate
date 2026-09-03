@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { useGates } from "./GatesProvider";
 import { useLocale } from "./LocaleProvider";
+import { BackButton } from "./BackButton";
 
 export function AddGateScanModal({
   open,
@@ -64,17 +65,11 @@ export function AddGateScanModal({
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-[28px] border border-gate-line bg-white p-5 shadow-gate"
+        className="w-full max-w-md rounded-[28px] border border-gate-line bg-gate-surface p-5 shadow-gate"
       >
-        <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="mb-4 flex items-center gap-2">
+          <BackButton onClick={onClose} />
           <h2 className="text-lg font-bold text-gate-ink">{t.scanGateTitle}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl px-3 py-1.5 text-sm font-semibold text-gate-muted active:bg-slate-50"
-          >
-            {t.back}
-          </button>
         </div>
 
         {step === "scan" ? (

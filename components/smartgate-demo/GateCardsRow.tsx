@@ -26,8 +26,8 @@ export function GateCardsRow({ onAddGate }: { onAddGate: () => void }) {
               className={cn(
                 "flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-2xl border-2 px-3 py-3 text-center transition active:scale-[0.98]",
                 selected
-                  ? "border-blue-400 bg-blue-50 shadow-sm"
-                  : "border-gate-line bg-white hover:border-blue-200 hover:bg-blue-50/40",
+                  ? "border-blue-400 bg-blue-50 shadow-sm dark:bg-blue-500/15"
+                  : "border-gate-line bg-gate-surface hover:border-blue-200 hover:bg-blue-50/40 dark:hover:bg-blue-500/10",
               )}
             >
               <span

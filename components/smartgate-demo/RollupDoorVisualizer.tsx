@@ -38,7 +38,7 @@ const openProgress: Record<GateState, number> = {
   unknown: 0,
 };
 
-const GATE_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const GATE_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 const GATE_DURATION = "2.4s";
 
 function pct(value: number, base: number) {
@@ -54,8 +54,7 @@ export function RollupDoorVisualizer({
   className?: string;
 }) {
   const progress = openProgress[state];
-
-  const lamilLiftPct =
+  const liftPct =
     LAMIL_COUNT > 1 ? progress * ((LAMIL_COUNT - 1) / LAMIL_COUNT) * 100 : 0;
 
   const trackLeft = pct(NATIVE.caseInset + NATIVE.caseW, NATIVE.width);
@@ -64,7 +63,7 @@ export function RollupDoorVisualizer({
   return (
     <div
       className={cn(
-        "relative mx-auto h-full max-h-[min(28dvh,220px)] w-full max-w-[min(78vw,280px)]",
+        "relative mx-auto h-full max-h-[min(28dvh,220px)] w-full max-w-[min(78vw,280px)] overflow-hidden",
         className,
       )}
       style={{ aspectRatio: `${NATIVE.width} / ${TOTAL_H}` }}
@@ -72,7 +71,7 @@ export function RollupDoorVisualizer({
       <div className="absolute inset-0 overflow-hidden bg-[#c8cfd8] shadow-gate-sm">
         {/* Bright driveway / daylight behind the opening */}
         <div
-          className="absolute"
+          className="absolute overflow-hidden"
           style={{
             top: pct(NATIVE.motorH, TOTAL_H),
             left: trackLeft,
@@ -83,7 +82,7 @@ export function RollupDoorVisualizer({
           }}
         />
 
-        {/* Lamels — clipped to track, behind side cases */}
+        {/* Lamels — stack is exactly the track height so closed sits on the floor */}
         <div
           className="absolute overflow-hidden"
           style={{
@@ -94,9 +93,10 @@ export function RollupDoorVisualizer({
           }}
         >
           <div
-            className="flex flex-col"
+            className="absolute inset-x-0 top-0 flex flex-col"
             style={{
-              transform: `translateY(-${lamilLiftPct}%)`,
+              height: "100%",
+              transform: `translate3d(0, -${liftPct}%, 0)`,
               transition: `transform ${GATE_DURATION} ${GATE_EASE}`,
             }}
           >
@@ -106,8 +106,8 @@ export function RollupDoorVisualizer({
                 src={ASSETS.lamil}
                 alt=""
                 draggable={false}
-                className="block w-full shrink-0 select-none"
-                style={{ height: pct(NATIVE.lamilH, NATIVE.caseH) }}
+                className="block w-full shrink-0 select-none object-fill"
+                style={{ height: `${100 / LAMIL_COUNT}%` }}
               />
             ))}
           </div>

@@ -2,11 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { IconSettings } from "@/components/ui/icons";
+import {
+  IconChevronRight,
+  IconClose,
+  IconSettings,
+} from "@/components/ui/icons";
 import { Toggle } from "@/components/ui/primitives";
 import { localeLabels, SUPPORTED_LOCALES } from "@/lib/smartgate/i18n";
 import { cn } from "@/lib/utils";
 import { useLocale } from "./LocaleProvider";
+import { useTheme } from "./ThemeProvider";
 
 export function SettingsMenu({
   open,
@@ -14,22 +19,27 @@ export function SettingsMenu({
   mockMode,
   presentationMode,
   onToggleMock,
+  onToast,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mockMode: boolean;
   presentationMode?: boolean;
   onToggleMock: () => void;
+  onToast?: (message: string) => void;
 }) {
   const { locale, setLocale, t } = useLocale();
+  const { darkMode, toggleTheme } = useTheme();
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    if (open) setLangOpen(false);
     if (!open) return;
 
     const prevOverflow = document.body.style.overflow;
@@ -54,12 +64,10 @@ export function SettingsMenu({
     };
   }, [open, onOpenChange]);
 
-  const locales = SUPPORTED_LOCALES;
-
   const overlay =
     open && mounted ? (
       <div
-        className="fixed inset-0 z-[200] flex items-start justify-center bg-slate-900/40 p-4 pt-16 backdrop-blur-[2px] sm:items-center sm:pt-4"
+        className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-950/45 p-0 backdrop-blur-[3px] sm:items-center sm:p-4"
         role="presentation"
       >
         <div
@@ -67,65 +75,165 @@ export function SettingsMenu({
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
-          className="relative z-[201] w-full max-w-md rounded-[28px] border border-gate-line bg-white p-5 shadow-gate sm:p-6"
+          className="relative z-[201] flex max-h-[min(92dvh,720px)] w-full max-w-md flex-col overflow-hidden rounded-t-[32px] border border-gate-line bg-gate-bg shadow-[0_-18px_50px_rgba(15,23,42,0.18)] sm:rounded-[32px] sm:shadow-gate"
         >
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <h2 id="settings-title" className="text-xl font-bold text-gate-ink">
-              {t.settings}
-            </h2>
+          <div className="mx-auto mt-3 h-1.5 w-12 shrink-0 rounded-full bg-gate-line sm:hidden" />
+
+          <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
+            <div>
+              <h2
+                id="settings-title"
+                className="text-[1.35rem] font-bold tracking-tight text-gate-ink"
+              >
+                {t.settings}
+              </h2>
+            </div>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded-xl border border-gate-line px-4 py-2 text-sm font-semibold text-gate-muted hover:bg-slate-50"
+              aria-label={t.settingsClose}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-gate-surface text-gate-muted shadow-sm ring-1 ring-gate-line active:bg-gate-card"
             >
-              {t.settingsClose}
+              <IconClose className="h-5 w-5" />
             </button>
           </div>
 
-          <section className="mb-5">
-            <p className="mb-3 text-sm font-bold text-gate-ink">{t.language}</p>
-            <div className="grid grid-cols-3 gap-2">
-              {locales.map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => setLocale(code)}
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <div className="overflow-hidden rounded-[26px] bg-gate-surface shadow-sm ring-1 ring-gate-line">
+              <button
+                type="button"
+                aria-expanded={langOpen}
+                onClick={() => setLangOpen((v) => !v)}
+                className="flex min-h-[64px] w-full items-center gap-3 px-4 py-3 text-left active:bg-gate-card"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200">
+                  <span className="text-sm font-black tracking-wide">
+                    {locale.toUpperCase()}
+                  </span>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-bold text-gate-ink">
+                    {t.language}
+                  </span>
+                  <span className="block text-sm text-gate-muted">
+                    {localeLabels[locale]}
+                  </span>
+                </span>
+                <IconChevronRight
                   className={cn(
-                    "min-h-[52px] rounded-2xl border px-4 py-3 text-base font-bold transition",
-                    locale === code
-                      ? "border-blue-400 bg-blue-50 text-blue-800 ring-2 ring-blue-200"
-                      : "border-gate-line bg-white text-gate-muted hover:border-blue-200 hover:bg-blue-50/50",
+                    "h-5 w-5 text-gate-muted transition-transform",
+                    langOpen && "rotate-90",
                   )}
-                >
-                  {localeLabels[code]}
-                </button>
-              ))}
+                />
+              </button>
+
+              {langOpen && (
+                <div className="grid grid-cols-3 gap-2 border-t border-gate-line bg-gate-card/70 px-3 py-3">
+                  {SUPPORTED_LOCALES.map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => {
+                        setLocale(code);
+                        setLangOpen(false);
+                      }}
+                      className={cn(
+                        "flex min-h-[56px] flex-col items-center justify-center rounded-2xl text-sm font-bold transition",
+                        locale === code
+                          ? "bg-blue-500 text-white shadow-sm"
+                          : "bg-gate-surface text-gate-ink ring-1 ring-gate-line",
+                      )}
+                    >
+                      <span>{code.toUpperCase()}</span>
+                      <span
+                        className={cn(
+                          "mt-0.5 text-[11px] font-semibold",
+                          locale === code ? "text-white/80" : "text-gate-muted",
+                        )}
+                      >
+                        {localeLabels[code]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-pressed={darkMode}
+                className="flex min-h-[64px] w-full cursor-pointer items-center gap-3 border-t border-gate-line px-4 py-3 text-left active:bg-gate-card"
+              >
+                <span className="pointer-events-none flex h-11 w-11 shrink-0 items-center justify-center overflow-visible rounded-2xl bg-amber-50 dark:bg-indigo-500/20">
+                  <input
+                    type="checkbox"
+                    className="theme-toggle pointer-events-none"
+                    checked={darkMode}
+                    readOnly
+                    tabIndex={-1}
+                    aria-hidden
+                  />
+                </span>
+                <span className="min-w-0 flex-1 text-[15px] font-bold text-gate-ink">
+                  {t.darkMode}
+                </span>
+              </button>
             </div>
-          </section>
 
-          {!presentationMode && (
-            <section className="mb-5 rounded-2xl border border-gate-line bg-slate-50 p-4">
-              <Toggle
-                checked={mockMode}
-                onChange={onToggleMock}
-                label={t.mockMode}
-              />
-              <p className="mt-3 text-sm leading-relaxed text-gate-muted">
-                {mockMode ? t.mockModeHint : t.mockModeDescription}
-              </p>
-            </section>
-          )}
+            {!presentationMode && (
+              <div className="mt-3 overflow-hidden rounded-[26px] bg-gate-surface p-4 shadow-sm ring-1 ring-gate-line">
+                <Toggle
+                  checked={mockMode}
+                  onChange={onToggleMock}
+                  label={t.mockMode}
+                />
+                <p className="mt-3 text-sm leading-relaxed text-gate-muted">
+                  {mockMode ? t.mockModeHint : t.mockModeDescription}
+                </p>
+              </div>
+            )}
 
-          <section>
             <button
               type="button"
-              disabled
-              aria-disabled="true"
-              className="w-full rounded-2xl border border-gate-line bg-white py-3.5 text-sm font-bold text-gate-muted opacity-60"
+              onClick={() => {
+                onToast?.(t.toastSpecialistRequested);
+                onOpenChange(false);
+              }}
+              className="mt-3 flex min-h-[58px] w-full items-center justify-center rounded-[22px] bg-blue-500 px-4 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(37,99,235,0.28)] active:scale-[0.99] active:bg-blue-600"
             >
-              {t.resetDevice}
+              {t.connectSpecialist}
             </button>
-          </section>
+
+            <div className="mt-3 overflow-hidden rounded-[26px] bg-gate-surface shadow-sm ring-1 ring-gate-line">
+              <button
+                type="button"
+                disabled
+                className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-gate-muted"
+              >
+                {t.forDevelopers}
+              </button>
+              <button
+                type="button"
+                disabled
+                className="flex min-h-[56px] w-full items-center border-t border-gate-line px-4 text-left text-[15px] font-semibold text-gate-muted"
+              >
+                {t.resetDevice}
+              </button>
+            </div>
+
+            <p className="mt-6 px-3 text-center text-[12px] leading-relaxed text-gate-muted">
+              {t.creditBefore}
+              <a
+                href="https://www.touchweb.am"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-600 dark:text-blue-300"
+              >
+                Touch Web Agency
+              </a>
+              {t.creditAfter}
+            </p>
+          </div>
         </div>
       </div>
     ) : null;
@@ -141,8 +249,8 @@ export function SettingsMenu({
         className={cn(
           "relative z-[2] flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition",
           open
-            ? "border-blue-400 bg-blue-100 text-blue-700"
-            : "border-gate-line bg-white text-gate-muted hover:border-blue-200 hover:bg-blue-50 hover:text-gate-ink",
+            ? "border-blue-400 bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-100"
+            : "border-gate-line bg-gate-surface text-gate-muted hover:border-blue-200 hover:bg-blue-50 hover:text-gate-ink dark:hover:bg-blue-500/10",
         )}
       >
         <IconSettings className="h-5 w-5" />

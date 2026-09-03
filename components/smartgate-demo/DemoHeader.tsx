@@ -12,6 +12,7 @@ export function DemoHeader({
   settingsOpen,
   onSettingsOpenChange,
   onToggleMock,
+  onToast,
 }: {
   connection: ConnectionStatus;
   mockMode: boolean;
@@ -20,6 +21,7 @@ export function DemoHeader({
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
   onToggleMock: () => void;
+  onToast?: (message: string) => void;
 }) {
   const { t } = useLocale();
 
@@ -30,10 +32,10 @@ export function DemoHeader({
       : t.gateStates[gateState];
 
   return (
-    <header className="relative z-10 shrink-0 border-b border-gate-line bg-white/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
+    <header className="relative z-10 shrink-0 border-b border-gate-line bg-gate-surface/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gate-line bg-white p-1.5 shadow-sm">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gate-line bg-gate-surface p-1.5 shadow-sm">
             <AppLogo size={40} />
           </div>
           <div className="min-w-0">
@@ -56,6 +58,7 @@ export function DemoHeader({
             mockMode={mockMode}
             presentationMode={presentationMode}
             onToggleMock={onToggleMock}
+            onToast={onToast}
           />
         </div>
       </div>

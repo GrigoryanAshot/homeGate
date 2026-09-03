@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,14 +10,14 @@ const config: Config = {
     extend: {
       colors: {
         gate: {
-          bg: "#e8f2ff",
-          surface: "#ffffff",
-          elevated: "#ffffff",
-          card: "#f1f6fd",
-          ink: "#0f172a",
-          muted: "#64748b",
-          line: "rgba(15, 23, 42, 0.1)",
-          "line-strong": "rgba(15, 23, 42, 0.18)",
+          bg: "var(--gate-bg)",
+          surface: "var(--gate-surface)",
+          elevated: "var(--gate-elevated)",
+          card: "var(--gate-card)",
+          ink: "var(--gate-ink)",
+          muted: "var(--gate-muted)",
+          line: "var(--gate-line)",
+          "line-strong": "var(--gate-line-strong)",
           gold: "#2563eb",
           "gold-strong": "#3b82f6",
           "gold-dim": "#1d4ed8",

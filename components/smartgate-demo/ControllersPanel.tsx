@@ -21,6 +21,7 @@ import {
 import { useLocale } from "./LocaleProvider";
 import { useGates } from "./GatesProvider";
 import { AlarmWheelTimePicker, TIME_NOW } from "./WheelTimePicker";
+import { BackButton } from "./BackButton";
 
 type PanelView = "list" | "add" | "edit" | "history" | "share";
 
@@ -334,6 +335,8 @@ export function ControllersPanel({
 
   function saveAccessChanges() {
     if (!editingId) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
     if (preset === "range" && (!rangeFrom || !rangeTo)) return;
 
     const rule = buildRule(
@@ -345,9 +348,12 @@ export function ControllersPanel({
     );
 
     setControllers((prev) =>
-      prev.map((c) => (c.id === editingId ? { ...c, rule } : c)),
+      prev.map((c) =>
+        c.id === editingId ? { ...c, name: trimmed, rule } : c,
+      ),
     );
     setEditingId(null);
+    setName("");
     setPreset("unlimited");
     resetRangeFields();
     setPanelView("list");
@@ -508,14 +514,8 @@ export function ControllersPanel({
   if (panelView === "history") {
     return (
       <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0 flex items-center gap-2 pb-3">
-          <button
-            type="button"
-            onClick={() => setPanelView("list")}
-            className="rounded-xl px-2 py-1.5 text-sm font-semibold text-gate-gold active:bg-blue-50"
-          >
-            ← {t.back}
-          </button>
+        <div className="flex shrink-0 items-center gap-2 pb-3">
+          <BackButton onClick={() => setPanelView("list")} />
           <h2 className="text-lg font-bold text-gate-ink">{t.historyTitle}</h2>
         </div>
 
@@ -529,7 +529,7 @@ export function ControllersPanel({
             history.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center gap-3 rounded-2xl border border-gate-line bg-white px-4 py-3 shadow-sm"
+                className="flex items-center gap-3 rounded-2xl border border-gate-line bg-gate-surface px-4 py-3 shadow-sm"
               >
                 <span
                   className={cn(
@@ -568,7 +568,7 @@ export function ControllersPanel({
         ? combineDateAndTime(rangeFrom, rangeFromTime)
         : 0;
     const canSave =
-      (isEdit || name.trim().length > 0) &&
+      name.trim().length > 0 &&
       (preset !== "range" ||
         (rangeFrom.length > 0 &&
           rangeTo.length > 0 &&
@@ -576,17 +576,13 @@ export function ControllersPanel({
 
     return (
       <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0 flex items-center gap-2 pb-3">
-          <button
-            type="button"
+        <div className="flex shrink-0 items-center gap-2 pb-3">
+          <BackButton
             onClick={() => {
               setEditingId(null);
               setPanelView("list");
             }}
-            className="rounded-xl px-2 py-1.5 text-sm font-semibold text-gate-gold active:bg-blue-50"
-          >
-            ← {t.back}
-          </button>
+          />
           <h2 className="text-lg font-bold text-gate-ink">
             {isEdit ? t.editAccessTitle : t.addController}
           </h2>
@@ -601,12 +597,8 @@ export function ControllersPanel({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              readOnly={isEdit}
               placeholder={t.controllerNamePlaceholder}
-              className={cn(
-                "w-full rounded-2xl border border-gate-line px-4 py-3 text-sm text-gate-ink outline-none ring-blue-400 focus:ring-2",
-                isEdit ? "bg-slate-50 text-gate-muted" : "bg-white",
-              )}
+              className="w-full rounded-2xl border border-gate-line bg-gate-surface px-4 py-3 text-sm text-gate-ink outline-none ring-blue-400 focus:ring-2"
             />
           </label>
 
@@ -750,7 +742,7 @@ export function ControllersPanel({
           controllers.map((user) => (
             <div
               key={user.id}
-              className="flex items-center gap-3 rounded-2xl border border-gate-line bg-white px-4 py-3 shadow-sm"
+              className="flex items-center gap-3 rounded-2xl border border-gate-line bg-gate-surface px-4 py-3 shadow-sm"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
                 {user.name.charAt(0).toUpperCase()}

@@ -12,6 +12,7 @@ import { GateCardsRow, PresentationBadge } from "./GateCardsRow";
 import { GateControlPanel } from "./GateControlPanel";
 import { GatesProvider, useGates } from "./GatesProvider";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
+import { ThemeProvider } from "./ThemeProvider";
 
 function SmartGateDemoInner() {
   const { t } = useLocale();
@@ -82,6 +83,7 @@ function SmartGateDemoInner() {
           settingsOpen={settingsOpen}
           onSettingsOpenChange={setSettingsOpen}
           onToggleMock={() => setMockMode((v) => !v)}
+          onToast={showToast}
         />
 
         {!presentationMode && !effectiveMock && !mqttConfigured && view === "control" && (
@@ -121,7 +123,7 @@ function SmartGateDemoInner() {
       {toast && (
         <div
           role="status"
-          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-1/2 z-[60] w-[min(88vw,320px)] -translate-x-1/2 rounded-2xl border border-blue-200 bg-white px-4 py-3 text-center text-sm font-semibold text-gate-ink shadow-gate"
+          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-1/2 z-[60] w-[min(88vw,320px)] -translate-x-1/2 rounded-2xl border border-blue-200 bg-gate-surface px-4 py-3 text-center text-sm font-semibold text-gate-ink shadow-gate"
         >
           {toast}
         </div>
@@ -133,9 +135,11 @@ function SmartGateDemoInner() {
 export function SmartGateDemoClient() {
   return (
     <LocaleProvider>
-      <GatesProvider>
-        <SmartGateDemoInner />
-      </GatesProvider>
+      <ThemeProvider>
+        <GatesProvider>
+          <SmartGateDemoInner />
+        </GatesProvider>
+      </ThemeProvider>
     </LocaleProvider>
   );
 }

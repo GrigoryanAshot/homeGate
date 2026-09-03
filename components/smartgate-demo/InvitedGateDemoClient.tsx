@@ -33,10 +33,10 @@ function DemoGuestInner() {
   return (
     <>
       <PresentationBadge />
-      <header className="shrink-0 border-b border-gate-line bg-white/90 px-4 py-3 backdrop-blur-md">
+      <header className="shrink-0 border-b border-gate-line bg-gate-surface/90 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gate-line bg-white p-1 shadow-sm">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gate-line bg-gate-surface p-1 shadow-sm">
               <AppLogo size={36} />
             </div>
             <div className="min-w-0">

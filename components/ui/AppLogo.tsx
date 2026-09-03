@@ -17,7 +17,7 @@ export function AppLogo({
       alt="HomeGate"
       width={size}
       height={size}
-      className={cn("shrink-0 object-contain", className)}
+      className={cn("shrink-0 object-contain dark:invert", className)}
       style={{ width: size, height: size }}
     />
   );

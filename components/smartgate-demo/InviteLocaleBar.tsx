@@ -19,7 +19,7 @@ export function InviteLocaleBar() {
             "rounded-lg px-2.5 py-1 text-xs font-bold transition",
             locale === loc
               ? "bg-blue-500 text-white"
-              : "border border-gate-line bg-white text-gate-muted",
+              : "border border-gate-line bg-gate-surface text-gate-muted",
           )}
         >
           {loc.toUpperCase()}

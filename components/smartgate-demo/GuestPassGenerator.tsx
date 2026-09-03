@@ -10,6 +10,7 @@ import {
   getGuestPassDurationLabel,
 } from "@/lib/smartgate/i18n";
 import { useLocale } from "./LocaleProvider";
+import { BackButton } from "./BackButton";
 
 function buildPass(duration: GuestPassDuration): GuestPass {
   const token = `SG-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
@@ -85,13 +86,7 @@ export function GuestPassGenerator({
   return (
     <div className="flex h-full min-h-0 flex-col px-1">
       <div className="mb-3 flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setStep("duration")}
-          className="rounded-xl border border-gate-line px-3 py-2 text-sm font-semibold text-gate-muted active:bg-slate-50"
-        >
-          ← {t.back}
-        </button>
+        <BackButton onClick={() => setStep("duration")} />
         <p className="text-sm font-bold text-gate-ink">{t.step2}</p>
       </div>
 

@@ -36,7 +36,7 @@ export function BottomNav({
     <nav
       role="tablist"
       aria-label={t.tabControl}
-      className="shrink-0 border-t border-gate-line bg-white/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
+      className="shrink-0 border-t border-gate-line bg-gate-surface/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
     >
       <div className="mx-auto grid max-w-lg grid-cols-2 gap-1">
         {tabs.map((tab) => {

@@ -120,6 +120,12 @@ export type SmartGateMessages = {
   mockMode: string;
   mockModeDescription: string;
   resetDevice: string;
+  darkMode: string;
+  forDevelopers: string;
+  connectSpecialist: string;
+  toastSpecialistRequested: string;
+  creditBefore: string;
+  creditAfter: string;
   gateStates: Record<GateState, string>;
 };
 
@@ -249,6 +255,12 @@ const en: SmartGateMessages = {
   mockModeDescription:
     "Use this to practice. Buttons will not control your real gate.",
   resetDevice: "Restart device (reset)",
+  darkMode: "Dark mode",
+  forDevelopers: "For developers",
+  connectSpecialist: "Contact a service specialist",
+  toastSpecialistRequested: "A specialist will contact you shortly",
+  creditBefore: "System developed and maintained by ",
+  creditAfter: "",
   gateStates: {
     closed: "Gate is closed",
     open: "Gate is open",
@@ -291,7 +303,7 @@ const hy: SmartGateMessages = {
   tabShareHint: "Ով կարող է կառավարել",
   controllersTitle: "Այլ կառավարողներ",
   controllersIntro:
-    "Մարդիկ, ովքեր կարող են բացել կամ փակել դուռը իրենց հ telefoniից։",
+    "Մարդիկ, ովքեր կարող են բացել | փակել դարպասն իրենց հեռախոսով",
   addController: "Ավելացնել",
   removeController: "Հեռացնել",
   viewHistory: "Բացելու/Փակելու պատմություն",
@@ -385,6 +397,12 @@ const hy: SmartGateMessages = {
   mockModeDescription:
     "Օգտագործեք սովորելու համար։ Կոճակները չեն կառավարի իրական դուռը։",
   resetDevice: "Վերագործարկել սարքը (reset)",
+  darkMode: "Մուգ ռեժիմ",
+  forDevelopers: "Ծրագրավորողների համար",
+  connectSpecialist: "Միանալ սպասարկող մասնագետին",
+  toastSpecialistRequested: "Մասնագետը շուտով կկապվի ձեզ հետ",
+  creditBefore: "Համակարգը մշակվել է և սպասարկվում է ",
+  creditAfter: "-ի կողմից",
   gateStates: {
     closed: "Դարպասը փակ է",
     open: "Դարպասը բաց է",
@@ -521,6 +539,12 @@ const ru: SmartGateMessages = {
   mockModeDescription:
     "Для обучения. Кнопки не будут управлять реальными воротами.",
   resetDevice: "Перезапустить устройство (reset)",
+  darkMode: "Тёмная тема",
+  forDevelopers: "Для разработчиков",
+  connectSpecialist: "Связаться со специалистом",
+  toastSpecialistRequested: "Специалист скоро свяжется с вами",
+  creditBefore: "Система разработана и обслуживается ",
+  creditAfter: "",
   gateStates: {
     closed: "Ворота закрыты",
     open: "Ворота открыты",

@@ -132,8 +132,8 @@ export function Toggle({
       className={cn(
         "inline-flex items-center gap-3 rounded-2xl border px-4 py-2.5 transition-all",
         checked
-          ? "border-blue-300 bg-blue-50 text-blue-800"
-          : "border-gate-line bg-white text-gate-muted hover:border-blue-200 hover:bg-blue-50/50",
+          ? "border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100"
+          : "border-gate-line bg-gate-surface text-gate-muted hover:border-blue-200 hover:bg-blue-50/50 dark:hover:bg-blue-500/10",
       )}
     >
       <span
