@@ -20,6 +20,7 @@ import {
 } from "@/lib/smartgate/types";
 import { useLocale } from "./LocaleProvider";
 import { useGates } from "./GatesProvider";
+import { useBiometric } from "./BiometricProvider";
 import { AlarmWheelTimePicker, TIME_NOW } from "./WheelTimePicker";
 import { BackButton } from "./BackButton";
 
@@ -185,6 +186,7 @@ export function ControllersPanel({
 }) {
   const { locale, t } = useLocale();
   const { selectedGateId } = useGates();
+  const { requireAuth } = useBiometric();
   const [panelView, setPanelView] = useState<PanelView>("list");
   const [controllers, setControllers] = useState<GateController[]>(() => [
     ...SEED_CONTROLLERS,
@@ -256,6 +258,23 @@ export function ControllersPanel({
     { id: "range", label: t.ruleFromTo, hint: t.ruleFromToHint },
   ];
 
+  async function withBiometric(
+    action: () => void | Promise<void>,
+  ): Promise<void> {
+    const result = await requireAuth({ force: true });
+    if (!result.ok) {
+      onToast?.(
+        result.reason === "cancelled"
+          ? t.biometricCancelled
+          : result.reason === "unsupported"
+            ? t.biometricNotSupported
+            : t.biometricFailed,
+      );
+      return;
+    }
+    await action();
+  }
+
   function removeController(id: string) {
     setControllers((prev) => prev.filter((c) => c.id !== id));
     onToast?.(t.toastControllerRemoved);
@@ -265,6 +284,18 @@ export function ControllersPanel({
     const trimmed = name.trim();
     if (!trimmed) return;
     if (preset === "range" && (!rangeFrom || !rangeTo)) return;
+
+    const auth = await requireAuth({ force: true });
+    if (!auth.ok) {
+      onToast?.(
+        auth.reason === "cancelled"
+          ? t.biometricCancelled
+          : auth.reason === "unsupported"
+            ? t.biometricNotSupported
+            : t.biometricFailed,
+      );
+      return;
+    }
 
     const rule = buildRule(
       preset,
@@ -361,74 +392,86 @@ export function ControllersPanel({
   }
 
   function openPreviewGuest() {
-    if (!shareUrl) return;
-    window.open(shareUrl, "_blank", "noopener,noreferrer");
+    void withBiometric(() => {
+      if (!shareUrl) return;
+      window.open(shareUrl, "_blank", "noopener,noreferrer");
+    });
   }
 
   function openWhatsAppShare() {
-    if (!shareUrl) return;
-    const message = buildInviteWhatsAppMessage(locale, shareName, shareUrl);
-    window.open(buildWhatsAppShareUrl(message), "_blank", "noopener,noreferrer");
+    void withBiometric(() => {
+      if (!shareUrl) return;
+      const message = buildInviteWhatsAppMessage(locale, shareName, shareUrl);
+      window.open(buildWhatsAppShareUrl(message), "_blank", "noopener,noreferrer");
+    });
   }
 
   async function copyInviteLink() {
-    if (!shareUrl) return;
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 3000);
+    await withBiometric(async () => {
+      if (!shareUrl) return;
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 3000);
+    });
   }
 
   async function shareQrImage() {
-    const svg = qrWrapRef.current?.querySelector("svg");
-    if (!svg || !shareUrl) return;
+    await withBiometric(async () => {
+      const svg = qrWrapRef.current?.querySelector("svg");
+      if (!svg || !shareUrl) return;
 
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const dataUrl =
-      "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const dataUrl =
+        "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
 
-    const pngBlob = await new Promise<Blob>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const size = 512;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          reject(new Error("canvas"));
+      const pngBlob = await new Promise<Blob>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const size = 512;
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("canvas"));
+            return;
+          }
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, size, size);
+          ctx.drawImage(img, 0, 0, size, size);
+          canvas.toBlob(
+            (blob) => (blob ? resolve(blob) : reject(new Error("blob"))),
+            "image/png",
+          );
+        };
+        img.onerror = () => reject(new Error("image"));
+        img.src = dataUrl;
+      });
+
+      const file = new File([pngBlob], "gate-invite-qr.png", {
+        type: "image/png",
+      });
+
+      if (typeof navigator.share === "function") {
+        try {
+          if (!navigator.canShare?.({ files: [file] })) {
+            throw new Error("nos share files");
+          }
+          await navigator.share({ files: [file], title: shareName });
           return;
+        } catch {
+          /* fall through to download */
         }
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, size, size);
-        ctx.drawImage(img, 0, 0, size, size);
-        canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error("blob"))),
-          "image/png",
-        );
-      };
-      img.onerror = () => reject(new Error("image"));
-      img.src = dataUrl;
-    });
-
-    const file = new File([pngBlob], "gate-invite-qr.png", { type: "image/png" });
-
-    if (typeof navigator.share === "function") {
-      try {
-        if (!navigator.canShare?.({ files: [file] })) throw new Error("nos share files");
-        await navigator.share({ files: [file], title: shareName });
-        return;
-      } catch {
-        /* fall through to download */
       }
-    }
 
-    const objectUrl = URL.createObjectURL(pngBlob);
-    const anchor = document.createElement("a");
-    anchor.href = objectUrl;
-    anchor.download = "gate-invite-qr.png";
-    anchor.click();
-    URL.revokeObjectURL(objectUrl);
-    onToast?.(t.shareQrSaved);
+      const objectUrl = URL.createObjectURL(pngBlob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = "gate-invite-qr.png";
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+      onToast?.(t.shareQrSaved);
+    });
   }
 
   if (panelView === "share") {

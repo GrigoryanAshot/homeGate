@@ -13,6 +13,8 @@ import { GateControlPanel } from "./GateControlPanel";
 import { GatesProvider, useGates } from "./GatesProvider";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
 import { ThemeProvider } from "./ThemeProvider";
+import { BiometricProvider } from "./BiometricProvider";
+import { BiometricLockScreen } from "./BiometricLockScreen";
 
 function SmartGateDemoInner() {
   const { t } = useLocale();
@@ -130,6 +132,8 @@ function SmartGateDemoInner() {
           {toast}
         </div>
       )}
+
+      <BiometricLockScreen />
     </div>
   );
 }
@@ -138,9 +142,11 @@ export function SmartGateDemoClient() {
   return (
     <LocaleProvider>
       <ThemeProvider>
-        <GatesProvider>
-          <SmartGateDemoInner />
-        </GatesProvider>
+        <BiometricProvider>
+          <GatesProvider>
+            <SmartGateDemoInner />
+          </GatesProvider>
+        </BiometricProvider>
       </ThemeProvider>
     </LocaleProvider>
   );

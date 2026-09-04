@@ -121,6 +121,16 @@ export type SmartGateMessages = {
   mockModeDescription: string;
   resetDevice: string;
   darkMode: string;
+  biometricLock: string;
+  biometricLockHint: string;
+  biometricUnlock: string;
+  biometricChecking: string;
+  biometricDescription: string;
+  biometricNotSupported: string;
+  biometricEnabledToast: string;
+  biometricDisabledToast: string;
+  biometricCancelled: string;
+  biometricFailed: string;
   forDevelopers: string;
   connectSpecialist: string;
   toastSpecialistRequested: string;
@@ -256,6 +266,19 @@ const en: SmartGateMessages = {
     "Use this to practice. Buttons will not control your real gate.",
   resetDevice: "Restart device (reset)",
   darkMode: "Dark mode",
+  biometricLock: "Face ID / Fingerprint",
+  biometricLockHint:
+    "Confirm with Face ID or fingerprint to open Touch SmartGate.",
+  biometricUnlock: "Unlock with Face ID / Fingerprint",
+  biometricChecking: "Checking…",
+  biometricDescription:
+    "Require Face ID or fingerprint when opening the app and before sharing access.",
+  biometricNotSupported:
+    "Face ID / fingerprint is not available on this device or browser.",
+  biometricEnabledToast: "Face ID / fingerprint enabled",
+  biometricDisabledToast: "Face ID / fingerprint turned off",
+  biometricCancelled: "Cancelled — action not allowed",
+  biometricFailed: "Could not verify Face ID / fingerprint",
   forDevelopers: "For developers",
   connectSpecialist: "Contact a service specialist",
   toastSpecialistRequested: "A specialist will contact you shortly",
@@ -398,6 +421,19 @@ const hy: SmartGateMessages = {
     "Օգտագործեք սովորելու համար։ Կոճակները չեն կառավարի իրական դուռը։",
   resetDevice: "Վերագործարկել սարքը (reset)",
   darkMode: "Մուգ ռեժիմ",
+  biometricLock: "Face ID / մատնահետք",
+  biometricLockHint:
+    "Բացեք Touch SmartGate-ը Face ID-ով կամ մատնահետքով։",
+  biometricUnlock: "Բացել Face ID / մատնահետքով",
+  biometricChecking: "Ստուգում…",
+  biometricDescription:
+    "Պահանջել Face ID կամ մատնահետք հավելվածը բացելիս և մուտք կիսելիս։",
+  biometricNotSupported:
+    "Face ID / մատնահետքը հասանելի չէ այս սարքում կամ բրաուզերում։",
+  biometricEnabledToast: "Face ID / մատնահետքը միացված է",
+  biometricDisabledToast: "Face ID / մատնահետքը անջատված է",
+  biometricCancelled: "Չեղարկվեց — գործողությունը չի թույլատրվում",
+  biometricFailed: "Չհաջողվեց հաստատել Face ID / մատնահետքը",
   forDevelopers: "Ծրագրավորողների համար",
   connectSpecialist: "Միանալ սպասարկող մասնագետին",
   toastSpecialistRequested: "Մասնագետը շուտով կկապվի ձեզ հետ",
@@ -540,6 +576,19 @@ const ru: SmartGateMessages = {
     "Для обучения. Кнопки не будут управлять реальными воротами.",
   resetDevice: "Перезапустить устройство (reset)",
   darkMode: "Тёмная тема",
+  biometricLock: "Face ID / отпечаток",
+  biometricLockHint:
+    "Подтвердите Face ID или отпечатком, чтобы открыть Touch SmartGate.",
+  biometricUnlock: "Разблокировать Face ID / отпечатком",
+  biometricChecking: "Проверка…",
+  biometricDescription:
+    "Требовать Face ID или отпечаток при открытии приложения и перед общим доступом.",
+  biometricNotSupported:
+    "Face ID / отпечаток недоступен на этом устройстве или в браузере.",
+  biometricEnabledToast: "Face ID / отпечаток включён",
+  biometricDisabledToast: "Face ID / отпечаток выключен",
+  biometricCancelled: "Отменено — действие не разрешено",
+  biometricFailed: "Не удалось подтвердить Face ID / отпечаток",
   forDevelopers: "Для разработчиков",
   connectSpecialist: "Связаться со специалистом",
   toastSpecialistRequested: "Специалист скоро свяжется с вами",

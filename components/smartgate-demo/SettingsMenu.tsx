@@ -10,6 +10,7 @@ import {
 import { Toggle } from "@/components/ui/primitives";
 import { localeLabels, SUPPORTED_LOCALES } from "@/lib/smartgate/i18n";
 import { cn } from "@/lib/utils";
+import { useBiometric } from "./BiometricProvider";
 import { useLocale } from "./LocaleProvider";
 import { useTheme } from "./ThemeProvider";
 
@@ -30,9 +31,11 @@ export function SettingsMenu({
 }) {
   const { locale, setLocale, t } = useLocale();
   const { darkMode, toggleTheme } = useTheme();
+  const biometric = useBiometric();
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [biometricBusy, setBiometricBusy] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -178,6 +181,60 @@ export function SettingsMenu({
                   {t.darkMode}
                 </span>
               </button>
+
+              <div className="border-t border-gate-line px-4 py-3">
+                <Toggle
+                  checked={biometric.enabled}
+                  disabled={biometricBusy || biometric.busy || !biometric.ready}
+                  onChange={() => {
+                    void (async () => {
+                      setBiometricBusy(true);
+                      try {
+                        if (biometric.enabled) {
+                          const auth = await biometric.requireAuth({
+                            force: true,
+                          });
+                          if (!auth.ok) {
+                            onToast?.(
+                              auth.reason === "cancelled"
+                                ? t.biometricCancelled
+                                : t.biometricFailed,
+                            );
+                            return;
+                          }
+                          await biometric.disable();
+                          onToast?.(t.biometricDisabledToast);
+                          return;
+                        }
+
+                        if (!biometric.supported) {
+                          onToast?.(t.biometricNotSupported);
+                          return;
+                        }
+
+                        const result = await biometric.enable();
+                        if (result.ok) {
+                          onToast?.(t.biometricEnabledToast);
+                          return;
+                        }
+                        onToast?.(
+                          result.reason === "unsupported"
+                            ? t.biometricNotSupported
+                            : result.reason === "cancelled"
+                              ? t.biometricCancelled
+                              : t.biometricFailed,
+                        );
+                      } finally {
+                        setBiometricBusy(false);
+                      }
+                    })();
+                  }}
+                  label={t.biometricLock}
+                />
+                <p className="mt-2 text-sm leading-relaxed text-gate-muted">
+                  {t.biometricDescription}
+                </p>
+              </div>
             </div>
 
             {!presentationMode && (

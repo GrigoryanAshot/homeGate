@@ -118,22 +118,26 @@ export function Toggle({
   checked,
   onChange,
   label,
+  disabled,
 }: {
   checked: boolean;
   onChange: () => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       onClick={onChange}
       className={cn(
-        "inline-flex items-center gap-3 rounded-2xl border px-4 py-2.5 transition-all",
+        "inline-flex w-full items-center gap-3 rounded-2xl border px-4 py-2.5 transition-all",
         checked
           ? "border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100"
           : "border-gate-line bg-gate-surface text-gate-muted hover:border-blue-200 hover:bg-blue-50/50 dark:hover:bg-blue-500/10",
+        disabled && "cursor-not-allowed opacity-50",
       )}
     >
       <span
