@@ -9,12 +9,16 @@ export function DemoHeader({
   onSettingsOpenChange,
   onToast,
   onMqttSaved,
+  onWifiReset,
+  mqttOnline = false,
 }: {
   gateState: GateState;
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
   onToast?: (message: string) => void;
   onMqttSaved?: () => void;
+  onWifiReset?: () => boolean;
+  mqttOnline?: boolean;
 }) {
   const { t } = useLocale();
 
@@ -41,6 +45,8 @@ export function DemoHeader({
             onOpenChange={onSettingsOpenChange}
             onToast={onToast}
             onMqttSaved={onMqttSaved}
+            onWifiReset={onWifiReset}
+            mqttOnline={mqttOnline}
           />
         </div>
       </div>

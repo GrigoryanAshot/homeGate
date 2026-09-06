@@ -252,6 +252,11 @@ void handleCommand(const String &cmd) {
     doClose();
   } else if (cmd == "STOP" || cmd.startsWith("STOP")) {
     doStop();
+  } else if (
+    cmd == "WIFI_RESET" || cmd == "WIFI_SETUP" || cmd.startsWith("WIFI_RESET")
+  ) {
+    // App / MQTT: wipe saved Wi‑Fi → reboot into SoftAP pick-network portal
+    wifiFactoryResetAndReboot();
   } else {
     Serial.println("Unknown command");
   }

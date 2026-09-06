@@ -19,11 +19,15 @@ export function SettingsMenu({
   onOpenChange,
   onToast,
   onMqttSaved,
+  onWifiReset,
+  mqttOnline = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onToast?: (message: string) => void;
   onMqttSaved?: () => void;
+  onWifiReset?: () => boolean;
+  mqttOnline?: boolean;
 }) {
   const { locale, setLocale, t } = useLocale();
   const { darkMode, toggleTheme } = useTheme();
@@ -317,18 +321,28 @@ export function SettingsMenu({
             <div className="mt-3 overflow-hidden rounded-[26px] bg-gate-surface shadow-sm ring-1 ring-gate-line">
               <button
                 type="button"
-                disabled
-                className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-gate-muted"
+                onClick={() => {
+                  if (!mqttOnline || !onWifiReset) {
+                    onToast?.(t.wifiResetNeedMqtt);
+                    return;
+                  }
+                  if (!window.confirm(t.wifiResetConfirm)) return;
+                  const ok = onWifiReset();
+                  if (ok) {
+                    onToast?.(t.wifiResetSentToast);
+                    setWifiGuideOpen(true);
+                    onOpenChange(false);
+                  } else {
+                    onToast?.(t.wifiResetNeedMqtt);
+                  }
+                }}
+                className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-amber-800 active:bg-amber-50 dark:text-amber-200 dark:active:bg-amber-500/10"
               >
-                {t.forDevelopers}
+                {t.wifiResetAction}
               </button>
-              <button
-                type="button"
-                disabled
-                className="flex min-h-[56px] w-full items-center border-t border-gate-line px-4 text-left text-[15px] font-semibold text-gate-muted"
-              >
-                {t.resetDevice}
-              </button>
+              <p className="border-t border-gate-line px-4 py-3 text-sm leading-relaxed text-gate-muted">
+                {t.wifiSetupReset}
+              </p>
             </div>
 
             <p className="mt-6 px-3 text-center text-[12px] leading-relaxed text-gate-muted">

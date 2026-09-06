@@ -82,33 +82,98 @@ inline bool wifiTryConnectSta(const String &ssid, const String &pass, uint32_t t
   return false;
 }
 
-inline const char *WIFI_PORTAL_HTML = R"HTML(
-<!DOCTYPE html><html><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Touch SmartGate Wi-Fi</title>
-<style>
-body{font-family:system-ui,sans-serif;background:#e8f2ff;margin:0;padding:24px;color:#0f172a}
-.box{display:block;max-width:420px;margin:0 auto;background:#fff;border-radius:24px;padding:24px;box-shadow:0 12px 40px rgba(15,23,42,.12)}
-h1{font-size:1.25rem;margin:0 0 8px}
-p{color:#64748b;font-size:.9rem;line-height:1.45}
-label{display:block;font-size:.75rem;font-weight:700;margin:14px 0 6px;color:#64748b}
-input{width:100%;box-sizing:border-box;padding:14px 16px;border-radius:16px;border:1px solid #cbd5e1;font-size:1rem}
-button{width:100%;margin-top:18px;padding:16px;border:0;border-radius:18px;background:#2563eb;color:#fff;font-weight:800;font-size:1rem}
-small{display:block;margin-top:12px;color:#94a3b8;font-size:.75rem}
-</style></head><body><div class="box">
-<h1>Touch SmartGate</h1>
-<p>Enter your home Wi-Fi. The gate box will reboot and connect.</p>
-<form method="POST" action="/save">
-<label>Network (SSID)</label>
-<input name="ssid" required maxlength="32" placeholder="Home Wi-Fi" autocomplete="username"/>
-<label>Password</label>
-<input name="pass" type="password" maxlength="64" placeholder="Wi-Fi password" autocomplete="current-password"/>
-<button type="submit">Save &amp; Connect</button>
-</form>
-<small>Device setup · 192.168.4.1</small>
-</div></body></html>
-)HTML";
+inline String wifiHtmlEscape(const String &in) {
+  String out;
+  out.reserve(in.length() + 8);
+  for (size_t i = 0; i < in.length(); i++) {
+    const char c = in[i];
+    if (c == '&') out += "&amp;";
+    else if (c == '<') out += "&lt;";
+    else if (c == '>') out += "&gt;";
+    else if (c == '"') out += "&quot;";
+    else out += c;
+  }
+  return out;
+}
+
+/** Build portal page: pick SSID from scan + type password (manual SSID fallback). */
+inline String wifiBuildPortalHtml() {
+  // AP+STA so we can scan while phone is on SoftAP
+  WiFi.mode(WIFI_AP_STA);
+  delay(100);
+
+  Serial.println("Scanning Wi-Fi networks…");
+  const int n = WiFi.scanNetworks(/*async=*/false, /*hidden=*/false);
+  Serial.print("Found ");
+  Serial.println(n);
+
+  String options;
+  options.reserve(n > 0 ? n * 80 : 64);
+  if (n <= 0) {
+    options =
+      "<option value=\"\" disabled selected>No networks found — use manual</option>";
+  } else {
+    options += "<option value=\"\" disabled selected>Select a network…</option>";
+    for (int i = 0; i < n; i++) {
+      const String ssid = WiFi.SSID(i);
+      if (ssid.length() == 0) continue;
+      const String esc = wifiHtmlEscape(ssid);
+      options += "<option value=\"";
+      options += esc;
+      options += "\">";
+      options += esc;
+      options += " · ";
+      options += String(WiFi.RSSI(i));
+      options += " dBm";
+      if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) options += " · open";
+      options += "</option>";
+    }
+  }
+  WiFi.scanDelete();
+
+  String html;
+  html.reserve(3500 + options.length());
+  html +=
+    "<!DOCTYPE html><html><head>"
+    "<meta charset=\"utf-8\"/>"
+    "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>"
+    "<title>Touch SmartGate Wi-Fi</title>"
+    "<style>"
+    "body{font-family:system-ui,sans-serif;background:#e8f2ff;margin:0;padding:24px;color:#0f172a}"
+    ".box{max-width:420px;margin:0 auto;background:#fff;border-radius:24px;padding:24px;"
+    "box-shadow:0 12px 40px rgba(15,23,42,.12)}"
+    "h1{font-size:1.25rem;margin:0 0 8px}"
+    "p{color:#64748b;font-size:.9rem;line-height:1.45}"
+    "label{display:block;font-size:.75rem;font-weight:700;margin:14px 0 6px;color:#64748b}"
+    "select,input{width:100%;box-sizing:border-box;padding:14px 16px;border-radius:16px;"
+    "border:1px solid #cbd5e1;font-size:1rem;background:#fff}"
+    "button{width:100%;margin-top:14px;padding:16px;border:0;border-radius:18px;"
+    "background:#2563eb;color:#fff;font-weight:800;font-size:1rem}"
+    "a.btn{display:block;text-align:center;text-decoration:none;background:#e2e8f0;color:#0f172a;"
+    "margin-top:10px;padding:14px;border-radius:18px;font-weight:700}"
+    "small{display:block;margin-top:12px;color:#94a3b8;font-size:.75rem}"
+    "</style></head><body><div class=\"box\">"
+    "<h1>Touch SmartGate</h1>"
+    "<p>Choose your home Wi‑Fi from the list, then enter the password.</p>"
+    "<form method=\"POST\" action=\"/save\">"
+    "<label>Network</label>"
+    "<select name=\"ssid\" id=\"ssidSel\">";
+  html += options;
+  html +=
+    "</select>"
+    "<label>Or type SSID (hidden network)</label>"
+    "<input name=\"ssid_manual\" maxlength=\"32\" placeholder=\"Optional — leave empty to use list\" "
+    "autocomplete=\"off\"/>"
+    "<label>Password</label>"
+    "<input name=\"pass\" type=\"password\" maxlength=\"64\" placeholder=\"Wi‑Fi password\" "
+    "autocomplete=\"current-password\"/>"
+    "<button type=\"submit\">Save &amp; Connect</button>"
+    "</form>"
+    "<a class=\"btn\" href=\"/\">Refresh network list</a>"
+    "<small>Device setup · 192.168.4.1</small>"
+    "</div></body></html>";
+  return html;
+}
 
 inline WebServer &wifiPortalServer() {
   static WebServer server(80);
@@ -121,16 +186,21 @@ inline DNSServer &wifiPortalDns() {
 }
 
 inline void wifiHandlePortalRoot() {
-  wifiPortalServer().send(200, "text/html", WIFI_PORTAL_HTML);
+  wifiPortalServer().send(200, "text/html", wifiBuildPortalHtml());
 }
 
 inline void wifiHandlePortalSave() {
   WebServer &server = wifiPortalServer();
-  if (!server.hasArg("ssid")) {
-    server.send(400, "text/plain", "ssid required");
+  String ssid = server.hasArg("ssid_manual") ? server.arg("ssid_manual") : "";
+  ssid.trim();
+  if (ssid.length() == 0 && server.hasArg("ssid")) {
+    ssid = server.arg("ssid");
+    ssid.trim();
+  }
+  if (ssid.length() == 0) {
+    server.send(400, "text/plain", "Select or type a network name");
     return;
   }
-  const String ssid = server.arg("ssid");
   const String pass = server.hasArg("pass") ? server.arg("pass") : "";
   wifiSaveCreds(ssid, pass);
 
@@ -139,7 +209,7 @@ inline void wifiHandlePortalSave() {
     "text/html",
     "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'/>"
     "<title>Saved</title></head><body style='font-family:system-ui;padding:24px'>"
-    "<h1>Saved</h1><p>Rebooting… Join your home Wi-Fi, then open the Touch SmartGate app and scan the QR.</p>"
+    "<h1>Saved</h1><p>Rebooting… Join your home Wi‑Fi, then open the Touch SmartGate app.</p>"
     "</body></html>"
   );
   delay(700);
@@ -160,16 +230,17 @@ inline void wifiRunSoftApPortal() {
   Serial.println(apSsid);
   Serial.println("Password: (none — open network)");
   Serial.println("Then open http://192.168.4.1");
+  Serial.println("Pick a network from the list + enter password");
   Serial.println("========================");
   Serial.flush();
 
   WiFi.persistent(false);
   WiFi.disconnect(true, true);
   delay(200);
-  WiFi.mode(WIFI_AP);
+  // AP+STA: SoftAP for phone + scan home networks
+  WiFi.mode(WIFI_AP_STA);
   delay(100);
 
-  // channel 1, visible, max 4 clients — helps phones find the AP
   bool ok = false;
   if (strlen(AP_PASSWORD) >= 8) {
     ok = WiFi.softAP(apSsid.c_str(), AP_PASSWORD, 1, 0, 4);
@@ -187,8 +258,6 @@ inline void wifiRunSoftApPortal() {
   Serial.println(ok ? "yes" : "NO");
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
-  Serial.print("AP MAC: ");
-  Serial.println(WiFi.softAPmacAddress());
   Serial.flush();
 
   wifiPortalDns().start(53, "*", WiFi.softAPIP());
@@ -199,13 +268,21 @@ inline void wifiRunSoftApPortal() {
   server.onNotFound(wifiHandlePortalNotFound);
   server.begin();
 
-  // Fast blink = waiting for phone
   while (true) {
     wifiPortalDns().processNextRequest();
     server.handleClient();
     setStatusLed((millis() / 200) % 2 == 0);
     delay(2);
   }
+}
+
+/** Clear saved Wi‑Fi and reboot into SoftAP (MQTT / app reset). */
+inline void wifiFactoryResetAndReboot() {
+  Serial.println("Wi-Fi factory reset → SoftAP on reboot");
+  blinkStatusLed(8, 40, 40);
+  wifiClearCreds();
+  delay(300);
+  ESP.restart();
 }
 
 inline void wifiResetPinBegin() {

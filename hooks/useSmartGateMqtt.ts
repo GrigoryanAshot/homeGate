@@ -259,12 +259,21 @@ export function useSmartGateMqtt({
     [clearSettleTimer, mockMode],
   );
 
+  const sendWifiReset = useCallback(() => {
+    const client = clientRef.current;
+    const config = configRef.current;
+    if (!client?.connected) return false;
+    client.publish(config.topicCommand, "WIFI_RESET", { qos: 0 });
+    return true;
+  }, []);
+
   return {
     connection,
     gateState,
     setGateState,
     busy: false,
     sendCommand,
+    sendWifiReset,
     mqttConfigured,
   };
 }

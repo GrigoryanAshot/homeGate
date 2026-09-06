@@ -158,6 +158,10 @@ export type SmartGateMessages = {
   wifiSetupStep4: string;
   wifiSetupStep5: string;
   wifiSetupReset: string;
+  wifiResetAction: string;
+  wifiResetConfirm: string;
+  wifiResetSentToast: string;
+  wifiResetNeedMqtt: string;
   mqttSettingsTitle: string;
   mqttSettingsHint: string;
   mqttHost: string;
@@ -320,7 +324,7 @@ const en: SmartGateMessages = {
   exitDemoMode: "Demo mode (simulated gate)",
   exitDemoModeDescription:
     "Turn this off to control your real gate over MQTT.",
-  resetDevice: "Restart device (reset)",
+  resetDevice: "Reset gate Wi‑Fi",
   darkMode: "Dark mode",
   biometricLock: "Face ID / Fingerprint",
   biometricLockHint:
@@ -342,10 +346,15 @@ const en: SmartGateMessages = {
   wifiSetupStep1: "Power the gate box. Fast blinking LED = waiting for setup.",
   wifiSetupStep2: "On your phone, join Wi‑Fi named TouchGate-XXXX (open network).",
   wifiSetupStep3: "Open http://192.168.4.1 in the browser (or wait for the setup page).",
-  wifiSetupStep4: "Enter home Wi‑Fi name + password → Save & Connect.",
+  wifiSetupStep4: "Choose your home Wi‑Fi from the list, type the password → Save & Connect.",
   wifiSetupStep5: "Phone rejoins home Wi‑Fi. LED steady, then scan the device QR in the app.",
   wifiSetupReset:
-    "Wrong Wi‑Fi? Hold the BOOT button on the ESP32-C3 ~3.5 seconds until it blinks, then set up again.",
+    "Wrong Wi‑Fi? In Settings tap “Reset gate Wi‑Fi”, or hold BOOT on the ESP ~3.5s until it blinks.",
+  wifiResetAction: "Reset gate Wi‑Fi",
+  wifiResetConfirm:
+    "Clear saved Wi‑Fi on the gate box? LED will blink fast — join TouchGate-XXXX and pick your network again.",
+  wifiResetSentToast: "Wi‑Fi reset sent — join TouchGate-XXXX, open 192.168.4.1",
+  wifiResetNeedMqtt: "Connect to the gate (MQTT) first, then reset Wi‑Fi.",
   mqttSettingsTitle: "MQTT (gate connection)",
   mqttSettingsHint:
     "Same HiveMQ host, username, and password as in the ESP config.h / old app gear menu.",
@@ -516,7 +525,7 @@ const hy: SmartGateMessages = {
     "Անջատեք՝ իրական դուռը MQTT-ով կառավարելու համար։",
   mockModeDescription:
     "Օգտագործեք սովորելու համար։ Կոճակները չեն կառավարի իրական դուռը։",
-  resetDevice: "Վերագործարկել սարքը (reset)",
+  resetDevice: "Վերակայել դարպասի Wi‑Fi",
   darkMode: "Մուգ ռեժիմ",
   biometricLock: "Face ID / մատնահետք",
   biometricLockHint:
@@ -538,10 +547,15 @@ const hy: SmartGateMessages = {
   wifiSetupStep1: "Միացրեք սնուցումը։ Արագ թարթող LED = սպասում է կարգավորման։",
   wifiSetupStep2: "Հեռախոսով միացեք TouchGate-XXXX Wi‑Fi-ին (բաց ցանց)։",
   wifiSetupStep3: "Բրաուզերում բացեք http://192.168.4.1 (կամ սպասեք էջին)։",
-  wifiSetupStep4: "Մուտքագրեք տան Wi‑Fi անունը և գաղտնաբառը → Save & Connect։",
+  wifiSetupStep4: "Ցանկից ընտրեք տան Wi‑Fi‑ը, մուտքագրեք գաղտնաբառը → Save & Connect։",
   wifiSetupStep5: "Հեռախոսը վերադարձրեք տան Wi‑Fi։ LED-ը կայուն է, ապա սկանավորեք QR-ը հավելվածում։",
   wifiSetupReset:
-    "Սխալ Wi‑Fi՞ Սեղմած պահեք ESP32-C3-ի BOOT կոճակը ~3.5 վրկ մինչև թարթի, ապա նորից կարգավորեք։",
+    "Սխալ Wi‑Fi՞ Կարգավորումներում սեղմեք «Վերակայել դարպասի Wi‑Fi», կամ BOOT ~3.5 վրկ։",
+  wifiResetAction: "Վերակայել դարպասի Wi‑Fi",
+  wifiResetConfirm:
+    "Ջնջե՞լ պահված Wi‑Fi‑ը։ LED-ը արագ կթարթի — միացեք TouchGate-XXXX և նորից ընտրեք ցանցը։",
+  wifiResetSentToast: "Wi‑Fi reset ուղարկվեց — միացեք TouchGate-XXXX, բացեք 192.168.4.1",
+  wifiResetNeedMqtt: "Նախ միացեք դռանը (MQTT), ապա վերակայեք Wi‑Fi‑ը։",
   mqttSettingsTitle: "MQTT (դռան կապ)",
   mqttSettingsHint:
     "Նույն HiveMQ host, username և password, ինչ ESP config.h-ում / հին հավելվածի կարգավորումներում։",
@@ -712,7 +726,7 @@ const ru: SmartGateMessages = {
   exitDemoMode: "Демо-режим (симуляция)",
   exitDemoModeDescription:
     "Выключите, чтобы управлять реальными воротами по MQTT.",
-  resetDevice: "Перезапустить устройство (reset)",
+  resetDevice: "Сбросить Wi‑Fi ворот",
   darkMode: "Тёмная тема",
   biometricLock: "Face ID / отпечаток",
   biometricLockHint:
@@ -734,10 +748,15 @@ const ru: SmartGateMessages = {
   wifiSetupStep1: "Включите питание. Быстрое мигание LED = ждёт настройку.",
   wifiSetupStep2: "На телефоне подключитесь к Wi‑Fi TouchGate-XXXX (открытая сеть).",
   wifiSetupStep3: "Откройте http://192.168.4.1 в браузере (или дождитесь страницы).",
-  wifiSetupStep4: "Введите имя и пароль домашнего Wi‑Fi → Save & Connect.",
+  wifiSetupStep4: "Выберите домашний Wi‑Fi из списка, введите пароль → Save & Connect.",
   wifiSetupStep5: "Верните телефон в домашний Wi‑Fi. LED горит ровно — сканируйте QR в приложении.",
   wifiSetupReset:
-    "Неверный Wi‑Fi? Удерживайте BOOT на ESP32-C3 ~3.5 с до мигания, затем настройте снова.",
+    "Неверный Wi‑Fi? В настройках нажмите «Сбросить Wi‑Fi ворот» или удерживайте BOOT ~3.5 с.",
+  wifiResetAction: "Сбросить Wi‑Fi ворот",
+  wifiResetConfirm:
+    "Очистить сохранённый Wi‑Fi? LED быстро мигнёт — подключитесь к TouchGate-XXXX и выберите сеть снова.",
+  wifiResetSentToast: "Сброс Wi‑Fi отправлен — подключитесь к TouchGate-XXXX, откройте 192.168.4.1",
+  wifiResetNeedMqtt: "Сначала подключитесь к воротам (MQTT), затем сбрасывайте Wi‑Fi.",
   mqttSettingsTitle: "MQTT (связь с воротами)",
   mqttSettingsHint:
     "Тот же HiveMQ host, username и password, что в ESP config.h / старом приложении.",

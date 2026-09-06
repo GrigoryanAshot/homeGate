@@ -41,7 +41,7 @@ function SmartGateDemoInner() {
     window.setTimeout(() => setToast(null), 2400);
   }, []);
 
-  const { connection, gateState, setGateState, busy, sendCommand, mqttConfigured } =
+  const { connection, gateState, setGateState, busy, sendCommand, sendWifiReset, mqttConfigured } =
     useSmartGateMqtt({
       mockMode: false,
       gateId: selectedGateId,
@@ -77,6 +77,8 @@ function SmartGateDemoInner() {
           onSettingsOpenChange={setSettingsOpen}
           onToast={showToast}
           onMqttSaved={() => setMqttEpoch((n) => n + 1)}
+          onWifiReset={sendWifiReset}
+          mqttOnline={mqttConfigured && connection === "online"}
         />
 
         {view === "control" && (!mqttConfigured || connection === "offline") && (
