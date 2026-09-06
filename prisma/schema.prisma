@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Local SQLite now. Later: change provider to "postgresql" + DATABASE_URL for cloud.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Factory ESP / controller. Id is permanent; ownership changes FREE <-> BUSY.
+model Device {
+  id         String   @id
+  /// SHA-256 of factory secret (never store raw secret)
+  secretHash String
+  /// FREE | BUSY
+  status     String   @default("FREE")
+  /// Owner account id (local phone key for now; real auth later)
+  ownerId    String?
+  /// Display name chosen by owner on claim
+  name       String?
+  claimedAt  DateTime?
+  lastSeenAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status])
+  @@index([ownerId])
+}

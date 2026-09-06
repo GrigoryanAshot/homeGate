@@ -13,20 +13,15 @@ import { cn } from "@/lib/utils";
 import { useBiometric } from "./BiometricProvider";
 import { useLocale } from "./LocaleProvider";
 import { useTheme } from "./ThemeProvider";
+import { WifiSetupGuide } from "./WifiSetupGuide";
 
 export function SettingsMenu({
   open,
   onOpenChange,
-  mockMode,
-  presentationMode,
-  onToggleMock,
   onToast,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  mockMode: boolean;
-  presentationMode?: boolean;
-  onToggleMock: () => void;
   onToast?: (message: string) => void;
 }) {
   const { locale, setLocale, t } = useLocale();
@@ -35,6 +30,7 @@ export function SettingsMenu({
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [wifiGuideOpen, setWifiGuideOpen] = useState(false);
   const [biometricBusy, setBiometricBusy] = useState(false);
 
   useEffect(() => {
@@ -42,7 +38,10 @@ export function SettingsMenu({
   }, []);
 
   useEffect(() => {
-    if (open) setLangOpen(false);
+    if (open) {
+      setLangOpen(false);
+      setWifiGuideOpen(false);
+    }
     if (!open) return;
 
     const prevOverflow = document.body.style.overflow;
@@ -237,18 +236,37 @@ export function SettingsMenu({
               </div>
             </div>
 
-            {!presentationMode && (
-              <div className="mt-3 overflow-hidden rounded-[26px] bg-gate-surface p-4 shadow-sm ring-1 ring-gate-line">
-                <Toggle
-                  checked={mockMode}
-                  onChange={onToggleMock}
-                  label={t.mockMode}
+            <div className="mt-3 overflow-hidden rounded-[26px] bg-gate-surface shadow-sm ring-1 ring-gate-line">
+              <button
+                type="button"
+                aria-expanded={wifiGuideOpen}
+                onClick={() => setWifiGuideOpen((v) => !v)}
+                className="flex min-h-[58px] w-full items-center gap-3 px-4 py-3 text-left active:bg-gate-card"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-sm font-black text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-100">
+                  Wi‑Fi
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-bold text-gate-ink">
+                    {t.wifiSetupTitle}
+                  </span>
+                  <span className="block text-sm text-gate-muted">
+                    {t.wifiSetupMenuHint}
+                  </span>
+                </span>
+                <IconChevronRight
+                  className={cn(
+                    "h-5 w-5 text-gate-muted transition-transform",
+                    wifiGuideOpen && "rotate-90",
+                  )}
                 />
-                <p className="mt-3 text-sm leading-relaxed text-gate-muted">
-                  {mockMode ? t.mockModeHint : t.mockModeDescription}
-                </p>
-              </div>
-            )}
+              </button>
+              {wifiGuideOpen && (
+                <div className="border-t border-gate-line px-4 py-3">
+                  <WifiSetupGuide compact />
+                </div>
+              )}
+            </div>
 
             <button
               type="button"

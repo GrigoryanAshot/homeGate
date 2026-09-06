@@ -1,11 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
+import { getOrCreateOwnerId } from "@/lib/smartgate/owner-id";
+import {
+  parsePairPayload,
+  type PairPayload,
+} from "@/lib/smartgate/pair-qr";
 import { useGates } from "./GatesProvider";
 import { useLocale } from "./LocaleProvider";
 import { BackButton } from "./BackButton";
+import { DeviceQrScanner } from "./DeviceQrScanner";
+import { WifiSetupGuide } from "./WifiSetupGuide";
+
+/** Kept for offline / desktop testing without a printed QR. */
+const DEMO_FREE_QR =
+  "smartgate://pair?id=demo-gate-001&s=secret-demo-001";
 
 export function AddGateScanModal({
   open,
@@ -19,8 +29,12 @@ export function AddGateScanModal({
   const { locale, t } = useLocale();
   const { addGateFromScan, suggestNextGateName } = useGates();
   const [mounted, setMounted] = useState(false);
-  const [scanning, setScanning] = useState(false);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
+  const [pair, setPair] = useState<PairPayload | null>(null);
+  const [paste, setPaste] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"scan" | "name">("scan");
 
   useEffect(() => {
@@ -30,8 +44,14 @@ export function AddGateScanModal({
   useEffect(() => {
     if (open) {
       setStep("scan");
-      setScanning(false);
+      setCameraOn(true);
+      setSaving(false);
+      setPair(null);
+      setPaste("");
+      setError(null);
       setName(suggestNextGateName(locale));
+    } else {
+      setCameraOn(false);
     }
   }, [open, locale, suggestNextGateName]);
 
@@ -44,18 +64,77 @@ export function AddGateScanModal({
     };
   }, [open]);
 
-  function handleSimulateScan() {
-    setScanning(true);
-    window.setTimeout(() => {
-      setScanning(false);
+  const applyPayload = useCallback(
+    (raw: string) => {
+      const parsed = parsePairPayload(raw);
+      if (!parsed) {
+        setError(t.deviceQrInvalid);
+        return;
+      }
+      setError(null);
+      setCameraOn(false);
+      setPair(parsed);
       setStep("name");
-    }, 1400);
+    },
+    [t.deviceQrInvalid],
+  );
+
+  const handleDecoded = useCallback(
+    (text: string) => {
+      applyPayload(text);
+    },
+    [applyPayload],
+  );
+
+  function handlePasteClaim() {
+    applyPayload(paste);
   }
 
-  function handleSave() {
-    const gate = addGateFromScan(name);
-    onAdded?.(gate.name);
-    onClose();
+  function handleDemoScan() {
+    setCameraOn(false);
+    applyPayload(DEMO_FREE_QR);
+  }
+
+  async function handleSave() {
+    if (!pair || !name.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/devices/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deviceId: pair.deviceId,
+          secret: pair.secret,
+          ownerId: getOrCreateOwnerId(),
+          name: name.trim(),
+        }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        device?: { id: string; name: string | null };
+      };
+
+      if (!res.ok || !data.ok) {
+        if (data.error === "already_in_use") setError(t.deviceAlreadyInUse);
+        else if (data.error === "not_found") setError(t.deviceNotFound);
+        else if (data.error === "invalid_secret") setError(t.deviceQrInvalid);
+        else setError(t.deviceClaimFailed);
+        return;
+      }
+
+      const gate = addGateFromScan(
+        data.device?.name || name.trim(),
+        data.device?.id || pair.deviceId,
+      );
+      onAdded?.(gate.name);
+      onClose();
+    } catch {
+      setError(t.deviceClaimFailed);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!open || !mounted) return null;
@@ -65,44 +144,117 @@ export function AddGateScanModal({
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-[28px] border border-gate-line bg-gate-surface p-5 shadow-gate"
+        className="max-h-[min(92dvh,720px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-gate-line bg-gate-surface p-5 shadow-gate"
       >
         <div className="mb-4 flex items-center gap-2">
-          <BackButton onClick={onClose} />
+          <BackButton
+            onClick={() => {
+              if (step === "name") {
+                setStep("scan");
+                setPair(null);
+                setError(null);
+                setCameraOn(true);
+                return;
+              }
+              setCameraOn(false);
+              onClose();
+            }}
+          />
           <h2 className="text-lg font-bold text-gate-ink">{t.scanGateTitle}</h2>
         </div>
 
         {step === "scan" ? (
           <>
-            <p className="mb-4 text-sm leading-relaxed text-gate-muted">
-              {t.scanGateHint}
+            <p className="mb-3 text-sm leading-relaxed text-gate-muted">
+              {t.scanGateHintCamera}
             </p>
-            <div
-              className={cn(
-                "relative mx-auto mb-4 aspect-square w-full max-w-[260px] overflow-hidden rounded-2xl border-4 border-slate-800 bg-slate-900",
-                scanning && "animate-pulse",
-              )}
-            >
-              <div className="absolute inset-6 rounded-xl border-2 border-dashed border-white/70" />
-              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-green-400/80 shadow-[0_0_12px_rgba(74,222,128,0.8)]" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="rounded-lg bg-black/50 px-3 py-1 text-xs font-medium text-white">
-                  {scanning ? t.scanGateScanning : "QR"}
-                </span>
+            <details className="mb-3 rounded-2xl border border-gate-line bg-gate-bg/80 px-3 py-2">
+              <summary className="cursor-pointer text-sm font-bold text-gate-ink">
+                {t.wifiSetupTitle}
+              </summary>
+              <div className="mt-2 pb-1">
+                <WifiSetupGuide compact />
               </div>
+            </details>
+
+            {cameraOn ? (
+              <DeviceQrScanner
+                active={cameraOn && step === "scan"}
+                onDecoded={handleDecoded}
+                onError={(message) => setError(message)}
+              />
+            ) : (
+              <div className="mx-auto mb-4 flex aspect-square w-full max-w-[280px] items-center justify-center rounded-2xl border-4 border-slate-800 bg-slate-900 text-sm text-white/80">
+                {t.scanCameraStopped}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              {!cameraOn ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setCameraOn(true);
+                  }}
+                  className="flex-1 rounded-2xl bg-blue-500 py-3.5 text-sm font-bold text-white active:bg-blue-600"
+                >
+                  {t.scanGateAction}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCameraOn(false)}
+                  className="flex-1 rounded-2xl border border-gate-line bg-gate-bg py-3.5 text-sm font-bold text-gate-ink active:bg-gate-card"
+                >
+                  {t.scanCameraStop}
+                </button>
+              )}
             </div>
-            <button
-              type="button"
-              disabled={scanning}
-              onClick={handleSimulateScan}
-              className="w-full rounded-2xl bg-blue-500 py-3.5 text-sm font-bold text-white active:bg-blue-600 disabled:opacity-60"
-            >
-              {scanning ? t.scanGateScanning : t.scanGateAction}
-            </button>
+
+            <div className="mt-4 space-y-2 border-t border-gate-line pt-4">
+              <button
+                type="button"
+                onClick={handleDemoScan}
+                className="w-full rounded-2xl border border-dashed border-blue-300 bg-blue-50 py-3 text-sm font-bold text-blue-800 active:bg-blue-100 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100"
+              >
+                {t.scanGateActionDemo}
+              </button>
+
+              <label className="mb-1 block text-xs font-semibold text-gate-muted">
+                {t.scanGatePasteLabel}
+              </label>
+              <input
+                type="text"
+                value={paste}
+                onChange={(e) => setPaste(e.target.value)}
+                placeholder="smartgate://pair?id=…&s=…"
+                className="mb-2 w-full rounded-2xl border border-gate-line bg-gate-bg px-4 py-3 text-sm outline-none ring-blue-400 focus:ring-2"
+              />
+              <button
+                type="button"
+                disabled={!paste.trim()}
+                onClick={handlePasteClaim}
+                className="w-full rounded-2xl border border-gate-line bg-gate-bg py-3 text-sm font-bold text-gate-ink active:bg-gate-card disabled:opacity-45"
+              >
+                {t.scanGatePasteAction}
+              </button>
+            </div>
+
+            {error && (
+              <p className="mt-3 text-center text-sm font-semibold text-red-600">
+                {error}
+              </p>
+            )}
           </>
         ) : (
           <>
-            <p className="mb-3 text-sm text-green-700">{t.scanGateSuccess}</p>
+            <p className="mb-1 text-sm text-green-700">{t.scanGateSuccess}</p>
+            {pair && (
+              <p className="mb-3 font-mono text-[0.7rem] text-gate-muted">
+                ID: {pair.deviceId}
+              </p>
+            )}
             <label className="mb-4 block">
               <span className="mb-1.5 block text-xs font-semibold text-gate-muted">
                 {t.scanGateNameLabel}
@@ -114,13 +266,18 @@ export function AddGateScanModal({
                 className="w-full rounded-2xl border border-gate-line px-4 py-3 text-sm outline-none ring-blue-400 focus:ring-2"
               />
             </label>
+            {error && (
+              <p className="mb-3 text-center text-sm font-semibold text-red-600">
+                {error}
+              </p>
+            )}
             <button
               type="button"
-              disabled={!name.trim()}
-              onClick={handleSave}
+              disabled={!name.trim() || saving}
+              onClick={() => void handleSave()}
               className="w-full rounded-2xl bg-blue-500 py-3.5 text-sm font-bold text-white active:bg-blue-600 disabled:opacity-45"
             >
-              {t.scanGateSave}
+              {saving ? t.pleaseWait : t.scanGateSave}
             </button>
           </>
         )}

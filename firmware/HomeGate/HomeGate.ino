@@ -1,122 +1,117 @@
 /*
-  HomeGate — ESP32-S3 MQTT client (HiveMQ Cloud)
+  HomeGate — ESP32-C3 Super Mini
+  1) Wi‑Fi from phone (SoftAP portal → NVS)  [step 4]
+  2) Register DEVICE_ID + DEVICE_SECRET → API (FREE until claimed)  [step 3]
+  3) MQTT HiveMQ — OPEN / CLOSE / STOP
 
-  Library: PubSubClient by Nick O'Leary
-  Board: ESP32S3 Dev Module
+  Library: PubSubClient (Nick O'Leary)
+  Board: ESP32C3 Dev Module · USB CDC On Boot: Enabled
+
+  Setup: join Wi‑Fi "TouchGate-XXXX" → open http://192.168.4.1
+  Reset Wi‑Fi: hold BOOT ~3.5s
 */
 
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <HTTPClient.h>
 #include <PubSubClient.h>
 #include <ctype.h>
 #include <time.h>
 #include "config.h"
+#include "wifi_provision.h"
 
-WiFiClientSecure secureClient;
-PubSubClient mqtt(secureClient);
-
-// Let's Encrypt ISRG Root X1 (required by HiveMQ Cloud)
-static const char ROOT_CA[] PROGMEM = R"EOF(
------BEGIN CERTIFICATE-----
-MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
-TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
-cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
-WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
-ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
-MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
-h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
-0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
-A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
-T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
-B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
-B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
-KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
-OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
-jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
-qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
-rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
-HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
-hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
-ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
-3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
-NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
-ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
-TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
-jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
-oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
-4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
-mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
-emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
------END CERTIFICATE-----
-)EOF";
+WiFiClientSecure mqttTls;
+PubSubClient mqtt(mqttTls);
 
 String doorState = "closed";
-int lastPair = 0;
+int lastAction = 0;  // 0=up 1=down
 unsigned long moveAt = 0;
 unsigned long lastReconnectAttempt = 0;
 unsigned long lastStatusMs = 0;
+unsigned long lastRegisterAttempt = 0;
+bool cloudRegistered = false;
 
-void releasePair(int a, int b) {
-  pinMode(a, INPUT);
-  pinMode(b, INPUT);
+void setStatusLed(bool on) {
+#if STATUS_LED_ACTIVE_LOW
+  digitalWrite(STATUS_LED_PIN, on ? LOW : HIGH);
+#else
+  digitalWrite(STATUS_LED_PIN, on ? HIGH : LOW);
+#endif
 }
 
-void allRelease() {
-  releasePair(PIN_UP_A, PIN_UP_B);
-  releasePair(PIN_DOWN_A, PIN_DOWN_B);
-}
-
-void shortPair(int a, int b) {
-  pinMode(a, OUTPUT);
-  pinMode(b, OUTPUT);
-  digitalWrite(a, LOW);
-  digitalWrite(b, LOW);
-}
-
-void pulsePair(int a, int b) {
-  allRelease();
-  shortPair(a, b);
-  delay(PULSE_MS);
-  allRelease();
-}
-
-void pressPair(int pair) {
-  lastPair = pair;
-  const int a = (pair == 0) ? PIN_UP_A : PIN_DOWN_A;
-  const int b = (pair == 0) ? PIN_UP_B : PIN_DOWN_B;
-  if (BUTTON_HOLD) {
-    allRelease();
-    shortPair(a, b);
-  } else {
-    pulsePair(a, b);
+void blinkStatusLed(int times, int onMs = 80, int offMs = 80) {
+  for (int i = 0; i < times; i++) {
+    setStatusLed(true);
+    delay(onMs);
+    setStatusLed(false);
+    delay(offMs);
   }
+}
+
+void allOptoOff() {
+  digitalWrite(PIN_UP, LOW);
+  digitalWrite(PIN_DOWN, LOW);
+  digitalWrite(PIN_STOP, LOW);
+}
+
+/** Drive PC817 LED: GPIO HIGH = transistor ON (button pressed). */
+void pulseOpto(int pin) {
+  allOptoOff();
+  digitalWrite(pin, HIGH);
+  delay(PULSE_MS);
+  digitalWrite(pin, LOW);
 }
 
 void doOpen() {
-  pressPair(0);
+  lastAction = 0;
+  pulseOpto(PIN_UP);
   doorState = "opening";
   moveAt = millis();
+  blinkStatusLed(1, 40, 40);
 }
 
 void doClose() {
-  pressPair(1);
+  lastAction = 1;
+  pulseOpto(PIN_DOWN);
   doorState = "closing";
   moveAt = millis();
+  blinkStatusLed(2, 40, 40);
 }
 
 void doStop() {
-  if (BUTTON_HOLD) {
-    allRelease();
-  } else {
-    const int a = (lastPair == 0) ? PIN_UP_A : PIN_DOWN_A;
-    const int b = (lastPair == 0) ? PIN_UP_B : PIN_DOWN_B;
-    pulsePair(a, b);
-  }
+  pulseOpto(PIN_STOP);
   doorState = "stopped";
+  blinkStatusLed(3, 30, 30);
+}
+
+void pollStopButton() {
+#if PIN_STOP_BTN >= 0
+  static int lastStable = HIGH;
+  static int lastRead = HIGH;
+  static unsigned long lastChangeMs = 0;
+
+  const int raw = digitalRead(PIN_STOP_BTN);
+  if (raw != lastRead) {
+    lastChangeMs = millis();
+    lastRead = raw;
+  }
+  if (millis() - lastChangeMs < STOP_BTN_DEBOUNCE_MS) return;
+
+  if (raw == lastStable) return;
+  lastStable = raw;
+
+  const bool pressed = STOP_BTN_ACTIVE_LOW ? (raw == LOW) : (raw == HIGH);
+  if (!pressed) return;
+
+  Serial.println("Physical STOP button");
+  doStop();
+  publishStatus();
+#endif
 }
 
 void updateMoveState() {
-  if ((doorState == "opening" || doorState == "closing") && millis() - moveAt >= MOVE_MS) {
+  if ((doorState == "opening" || doorState == "closing") &&
+      millis() - moveAt >= MOVE_MS) {
     doorState = (doorState == "opening") ? "open" : "closed";
   }
 }
@@ -124,15 +119,87 @@ void updateMoveState() {
 void publishStatus() {
   if (!mqtt.connected()) return;
   updateMoveState();
-  char payload[128];
+  char payload[220];
   snprintf(
     payload,
     sizeof(payload),
-    "{\"state\":\"%s\",\"online\":true,\"ip\":\"%s\"}",
+    "{\"state\":\"%s\",\"online\":true,\"registered\":%s,\"deviceId\":\"%s\",\"ip\":\"%s\"}",
     doorState.c_str(),
+    cloudRegistered ? "true" : "false",
+    DEVICE_ID,
     WiFi.localIP().toString().c_str()
   );
   mqtt.publish(TOPIC_STATUS, payload, true);
+}
+
+bool registerWithCloud() {
+  if (WiFi.status() != WL_CONNECTED) return false;
+
+  String url = String(API_BASE_URL) + "/api/devices/register";
+  Serial.print("Cloud register → ");
+  Serial.println(url);
+
+  HTTPClient http;
+  http.setConnectTimeout(10000);
+  http.setTimeout(15000);
+
+  bool began = false;
+  WiFiClientSecure httpsClient;
+  WiFiClient httpClient;
+
+  if (url.startsWith("https://")) {
+    httpsClient.setInsecure();
+    httpsClient.setHandshakeTimeout(20);
+    began = http.begin(httpsClient, url);
+  } else {
+    began = http.begin(httpClient, url);
+  }
+
+  if (!began) {
+    Serial.println("HTTP begin failed");
+    return false;
+  }
+
+  http.addHeader("Content-Type", "application/json");
+
+  char body[192];
+  snprintf(
+    body,
+    sizeof(body),
+    "{\"deviceId\":\"%s\",\"secret\":\"%s\"}",
+    DEVICE_ID,
+    DEVICE_SECRET
+  );
+
+  const int code = http.POST(body);
+  const String resp = http.getString();
+  http.end();
+
+  Serial.print("Register HTTP ");
+  Serial.print(code);
+  Serial.print(" ");
+  Serial.println(resp);
+
+  if (code == 200 && resp.indexOf("\"ok\":true") >= 0) {
+    cloudRegistered = true;
+    Serial.println("Registered in DB (FREE until claimed / keep BUSY if owned).");
+    blinkStatusLed(3, 50, 50);
+    return true;
+  }
+
+  Serial.println("Register failed — will retry");
+  blinkStatusLed(2, 120, 120);
+  return false;
+}
+
+void ensureRegistered() {
+  if (cloudRegistered) return;
+  const unsigned long now = millis();
+  if (now - lastRegisterAttempt < REGISTER_RETRY_MS && lastRegisterAttempt != 0) {
+    return;
+  }
+  lastRegisterAttempt = now;
+  registerWithCloud();
 }
 
 String normalizeCommand(const char *raw, unsigned int len) {
@@ -190,18 +257,15 @@ void syncTime() {
 }
 
 void connectWifi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  Serial.print("WiFi: ");
-  Serial.println(WIFI_SSID);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(400);
-    Serial.print(".");
-  }
-  Serial.println();
-  Serial.print("IP: ");
-  Serial.println(WiFi.localIP());
+  cloudRegistered = false;
+  lastRegisterAttempt = 0;
+
+  // SoftAP portal if needed, then STA
+  wifiEnsureConnected();
   syncTime();
+
+  lastRegisterAttempt = millis();
+  registerWithCloud();
 }
 
 const char *mqttStateText(int state) {
@@ -231,14 +295,12 @@ bool connectMqtt() {
   Serial.print("DNS OK -> ");
   Serial.println(ip);
 
-  secureClient.stop();
+  mqttTls.stop();
   delay(200);
 
-  // HiveMQ Cloud + ESP32: insecure TLS is the most reliable first step.
-  // (SNI still uses the hostname; certificate pinning can be added later.)
-  secureClient.setInsecure();
-  secureClient.setHandshakeTimeout(30);
-  secureClient.setTimeout(30);
+  mqttTls.setInsecure();
+  mqttTls.setHandshakeTimeout(30);
+  mqttTls.setTimeout(30);
 
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setCallback(onMqttMessage);
@@ -246,12 +308,12 @@ bool connectMqtt() {
   mqtt.setKeepAlive(45);
   mqtt.setSocketTimeout(30);
 
-  String clientId = String(MQTT_CLIENT_ID) + "-" + String((uint32_t)ESP.getEfuseMac(), HEX);
-  Serial.print("User: ");
-  Serial.println(MQTT_USER);
+  String clientId =
+    String(MQTT_CLIENT_ID) + "-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+  Serial.print("DeviceId: ");
+  Serial.println(DEVICE_ID);
   Serial.print("ClientId: ");
   Serial.println(clientId);
-  Serial.println("TCP/TLS+MQTT handshake (wait up to ~30s)...");
   Serial.flush();
 
   const bool ok = mqtt.connect(clientId.c_str(), MQTT_USER, MQTT_PASS);
@@ -262,18 +324,21 @@ bool connectMqtt() {
     Serial.print(" (");
     Serial.print(mqttStateText(st));
     Serial.println(")");
-    secureClient.stop();
+    mqttTls.stop();
+    blinkStatusLed(5, 60, 60);
     return false;
   }
 
   mqtt.subscribe(TOPIC_COMMAND, 1);
   Serial.println("MQTT connected + subscribed " TOPIC_COMMAND);
+  setStatusLed(true);
   publishStatus();
   return true;
 }
 
 void ensureMqtt() {
   if (mqtt.connected()) return;
+  setStatusLed(false);
   const unsigned long now = millis();
   if (now - lastReconnectAttempt < 5000) return;
   lastReconnectAttempt = now;
@@ -281,20 +346,43 @@ void ensureMqtt() {
 }
 
 void setup() {
-  allRelease();
+  pinMode(STATUS_LED_PIN, OUTPUT);
+  setStatusLed(false);
+
+  pinMode(PIN_UP, OUTPUT);
+  pinMode(PIN_DOWN, OUTPUT);
+  pinMode(PIN_STOP, OUTPUT);
+  allOptoOff();
+
+#if PIN_STOP_BTN >= 0
+  pinMode(PIN_STOP_BTN, INPUT_PULLUP);
+#endif
+  wifiResetPinBegin();
+
   Serial.begin(115200);
-  delay(300);
-  Serial.println("HomeGate ESP32-S3 MQTT");
+  delay(800);
+  Serial.println();
+  Serial.println("HomeGate ESP32-C3 Super Mini (PC817)");
+  Serial.println("Opto: UP=GPIO3 DOWN=GPIO5 STOP=GPIO10");
+  Serial.print("Device: ");
+  Serial.println(DEVICE_ID);
+  Serial.print("API: ");
+  Serial.println(API_BASE_URL);
+  Serial.println("Wi-Fi: SoftAP · hold BOOT to reset Wi-Fi");
 
   connectWifi();
   connectMqtt();
 }
 
 void loop() {
+  wifiPollResetButton();
+  pollStopButton();
+
   if (WiFi.status() != WL_CONNECTED) {
     connectWifi();
   }
 
+  ensureRegistered();
   ensureMqtt();
   mqtt.loop();
   updateMoveState();

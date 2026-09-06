@@ -21,7 +21,6 @@ function InvitedGateInner({ token }: { token: string }) {
   const [error, setError] = useState<string | null>(null);
   const [invite, setInvite] = useState<InviteData | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [mockMode, setMockMode] = useState(true);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -89,14 +88,10 @@ function InvitedGateInner({ token }: { token: string }) {
 
   const { gateState, busy, sendCommand, mqttConfigured } =
     useSmartGateMqtt({
-      mockMode,
+      mockMode: false,
       gateId: invite?.gateId,
       onCommandSent,
     });
-
-  useEffect(() => {
-    if (mqttConfigured) setMockMode(false);
-  }, [mqttConfigured]);
 
   const handleCommand = useCallback(
     (command: GateCommand) => {
@@ -144,7 +139,7 @@ function InvitedGateInner({ token }: { token: string }) {
         </div>
       </header>
 
-      {!mockMode && !mqttConfigured && (
+      {!mqttConfigured && (
         <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
           {t.gateNotConnected}
         </div>
@@ -153,7 +148,6 @@ function InvitedGateInner({ token }: { token: string }) {
       <main className="min-h-0 flex-1 overflow-hidden px-4 py-3">
         <GateControlPanel
           busy={busy}
-          mockMode={mockMode}
           gateState={gateState}
           onCommand={handleCommand}
         />

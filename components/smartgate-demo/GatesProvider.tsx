@@ -25,7 +25,7 @@ type GatesContextValue = {
   selectedGateId: string;
   selectedGate: UserGate;
   selectGate: (id: string) => void;
-  addGateFromScan: (name: string) => UserGate;
+  addGateFromScan: (name: string, deviceId?: string) => UserGate;
   suggestNextGateName: (locale: Locale) => string;
 };
 
@@ -56,9 +56,16 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addGateFromScan = useCallback(
-    (name: string) => {
-      const gate = createGateFromScan(name, gates);
-      setGates((prev) => [...prev, gate]);
+    (name: string, deviceId?: string) => {
+      const gate = createGateFromScan(name, gates, deviceId);
+      setGates((prev) => {
+        if (prev.some((g) => g.id === gate.id)) {
+          return prev.map((g) =>
+            g.id === gate.id ? { ...g, name: gate.name } : g,
+          );
+        }
+        return [...prev, gate];
+      });
       setSelectedGateId(gate.id);
       return gate;
     },

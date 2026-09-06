@@ -8,7 +8,7 @@ import {
 } from "./access";
 
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://home-gate-seven.vercel.app";
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://1234-plum-nine.vercel.app";
 
 function inviteSecret() {
   return (

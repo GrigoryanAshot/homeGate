@@ -4,29 +4,17 @@ import { AppLogo } from "@/components/ui/AppLogo";
 import type { GateState } from "@/lib/smartgate/types";
 
 export function DemoHeader({
-  mockMode,
-  presentationMode,
   gateState,
   settingsOpen,
   onSettingsOpenChange,
-  onToggleMock,
   onToast,
 }: {
-  mockMode: boolean;
-  presentationMode?: boolean;
   gateState: GateState;
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
-  onToggleMock: () => void;
   onToast?: (message: string) => void;
 }) {
   const { t } = useLocale();
-
-  const subtitle = presentationMode
-    ? t.gateStates[gateState]
-    : mockMode
-      ? t.practiceMode
-      : t.gateStates[gateState];
 
   return (
     <header className="relative z-10 shrink-0 border-b border-gate-line bg-gate-surface/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
@@ -39,7 +27,9 @@ export function DemoHeader({
             <h1 className="truncate text-base font-bold text-gate-ink">
               {t.appTitle}
             </h1>
-            <p className="truncate text-xs text-gate-muted">{subtitle}</p>
+            <p className="truncate text-xs text-gate-muted">
+              {t.gateStates[gateState]}
+            </p>
           </div>
         </div>
 
@@ -47,9 +37,6 @@ export function DemoHeader({
           <SettingsMenu
             open={settingsOpen}
             onOpenChange={onSettingsOpenChange}
-            mockMode={mockMode}
-            presentationMode={presentationMode}
-            onToggleMock={onToggleMock}
             onToast={onToast}
           />
         </div>

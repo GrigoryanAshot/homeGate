@@ -50,9 +50,13 @@ export function nextGateDefaultName(count: number, locale: Locale): string {
   return `Gate ${n}`;
 }
 
-export function createGateFromScan(name: string, existing: UserGate[]): UserGate {
+export function createGateFromScan(
+  name: string,
+  existing: UserGate[],
+  deviceId?: string,
+): UserGate {
   return {
-    id: `gate-${crypto.randomUUID().slice(0, 8)}`,
+    id: deviceId?.trim() || `gate-${crypto.randomUUID().slice(0, 8)}`,
     name: name.trim() || nextGateDefaultName(existing.length, "hy"),
     createdAt: Date.now(),
   };

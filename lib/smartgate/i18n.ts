@@ -12,11 +12,25 @@ export type SmartGateMessages = {
   addGate: string;
   scanGateTitle: string;
   scanGateHint: string;
+  scanGateHintDb: string;
+  scanGateHintCamera: string;
   scanGateAction: string;
+  scanGateActionDemo: string;
   scanGateScanning: string;
+  scanCameraStarting: string;
+  scanCameraStop: string;
+  scanCameraStopped: string;
+  scanCameraPermissionDenied: string;
+  scanCameraUnavailable: string;
   scanGateSuccess: string;
   scanGateNameLabel: string;
   scanGateSave: string;
+  scanGatePasteLabel: string;
+  scanGatePasteAction: string;
+  deviceAlreadyInUse: string;
+  deviceNotFound: string;
+  deviceQrInvalid: string;
+  deviceClaimFailed: string;
   toastGateAdded: (name: string) => string;
   guestViewSubtitle: string;
   previewGuestView: string;
@@ -119,6 +133,9 @@ export type SmartGateMessages = {
   language: string;
   mockMode: string;
   mockModeDescription: string;
+  /** Leave sticky demo / presentation mode and use real MQTT */
+  exitDemoMode: string;
+  exitDemoModeDescription: string;
   resetDevice: string;
   darkMode: string;
   biometricLock: string;
@@ -131,6 +148,15 @@ export type SmartGateMessages = {
   biometricDisabledToast: string;
   biometricCancelled: string;
   biometricFailed: string;
+  wifiSetupTitle: string;
+  wifiSetupMenuHint: string;
+  wifiSetupIntro: string;
+  wifiSetupStep1: string;
+  wifiSetupStep2: string;
+  wifiSetupStep3: string;
+  wifiSetupStep4: string;
+  wifiSetupStep5: string;
+  wifiSetupReset: string;
   forDevelopers: string;
   connectSpecialist: string;
   toastSpecialistRequested: string;
@@ -148,11 +174,29 @@ const en: SmartGateMessages = {
   scanGateTitle: "Scan device QR",
   scanGateHint:
     "Point your phone at the QR code on the gate remote or control box to add it.",
+  scanGateHintDb:
+    "Scan or paste the factory QR. Free devices can be claimed once — busy devices are rejected.",
+  scanGateHintCamera:
+    "Point the camera at the QR on the gate box. Camera needs HTTPS (or localhost).",
   scanGateAction: "Scan QR code",
+  scanGateActionDemo: "Use demo FREE device (no camera)",
   scanGateScanning: "Scanning…",
+  scanCameraStarting: "Starting camera…",
+  scanCameraStop: "Stop camera",
+  scanCameraStopped: "Camera off",
+  scanCameraPermissionDenied:
+    "Camera permission denied. Allow camera for this site, or paste the QR link below.",
+  scanCameraUnavailable:
+    "Camera not available on this device. Paste the QR link or use the demo button.",
   scanGateSuccess: "Device found — name your gate",
   scanGateNameLabel: "Gate name",
   scanGateSave: "Add gate",
+  scanGatePasteLabel: "Or paste QR / pair link",
+  scanGatePasteAction: "Use this code",
+  deviceAlreadyInUse: "This device is already in use on another account.",
+  deviceNotFound: "Device not found in database.",
+  deviceQrInvalid: "Invalid QR / pair code.",
+  deviceClaimFailed: "Could not claim device. Try again.",
   toastGateAdded: (name) => `${name} added`,
   guestViewSubtitle: "Shared access — open & close only",
   previewGuestView: "Preview guest screen",
@@ -248,13 +292,13 @@ const en: SmartGateMessages = {
   durationHint24h: "Good for delivery or guest today",
   durationHintOnce: "Link works only one time",
   gateNotConnected:
-    "Gate not connected yet. Turn on Mock Mode in Settings (gear icon) to try the buttons.",
+    "Gate not connected. Check Wi‑Fi and MQTT (same broker as your ESP).",
   mockModeHint:
     "Mock mode is on — buttons only change the picture on screen, not your real gate.",
   toastOpening: "Opening gate…",
   toastClosing: "Closing gate…",
   toastStopped: "Gate stopped",
-  toastCommandFailed: "Cannot reach gate — turn on Mock Mode or check connection",
+  toastCommandFailed: "Cannot reach gate — check MQTT connection",
   toastRevoked: "Access revoked",
   moreOptions: "More options (for property managers)",
   settings: "Settings",
@@ -264,6 +308,9 @@ const en: SmartGateMessages = {
   mockMode: "Try without real gate (mock mode)",
   mockModeDescription:
     "Use this to practice. Buttons will not control your real gate.",
+  exitDemoMode: "Demo mode (simulated gate)",
+  exitDemoModeDescription:
+    "Turn this off to control your real gate over MQTT.",
   resetDevice: "Restart device (reset)",
   darkMode: "Dark mode",
   biometricLock: "Face ID / Fingerprint",
@@ -279,6 +326,17 @@ const en: SmartGateMessages = {
   biometricDisabledToast: "Face ID / fingerprint turned off",
   biometricCancelled: "Cancelled — action not allowed",
   biometricFailed: "Could not verify Face ID / fingerprint",
+  wifiSetupTitle: "Set up gate Wi‑Fi",
+  wifiSetupMenuHint: "New box · SoftAP from phone",
+  wifiSetupIntro:
+    "The controller creates a temporary Wi‑Fi so you can give it your home network — no cable needed.",
+  wifiSetupStep1: "Power the gate box. Fast blinking LED = waiting for setup.",
+  wifiSetupStep2: "On your phone, join Wi‑Fi named TouchGate-XXXX (open network).",
+  wifiSetupStep3: "Open http://192.168.4.1 in the browser (or wait for the setup page).",
+  wifiSetupStep4: "Enter home Wi‑Fi name + password → Save & Connect.",
+  wifiSetupStep5: "Phone rejoins home Wi‑Fi. LED steady, then scan the device QR in the app.",
+  wifiSetupReset:
+    "Wrong Wi‑Fi? Hold the BOOT button on the ESP32-C3 ~3.5 seconds until it blinks, then set up again.",
   forDevelopers: "For developers",
   connectSpecialist: "Contact a service specialist",
   toastSpecialistRequested: "A specialist will contact you shortly",
@@ -303,11 +361,29 @@ const hy: SmartGateMessages = {
   scanGateTitle: "Սկանավորել QR կոդը",
   scanGateHint:
     "Ուղղեք հեռախոսը դարպասի հեռակառավարման կամ վահանակի QR կոդին՝ ավելացնելու համար։",
+  scanGateHintDb:
+    "Սկանավորեք կամ տեղադրեք գործարանային QR-ը։ Ազատ սարքը կարելի է վերցնել մեկ անգամ — զբաղվածը մերժվում է։",
+  scanGateHintCamera:
+    "Ուղղեք տեսախցիկը դարպասի տուփի QR-ին։ Պահանջվում է HTTPS (կամ localhost)։",
   scanGateAction: "Սկանավորել QR",
+  scanGateActionDemo: "Demo FREE սարք (առանց տեսախցիկի)",
   scanGateScanning: "Սկանավորում…",
+  scanCameraStarting: "Տեսախցիկը միանում է…",
+  scanCameraStop: "Անջատել տեսախցիկը",
+  scanCameraStopped: "Տեսախցիկն անջատված է",
+  scanCameraPermissionDenied:
+    "Տեսախցիկի թույլտվությունը մերժված է։ Թույլատրեք կամ տեղադրեք QR հղումը ներքևում։",
+  scanCameraUnavailable:
+    "Տեսախցիկը հասանելի չէ։ Տեղադրեք QR հղումը կամ օգտագործեք demo կոճակը։",
   scanGateSuccess: "Սարքը գտնվեց — անվանեք դարպասը",
   scanGateNameLabel: "Դարպասի անուն",
   scanGateSave: "Ավելացնել դարպաս",
+  scanGatePasteLabel: "Կամ տեղադրեք QR / հղումը",
+  scanGatePasteAction: "Օգտագործել այս կոդը",
+  deviceAlreadyInUse: "Այս սարքն արդեն օգտագործվում է այլ հաշվով։",
+  deviceNotFound: "Սարքը տվյալների բազայում չի գտնվել։",
+  deviceQrInvalid: "Անվավեր QR / զուգավորման կոդ։",
+  deviceClaimFailed: "Չհաջողվեց կապել սարքը։ Փորձեք նորից։",
   toastGateAdded: (name) => `${name} ավելացվեց`,
   guestViewSubtitle: "Համօգտագործված մուտք — միայն բացել/փակել",
   previewGuestView: "Տեսնել հյուրի էկրանը",
@@ -403,13 +479,13 @@ const hy: SmartGateMessages = {
   durationHint24h: "Առաքում կամ հյուրի համար",
   durationHintOnce: "Հղումը աշխատում է մեկ անգամ",
   gateNotConnected:
-    "Դուռը դեռ միացված չէ։ Կարգավորումներում (անիվ) միացրեք Փորձարկման ռեժիմը։",
+    "Դուռը միացված չէ։ Ստուգեք Wi‑Fi‑ը և MQTT‑ն (նույնը, ինչ ESP‑ում)։",
   mockModeHint:
     "Փորձարկման ռեժիմը միացված է — կոճակները փոխում են միայն նկարը, ոչ թե իրական դուռը։",
   toastOpening: "Դուռը բացվում է…",
   toastClosing: "Դուռը փակվում է…",
   toastStopped: "Դուռը կանգնեցվեց",
-  toastCommandFailed: "Դուռին հասանելի չէ — միացրեք Փորձարկման ռեժիմը",
+  toastCommandFailed: "Դուռին հասանելի չէ — ստուգեք MQTT կապը",
   toastRevoked: "Մուտքը չեղարկվեց",
   moreOptions: "Լրացուցիչ (կառավարիչների համար)",
   settings: "Կարգավորումներ",
@@ -417,6 +493,9 @@ const hy: SmartGateMessages = {
   back: "Հետ",
   language: "Լեզու",
   mockMode: "Փորձարկել առանց իրական դռի",
+  exitDemoMode: "Ցուցադրական ռեժիմ (սիմուլյացիա)",
+  exitDemoModeDescription:
+    "Անջատեք՝ իրական դուռը MQTT-ով կառավարելու համար։",
   mockModeDescription:
     "Օգտագործեք սովորելու համար։ Կոճակները չեն կառավարի իրական դուռը։",
   resetDevice: "Վերագործարկել սարքը (reset)",
@@ -434,6 +513,17 @@ const hy: SmartGateMessages = {
   biometricDisabledToast: "Face ID / մատնահետքը անջատված է",
   biometricCancelled: "Չեղարկվեց — գործողությունը չի թույլատրվում",
   biometricFailed: "Չհաջողվեց հաստատել Face ID / մատնահետքը",
+  wifiSetupTitle: "Կարգավորել դարպասի Wi‑Fi",
+  wifiSetupMenuHint: "Նոր սարք · SoftAP հեռախոսով",
+  wifiSetupIntro:
+    "Վահանակը ստեղծում է ժամանակավոր Wi‑Fi, որ տաք ձեր տան ցանցը — մալուխ պետք չէ։",
+  wifiSetupStep1: "Միացրեք սնուցումը։ Արագ թարթող LED = սպասում է կարգավորման։",
+  wifiSetupStep2: "Հեռախոսով միացեք TouchGate-XXXX Wi‑Fi-ին (բաց ցանց)։",
+  wifiSetupStep3: "Բրաուզերում բացեք http://192.168.4.1 (կամ սպասեք էջին)։",
+  wifiSetupStep4: "Մուտքագրեք տան Wi‑Fi անունը և գաղտնաբառը → Save & Connect։",
+  wifiSetupStep5: "Հեռախոսը վերադարձրեք տան Wi‑Fi։ LED-ը կայուն է, ապա սկանավորեք QR-ը հավելվածում։",
+  wifiSetupReset:
+    "Սխալ Wi‑Fi՞ Սեղմած պահեք ESP32-C3-ի BOOT կոճակը ~3.5 վրկ մինչև թարթի, ապա նորից կարգավորեք։",
   forDevelopers: "Ծրագրավորողների համար",
   connectSpecialist: "Միանալ սպասարկող մասնագետին",
   toastSpecialistRequested: "Մասնագետը շուտով կկապվի ձեզ հետ",
@@ -458,11 +548,29 @@ const ru: SmartGateMessages = {
   scanGateTitle: "Сканировать QR-код",
   scanGateHint:
     "Наведите телефон на QR-код пульта или блока управления воротами, чтобы добавить их.",
+  scanGateHintDb:
+    "Отсканируйте или вставьте заводской QR. Свободное устройство можно забрать один раз — занятое отклоняется.",
+  scanGateHintCamera:
+    "Наведите камеру на QR на корпусе ворот. Нужен HTTPS (или localhost).",
   scanGateAction: "Сканировать QR",
+  scanGateActionDemo: "Demo FREE устройство (без камеры)",
   scanGateScanning: "Сканирование…",
+  scanCameraStarting: "Включение камеры…",
+  scanCameraStop: "Остановить камеру",
+  scanCameraStopped: "Камера выключена",
+  scanCameraPermissionDenied:
+    "Нет доступа к камере. Разрешите камеру для сайта или вставьте ссылку QR ниже.",
+  scanCameraUnavailable:
+    "Камера недоступна. Вставьте ссылку QR или нажмите demo.",
   scanGateSuccess: "Устройство найдено — назовите ворота",
   scanGateNameLabel: "Название ворот",
   scanGateSave: "Добавить ворота",
+  scanGatePasteLabel: "Или вставьте QR / ссылку",
+  scanGatePasteAction: "Использовать этот код",
+  deviceAlreadyInUse: "Это устройство уже используется другим аккаунтом.",
+  deviceNotFound: "Устройство не найдено в базе.",
+  deviceQrInvalid: "Неверный QR / код привязки.",
+  deviceClaimFailed: "Не удалось привязать устройство. Попробуйте снова.",
   toastGateAdded: (name) => `${name} добавлены`,
   guestViewSubtitle: "Общий доступ — только открыть/закрыть",
   previewGuestView: "Экран гостя",
@@ -558,13 +666,13 @@ const ru: SmartGateMessages = {
   durationHint24h: "Для доставки или гостя сегодня",
   durationHintOnce: "Ссылка работает один раз",
   gateNotConnected:
-    "Ворота не подключены. Включите демо-режим в настройках (шестерёнка), чтобы попробовать кнопки.",
+    "Ворота не подключены. Проверьте Wi‑Fi и MQTT (тот же брокер, что на ESP).",
   mockModeHint:
     "Демо-режим включён — кнопки меняют только картинку на экране, не реальные ворота.",
   toastOpening: "Открываем ворота…",
   toastClosing: "Закрываем ворота…",
   toastStopped: "Ворота остановлены",
-  toastCommandFailed: "Нет связи с воротами — включите демо-режим или проверьте подключение",
+  toastCommandFailed: "Нет связи с воротами — проверьте MQTT",
   toastRevoked: "Доступ отменён",
   moreOptions: "Дополнительно (для управляющих)",
   settings: "Настройки",
@@ -574,6 +682,9 @@ const ru: SmartGateMessages = {
   mockMode: "Пробовать без реальных ворот (демо)",
   mockModeDescription:
     "Для обучения. Кнопки не будут управлять реальными воротами.",
+  exitDemoMode: "Демо-режим (симуляция)",
+  exitDemoModeDescription:
+    "Выключите, чтобы управлять реальными воротами по MQTT.",
   resetDevice: "Перезапустить устройство (reset)",
   darkMode: "Тёмная тема",
   biometricLock: "Face ID / отпечаток",
@@ -589,6 +700,17 @@ const ru: SmartGateMessages = {
   biometricDisabledToast: "Face ID / отпечаток выключен",
   biometricCancelled: "Отменено — действие не разрешено",
   biometricFailed: "Не удалось подтвердить Face ID / отпечаток",
+  wifiSetupTitle: "Настроить Wi‑Fi ворот",
+  wifiSetupMenuHint: "Новый блок · SoftAP с телефона",
+  wifiSetupIntro:
+    "Контроллер создаёт временный Wi‑Fi, чтобы вы передали домашнюю сеть — без кабеля.",
+  wifiSetupStep1: "Включите питание. Быстрое мигание LED = ждёт настройку.",
+  wifiSetupStep2: "На телефоне подключитесь к Wi‑Fi TouchGate-XXXX (открытая сеть).",
+  wifiSetupStep3: "Откройте http://192.168.4.1 в браузере (или дождитесь страницы).",
+  wifiSetupStep4: "Введите имя и пароль домашнего Wi‑Fi → Save & Connect.",
+  wifiSetupStep5: "Верните телефон в домашний Wi‑Fi. LED горит ровно — сканируйте QR в приложении.",
+  wifiSetupReset:
+    "Неверный Wi‑Fi? Удерживайте BOOT на ESP32-C3 ~3.5 с до мигания, затем настройте снова.",
   forDevelopers: "Для разработчиков",
   connectSpecialist: "Связаться со специалистом",
   toastSpecialistRequested: "Специалист скоро свяжется с вами",

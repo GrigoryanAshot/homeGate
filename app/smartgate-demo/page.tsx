@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { SmartGateDemoClient } from "@/components/smartgate-demo/SmartGateDemoClient";
 
 export const metadata: Metadata = {
-  title: "Smart Gate — Demo",
-  description: "Cloud gate control and access sharing demonstration.",
+  title: "Touch SmartGate",
+  description: "Cloud gate control and access sharing.",
   robots: {
     index: false,
     follow: false,

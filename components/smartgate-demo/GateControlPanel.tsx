@@ -19,12 +19,10 @@ const stateBadgeStyle: Record<GateState, string> = {
 
 export function GateControlPanel({
   busy,
-  mockMode,
   gateState,
   onCommand,
 }: {
   busy: boolean;
-  mockMode: boolean;
   gateState: GateState;
   onCommand: (command: GateCommand) => void;
 }) {

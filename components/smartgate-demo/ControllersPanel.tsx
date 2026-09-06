@@ -8,7 +8,6 @@ import {
   buildInviteWhatsAppMessage,
   buildWhatsAppShareUrl,
 } from "@/lib/smartgate/invites";
-import { demoGuestUrl } from "@/lib/smartgate/presentation";
 import {
   formatControllerAccess,
   formatHistoryWhen,
@@ -178,10 +177,8 @@ function ruleToFormState(rule: ControllerAccessRule): {
 }
 
 export function ControllersPanel({
-  presentationMode = false,
   onToast,
 }: {
-  presentationMode?: boolean;
   onToast?: (message: string) => void;
 }) {
   const { locale, t } = useLocale();
@@ -308,24 +305,20 @@ export function ControllersPanel({
 
     setSaving(true);
     try {
-      let url = demoGuestUrl(trimmed);
+      const res = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gateId: selectedGateId,
+          name: trimmed,
+          rule,
+          id: controllerId,
+        }),
+      });
 
-      if (!presentationMode) {
-        const res = await fetch("/api/invites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            gateId: selectedGateId,
-            name: trimmed,
-            rule,
-            id: controllerId,
-          }),
-        });
-
-        if (!res.ok) throw new Error("invite failed");
-        const data = (await res.json()) as { url: string };
-        url = data.url;
-      }
+      if (!res.ok) throw new Error("invite failed");
+      const data = (await res.json()) as { url: string };
+      const url = data.url;
 
       setControllers((prev) => [
         ...prev,
@@ -480,7 +473,7 @@ export function ControllersPanel({
         <div className="shrink-0 pb-3 text-center">
           <h2 className="text-lg font-bold text-gate-ink">{t.shareInviteTitle}</h2>
           <p className="mt-1 text-xs leading-relaxed text-gate-muted">
-            {presentationMode ? t.shareInviteIntroDemo : t.shareInviteIntro}
+            {t.shareInviteIntro}
           </p>
         </div>
 

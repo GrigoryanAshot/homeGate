@@ -18,6 +18,12 @@ js/mqtt-config.js
 .env
 .env.local
 
+# Local SQLite (Prisma) — switch DATABASE_URL to Postgres in cloud later
+prisma/dev.db
+prisma/dev.db-journal
+*.db
+*.db-journal
+
 # Next.js
 node_modules/
 .next/

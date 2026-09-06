@@ -159,10 +159,13 @@ export const DEFAULT_PERMISSIONS: PermissionUser[] = [
 ];
 
 export function getMqttConfig(): MqttConfig {
-  return {
-    host: process.env.NEXT_PUBLIC_MQTT_HOST ?? "",
-    username: process.env.NEXT_PUBLIC_MQTT_USER ?? "",
-    password: process.env.NEXT_PUBLIC_MQTT_PASS ?? "",
+  // Defaults match firmware/HomeGate/config.h (WebSocket port 8884 for browsers)
+  const fromEnv = {
+    host:
+      process.env.NEXT_PUBLIC_MQTT_HOST ??
+      "3c391676ced3426b8300afc7d6b4961e.s1.eu.hivemq.cloud",
+    username: process.env.NEXT_PUBLIC_MQTT_USER ?? "Gate1",
+    password: process.env.NEXT_PUBLIC_MQTT_PASS ?? "Ash7289...",
     port: Number(process.env.NEXT_PUBLIC_MQTT_PORT ?? 8884),
     path: process.env.NEXT_PUBLIC_MQTT_PATH ?? "/mqtt",
     topicCommand:
@@ -170,19 +173,34 @@ export function getMqttConfig(): MqttConfig {
     topicStatus:
       process.env.NEXT_PUBLIC_MQTT_TOPIC_STATUS ?? "home/gate/status",
   };
+
+  // Same keys as the old static app gear menu
+  if (typeof window !== "undefined") {
+    const host =
+      window.localStorage.getItem("homegate.mqtt.host")?.trim() || fromEnv.host;
+    const username =
+      window.localStorage.getItem("homegate.mqtt.user")?.trim() ||
+      fromEnv.username;
+    const password =
+      window.localStorage.getItem("homegate.mqtt.pass") ?? fromEnv.password;
+    return {
+      ...fromEnv,
+      host,
+      username,
+      password,
+    };
+  }
+
+  return fromEnv;
 }
 
 /** Per-gate MQTT topics for multi-device setups */
 export function getMqttConfigForGate(gateId?: string): MqttConfig {
   const base = getMqttConfig();
-  if (!gateId || gateId === "default") return base;
-
-  const prefix = process.env.NEXT_PUBLIC_MQTT_TOPIC_PREFIX ?? "home";
-  return {
-    ...base,
-    topicCommand: `${prefix}/${gateId}/command`,
-    topicStatus: `${prefix}/${gateId}/status`,
-  };
+  // Current C3 firmware listens on shared home/gate/* (same as old app).
+  // Per-gate topics later when each ESP uses home/{deviceId}/command.
+  void gateId;
+  return base;
 }
 
 export function formatRelativeTime(timestamp: number): string {

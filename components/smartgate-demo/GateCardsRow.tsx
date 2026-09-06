@@ -75,11 +75,3 @@ export function GateCardsRow({
   );
 }
 
-export function PresentationBadge() {
-  const { t } = useLocale();
-  return (
-    <div className="shrink-0 border-b border-blue-200 bg-blue-600 px-4 py-1.5 text-center text-[0.65rem] font-bold uppercase tracking-wider text-white">
-      {t.presentationBadge}
-    </div>
-  );
-}
