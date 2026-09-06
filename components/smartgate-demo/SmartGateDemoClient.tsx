@@ -12,8 +12,6 @@ import { GateControlPanel } from "./GateControlPanel";
 import { GatesProvider, useGates } from "./GatesProvider";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
 import { ThemeProvider } from "./ThemeProvider";
-import { BiometricProvider } from "./BiometricProvider";
-import { BiometricLockScreen } from "./BiometricLockScreen";
 
 function SmartGateDemoInner() {
   const { t } = useLocale();
@@ -26,10 +24,13 @@ function SmartGateDemoInner() {
   const gateStateByIdRef = useRef<Record<string, GateState>>({});
   const prevGateIdRef = useRef(selectedGateId);
 
-  // Clear old sticky demo mode from earlier deploys
   useEffect(() => {
     try {
       window.localStorage.removeItem("smartgate-presentation");
+      // Face ID disabled for now — clear any leftover lock
+      window.localStorage.removeItem("smartgate-biometric-enabled");
+      window.localStorage.removeItem("smartgate-biometric-cred");
+      window.localStorage.removeItem("smartgate-biometric-unlocked");
     } catch {
       /* ignore */
     }
@@ -119,8 +120,6 @@ function SmartGateDemoInner() {
           {toast}
         </div>
       )}
-
-      <BiometricLockScreen />
     </div>
   );
 }
@@ -129,11 +128,9 @@ export function SmartGateDemoClient() {
   return (
     <LocaleProvider>
       <ThemeProvider>
-        <BiometricProvider>
-          <GatesProvider>
-            <SmartGateDemoInner />
-          </GatesProvider>
-        </BiometricProvider>
+        <GatesProvider>
+          <SmartGateDemoInner />
+        </GatesProvider>
       </ThemeProvider>
     </LocaleProvider>
   );
