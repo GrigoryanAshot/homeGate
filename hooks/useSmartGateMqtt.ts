@@ -13,6 +13,9 @@ import { getMqttConfig, getMqttConfigForGate } from "@/lib/smartgate/types";
 /** Opto wiring on this unit is reversed vs labels — swap MQTT OPEN/CLOSE only. */
 const SWAP_OPEN_CLOSE_MQTT = true;
 
+/** Match firmware MOVE_MS — UI settle only, never blocks buttons */
+const MOVE_SETTLE_MS = 12_000;
+
 function mqttWireCommand(command: GateCommand): GateCommand {
   if (!SWAP_OPEN_CLOSE_MQTT) return command;
   if (command === "OPEN") return "CLOSE";
