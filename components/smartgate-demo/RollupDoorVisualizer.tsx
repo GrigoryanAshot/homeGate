@@ -33,7 +33,8 @@ const openProgress: Record<GateState, number> = {
   closed: 0,
   closing: 0,
   stopped: 0.5,
-  opening: 1,
+  // Animate toward open while moving; don't look fully open until "open"
+  opening: 0.85,
   open: 1,
   unknown: 0,
 };

@@ -10,16 +10,22 @@ import type {
 } from "@/lib/smartgate/types";
 import { getMqttConfig, getMqttConfigForGate } from "@/lib/smartgate/types";
 
-/** Match firmware MOVE_MS — settle transient opening/closing if broker is stale */
+/** Match firmware MOVE_MS */
 const MOVE_SETTLE_MS = 12_000;
+
+const MOTION_STATES = new Set<GateState>(["opening", "closing"]);
 
 interface UseSmartGateMqttOptions {
   mockMode: boolean;
   gateId?: string;
-  /** Bump to force reconnect after saving MQTT settings */
   configEpoch?: number;
   onCommandSent?: (command: GateCommand) => void;
-  onStateFromBroker?: (state: GateState) => void;
+}
+
+function settleMotion(state: GateState): GateState {
+  if (state === "opening") return "open";
+  if (state === "closing") return "closed";
+  return state;
 }
 
 export function useSmartGateMqtt({
@@ -27,13 +33,16 @@ export function useSmartGateMqtt({
   gateId,
   configEpoch = 0,
   onCommandSent,
-  onStateFromBroker,
 }: UseSmartGateMqttOptions) {
   const clientRef = useRef<MqttClient | null>(null);
   const configRef = useRef<MqttConfig>(getMqttConfig());
+  const lastCommandAtRef = useRef(0);
   const settleTimerRef = useRef<number | null>(null);
+  const onCommandSentRef = useRef(onCommandSent);
+  onCommandSentRef.current = onCommandSent;
+
   const [connection, setConnection] = useState<ConnectionStatus>("connecting");
-  const [gateState, setGateState] = useState<GateState>("unknown");
+  const [gateState, setGateState] = useState<GateState>("closed");
   const [busy, setBusy] = useState(false);
   const [mqttConfigured, setMqttConfigured] = useState(false);
 
@@ -44,39 +53,6 @@ export function useSmartGateMqtt({
     }
   }, []);
 
-  const applyGateState = useCallback(
-    (state: GateState) => {
-      setGateState(state);
-      onStateFromBroker?.(state);
-      clearSettleTimer();
-
-      // Retained MQTT can stick on "opening"/"closing" if ESP never republished.
-      // After MOVE_MS, treat as finished so the UI does not say "opening" forever.
-      if (state === "opening") {
-        settleTimerRef.current = window.setTimeout(() => {
-          setGateState("open");
-          settleTimerRef.current = null;
-        }, MOVE_SETTLE_MS);
-      } else if (state === "closing") {
-        settleTimerRef.current = window.setTimeout(() => {
-          setGateState("closed");
-          settleTimerRef.current = null;
-        }, MOVE_SETTLE_MS);
-      }
-    },
-    [clearSettleTimer, onStateFromBroker],
-  );
-
-  const simulateTransition = useCallback((command: GateCommand) => {
-    if (command === "OPEN") {
-      applyGateState("opening");
-    } else if (command === "CLOSE") {
-      applyGateState("closing");
-    } else {
-      applyGateState("stopped");
-    }
-  }, [applyGateState]);
-
   useEffect(() => {
     if (mockMode) {
       if (clientRef.current) {
@@ -85,7 +61,7 @@ export function useSmartGateMqtt({
       }
       setConnection("online");
       setMqttConfigured(true);
-      if (gateState === "unknown") setGateState("closed");
+      setGateState("closed");
       return;
     }
 
@@ -105,11 +81,55 @@ export function useSmartGateMqtt({
       username: config.username,
       password: config.password,
       clientId: `smartgate-${Math.random().toString(16).slice(2, 10)}`,
-      reconnectPeriod: 3000,
+      reconnectPeriod: 4000,
       connectTimeout: 15000,
+      // Avoid resubscribe storms wiping UI state every few seconds
+      resubscribe: true,
     });
 
     clientRef.current = client;
+
+    const clearStaleRetained = (settled: GateState) => {
+      // Overwrite sticky retained "opening" on the broker so it stops coming back
+      try {
+        client.publish(
+          config.topicStatus,
+          JSON.stringify({ state: settled, online: true, source: "app-correct" }),
+          { qos: 1, retain: true },
+        );
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const onBrokerState = (raw: GateState) => {
+      const recentCommand =
+        Date.now() - lastCommandAtRef.current < MOVE_SETTLE_MS;
+
+      // Stale retained motion (no recent OPEN/CLOSE from this phone) → settle now
+      if (MOTION_STATES.has(raw) && !recentCommand) {
+        const settled = settleMotion(raw);
+        clearSettleTimer();
+        setGateState(settled);
+        clearStaleRetained(settled);
+        return;
+      }
+
+      setGateState(raw);
+      clearSettleTimer();
+
+      if (raw === "opening") {
+        settleTimerRef.current = window.setTimeout(() => {
+          setGateState("open");
+          settleTimerRef.current = null;
+        }, MOVE_SETTLE_MS);
+      } else if (raw === "closing") {
+        settleTimerRef.current = window.setTimeout(() => {
+          setGateState("closed");
+          settleTimerRef.current = null;
+        }, MOVE_SETTLE_MS);
+      }
+    };
 
     client.on("connect", () => {
       setConnection("online");
@@ -124,11 +144,9 @@ export function useSmartGateMqtt({
       if (topic !== config.topicStatus) return;
       try {
         const data = JSON.parse(payload.toString()) as { state?: GateState };
-        if (data.state) {
-          applyGateState(data.state);
-        }
+        if (data.state) onBrokerState(data.state);
       } catch {
-        /* ignore malformed payloads */
+        /* ignore */
       }
     });
 
@@ -137,8 +155,7 @@ export function useSmartGateMqtt({
       client.end(true);
       clientRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mockMode, gateId, configEpoch, applyGateState, clearSettleTimer]);
+  }, [mockMode, gateId, configEpoch, clearSettleTimer]);
 
   useEffect(() => {
     setBusy(false);
@@ -148,10 +165,25 @@ export function useSmartGateMqtt({
     (command: GateCommand) => {
       if (busy) return false;
       setBusy(true);
-      onCommandSent?.(command);
+      onCommandSentRef.current?.(command);
 
       if (mockMode) {
-        simulateTransition(command);
+        lastCommandAtRef.current = Date.now();
+        if (command === "OPEN") setGateState("opening");
+        else if (command === "CLOSE") setGateState("closing");
+        else setGateState("stopped");
+        clearSettleTimer();
+        if (command === "OPEN") {
+          settleTimerRef.current = window.setTimeout(() => {
+            setGateState("open");
+            settleTimerRef.current = null;
+          }, 2400);
+        } else if (command === "CLOSE") {
+          settleTimerRef.current = window.setTimeout(() => {
+            setGateState("closed");
+            settleTimerRef.current = null;
+          }, 2400);
+        }
         window.setTimeout(() => setBusy(false), 500);
         return true;
       }
@@ -163,17 +195,30 @@ export function useSmartGateMqtt({
         return false;
       }
 
-      // Optimistic UI — ESP will confirm via status topic
-      if (command === "OPEN") applyGateState("opening");
-      else if (command === "CLOSE") applyGateState("closing");
-      else applyGateState("stopped");
+      lastCommandAtRef.current = Date.now();
+      clearSettleTimer();
+      if (command === "OPEN") {
+        setGateState("opening");
+        settleTimerRef.current = window.setTimeout(() => {
+          setGateState("open");
+          settleTimerRef.current = null;
+        }, MOVE_SETTLE_MS);
+      } else if (command === "CLOSE") {
+        setGateState("closing");
+        settleTimerRef.current = window.setTimeout(() => {
+          setGateState("closed");
+          settleTimerRef.current = null;
+        }, MOVE_SETTLE_MS);
+      } else {
+        setGateState("stopped");
+      }
 
       client.publish(config.topicCommand, command, { qos: 1 }, () => {
         setBusy(false);
       });
       return true;
     },
-    [applyGateState, busy, mockMode, onCommandSent, simulateTransition],
+    [busy, clearSettleTimer, mockMode],
   );
 
   return {
