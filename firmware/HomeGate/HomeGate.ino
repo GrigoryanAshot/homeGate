@@ -109,11 +109,13 @@ void pollStopButton() {
 #endif
 }
 
-void updateMoveState() {
+bool updateMoveState() {
   if ((doorState == "opening" || doorState == "closing") &&
       millis() - moveAt >= MOVE_MS) {
     doorState = (doorState == "opening") ? "open" : "closed";
+    return true;
   }
+  return false;
 }
 
 void publishStatus() {
@@ -385,7 +387,11 @@ void loop() {
   ensureRegistered();
   ensureMqtt();
   mqtt.loop();
-  updateMoveState();
+
+  // Publish as soon as open/close motion finishes (don't wait 30s)
+  if (updateMoveState()) {
+    publishStatus();
+  }
 
   if (mqtt.connected() && millis() - lastStatusMs > 30000) {
     lastStatusMs = millis();
