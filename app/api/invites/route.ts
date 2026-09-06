@@ -39,6 +39,6 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     token,
-    url: buildInviteUrl(token),
+    url: buildInviteUrl(token, req),
   });
 }

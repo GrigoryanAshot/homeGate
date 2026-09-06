@@ -68,9 +68,19 @@ export function verifyInviteToken(token: string): InvitePayload | null {
   }
 }
 
-export function buildInviteUrl(token: string): string {
-  const base = APP_URL.replace(/\/$/, "");
-  return `${base}/invite/${encodeURIComponent(token)}`;
+export function buildInviteUrl(token: string, req?: Request): string {
+  let base = APP_URL.replace(/\/$/, "");
+  if (req) {
+    const host =
+      req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+      req.headers.get("host") ||
+      "";
+    const proto =
+      req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+    if (host) base = `${proto}://${host}`;
+  }
+  // Query param — path /invite/payload.sig breaks on many phones (dot truncation)
+  return `${base}/invite?t=${encodeURIComponent(token)}`;
 }
 
 export function buildWhatsAppShareUrl(message: string): string {

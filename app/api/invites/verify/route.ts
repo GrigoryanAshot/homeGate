@@ -30,18 +30,21 @@ export async function GET(req: Request) {
     );
   }
 
-  const bind = checkOrBindInviteDevice(
-    result.payload.id,
-    deviceId,
-    getClientIp(req),
-    req.headers.get("user-agent") ?? "",
-  );
-
-  if (bind === "other_device") {
-    return NextResponse.json(
-      { valid: false, reason: "other_device" },
-      { status: 403 },
+  // Unlimited family links work on any phone. Device lock only for timed/once invites.
+  if (result.payload.rule.type !== "unlimited") {
+    const bind = checkOrBindInviteDevice(
+      result.payload.id,
+      deviceId,
+      getClientIp(req),
+      req.headers.get("user-agent") ?? "",
     );
+
+    if (bind === "other_device") {
+      return NextResponse.json(
+        { valid: false, reason: "other_device" },
+        { status: 403 },
+      );
+    }
   }
 
   const { payload } = result;
