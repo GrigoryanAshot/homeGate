@@ -13,6 +13,8 @@ import { getMqttConfig, getMqttConfigForGate } from "@/lib/smartgate/types";
 interface UseSmartGateMqttOptions {
   mockMode: boolean;
   gateId?: string;
+  /** Bump to force reconnect after saving MQTT settings */
+  configEpoch?: number;
   onCommandSent?: (command: GateCommand) => void;
   onStateFromBroker?: (state: GateState) => void;
 }
@@ -20,16 +22,16 @@ interface UseSmartGateMqttOptions {
 export function useSmartGateMqtt({
   mockMode,
   gateId,
+  configEpoch = 0,
   onCommandSent,
   onStateFromBroker,
 }: UseSmartGateMqttOptions) {
   const clientRef = useRef<MqttClient | null>(null);
-  const configRef = useRef<MqttConfig>(
-    gateId ? getMqttConfigForGate(gateId) : getMqttConfig(),
-  );
+  const configRef = useRef<MqttConfig>(getMqttConfig());
   const [connection, setConnection] = useState<ConnectionStatus>("connecting");
   const [gateState, setGateState] = useState<GateState>("unknown");
   const [busy, setBusy] = useState(false);
+  const [mqttConfigured, setMqttConfigured] = useState(false);
 
   const simulateTransition = useCallback((command: GateCommand) => {
     if (command === "OPEN") {
@@ -50,14 +52,17 @@ export function useSmartGateMqtt({
         clientRef.current = null;
       }
       setConnection("online");
+      setMqttConfigured(true);
       if (gateState === "unknown") setGateState("closed");
       return;
     }
 
     const config = gateId ? getMqttConfigForGate(gateId) : getMqttConfig();
     configRef.current = config;
+    const configured = Boolean(config.host && config.username);
+    setMqttConfigured(configured);
 
-    if (!config.host || !config.username) {
+    if (!configured) {
       setConnection("offline");
       return;
     }
@@ -67,7 +72,7 @@ export function useSmartGateMqtt({
     const client = mqtt.connect(url, {
       username: config.username,
       password: config.password,
-      clientId: `smartgate-demo-${Math.random().toString(16).slice(2, 10)}`,
+      clientId: `smartgate-${Math.random().toString(16).slice(2, 10)}`,
       reconnectPeriod: 3000,
       connectTimeout: 15000,
     });
@@ -101,7 +106,7 @@ export function useSmartGateMqtt({
       clientRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mockMode, gateId]);
+  }, [mockMode, gateId, configEpoch]);
 
   useEffect(() => {
     setBusy(false);
@@ -140,6 +145,6 @@ export function useSmartGateMqtt({
     setGateState,
     busy,
     sendCommand,
-    mqttConfigured: Boolean(configRef.current.host && configRef.current.username),
+    mqttConfigured,
   };
 }

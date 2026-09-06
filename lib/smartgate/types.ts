@@ -159,19 +159,20 @@ export const DEFAULT_PERMISSIONS: PermissionUser[] = [
 ];
 
 export function getMqttConfig(): MqttConfig {
-  // Defaults match firmware/HomeGate/config.h (WebSocket port 8884 for browsers)
+  // Defaults match firmware/HomeGate/config.h (browser uses WSS :8884)
+  // Use || so empty Vercel env vars still fall back to defaults.
   const fromEnv = {
     host:
-      process.env.NEXT_PUBLIC_MQTT_HOST ??
+      process.env.NEXT_PUBLIC_MQTT_HOST ||
       "3c391676ced3426b8300afc7d6b4961e.s1.eu.hivemq.cloud",
-    username: process.env.NEXT_PUBLIC_MQTT_USER ?? "Gate1",
-    password: process.env.NEXT_PUBLIC_MQTT_PASS ?? "Ash7289...",
-    port: Number(process.env.NEXT_PUBLIC_MQTT_PORT ?? 8884),
-    path: process.env.NEXT_PUBLIC_MQTT_PATH ?? "/mqtt",
+    username: process.env.NEXT_PUBLIC_MQTT_USER || "Gate1",
+    password: process.env.NEXT_PUBLIC_MQTT_PASS || "Ash7289...",
+    port: Number(process.env.NEXT_PUBLIC_MQTT_PORT || 8884),
+    path: process.env.NEXT_PUBLIC_MQTT_PATH || "/mqtt",
     topicCommand:
-      process.env.NEXT_PUBLIC_MQTT_TOPIC_COMMAND ?? "home/gate/command",
+      process.env.NEXT_PUBLIC_MQTT_TOPIC_COMMAND || "home/gate/command",
     topicStatus:
-      process.env.NEXT_PUBLIC_MQTT_TOPIC_STATUS ?? "home/gate/status",
+      process.env.NEXT_PUBLIC_MQTT_TOPIC_STATUS || "home/gate/status",
   };
 
   // Same keys as the old static app gear menu
@@ -192,6 +193,17 @@ export function getMqttConfig(): MqttConfig {
   }
 
   return fromEnv;
+}
+
+export function saveMqttLocalConfig(partial: {
+  host: string;
+  username: string;
+  password: string;
+}) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("homegate.mqtt.host", partial.host.trim());
+  window.localStorage.setItem("homegate.mqtt.user", partial.username.trim());
+  window.localStorage.setItem("homegate.mqtt.pass", partial.password);
 }
 
 /** Per-gate MQTT topics for multi-device setups */

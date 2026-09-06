@@ -22,6 +22,7 @@ function SmartGateDemoInner() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
+  const [mqttEpoch, setMqttEpoch] = useState(0);
   const gateStateByIdRef = useRef<Record<string, GateState>>({});
   const prevGateIdRef = useRef(selectedGateId);
 
@@ -43,6 +44,7 @@ function SmartGateDemoInner() {
     useSmartGateMqtt({
       mockMode: false,
       gateId: selectedGateId,
+      configEpoch: mqttEpoch,
     });
 
   useEffect(() => {
@@ -73,9 +75,10 @@ function SmartGateDemoInner() {
           settingsOpen={settingsOpen}
           onSettingsOpenChange={setSettingsOpen}
           onToast={showToast}
+          onMqttSaved={() => setMqttEpoch((n) => n + 1)}
         />
 
-        {!mqttConfigured && view === "control" && (
+        {view === "control" && (!mqttConfigured || connection === "offline") && (
           <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
             {t.gateNotConnected}
           </div>

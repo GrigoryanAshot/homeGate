@@ -8,11 +8,13 @@ export function DemoHeader({
   settingsOpen,
   onSettingsOpenChange,
   onToast,
+  onMqttSaved,
 }: {
   gateState: GateState;
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
   onToast?: (message: string) => void;
+  onMqttSaved?: () => void;
 }) {
   const { t } = useLocale();
 
@@ -38,6 +40,7 @@ export function DemoHeader({
             open={settingsOpen}
             onOpenChange={onSettingsOpenChange}
             onToast={onToast}
+            onMqttSaved={onMqttSaved}
           />
         </div>
       </div>

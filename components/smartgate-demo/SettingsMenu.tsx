@@ -14,15 +14,18 @@ import { useBiometric } from "./BiometricProvider";
 import { useLocale } from "./LocaleProvider";
 import { useTheme } from "./ThemeProvider";
 import { WifiSetupGuide } from "./WifiSetupGuide";
+import { getMqttConfig, saveMqttLocalConfig } from "@/lib/smartgate/types";
 
 export function SettingsMenu({
   open,
   onOpenChange,
   onToast,
+  onMqttSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onToast?: (message: string) => void;
+  onMqttSaved?: () => void;
 }) {
   const { locale, setLocale, t } = useLocale();
   const { darkMode, toggleTheme } = useTheme();
@@ -31,7 +34,11 @@ export function SettingsMenu({
   const [mounted, setMounted] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [wifiGuideOpen, setWifiGuideOpen] = useState(false);
+  const [mqttOpen, setMqttOpen] = useState(false);
   const [biometricBusy, setBiometricBusy] = useState(false);
+  const [mqttHost, setMqttHost] = useState("");
+  const [mqttUser, setMqttUser] = useState("");
+  const [mqttPass, setMqttPass] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -41,6 +48,11 @@ export function SettingsMenu({
     if (open) {
       setLangOpen(false);
       setWifiGuideOpen(false);
+      setMqttOpen(false);
+      const cfg = getMqttConfig();
+      setMqttHost(cfg.host);
+      setMqttUser(cfg.username);
+      setMqttPass(cfg.password);
     }
     if (!open) return;
 
@@ -234,6 +246,87 @@ export function SettingsMenu({
                   {t.biometricDescription}
                 </p>
               </div>
+            </div>
+
+            <div className="mt-3 overflow-hidden rounded-[26px] bg-gate-surface shadow-sm ring-1 ring-gate-line">
+              <button
+                type="button"
+                aria-expanded={mqttOpen}
+                onClick={() => setMqttOpen((v) => !v)}
+                className="flex min-h-[58px] w-full items-center gap-3 px-4 py-3 text-left active:bg-gate-card"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-sm font-black text-sky-800 dark:bg-sky-500/20 dark:text-sky-100">
+                  MQTT
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-bold text-gate-ink">
+                    {t.mqttSettingsTitle}
+                  </span>
+                  <span className="block text-sm text-gate-muted">
+                    {t.mqttSettingsHint}
+                  </span>
+                </span>
+                <IconChevronRight
+                  className={cn(
+                    "h-5 w-5 text-gate-muted transition-transform",
+                    mqttOpen && "rotate-90",
+                  )}
+                />
+              </button>
+              {mqttOpen && (
+                <div className="space-y-3 border-t border-gate-line px-4 py-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gate-muted">
+                      {t.mqttHost}
+                    </span>
+                    <input
+                      value={mqttHost}
+                      onChange={(e) => setMqttHost(e.target.value)}
+                      autoComplete="off"
+                      className="w-full rounded-xl border border-gate-line bg-gate-bg px-3 py-2.5 text-sm text-gate-ink outline-none focus:border-blue-400"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gate-muted">
+                      {t.mqttUser}
+                    </span>
+                    <input
+                      value={mqttUser}
+                      onChange={(e) => setMqttUser(e.target.value)}
+                      autoComplete="username"
+                      className="w-full rounded-xl border border-gate-line bg-gate-bg px-3 py-2.5 text-sm text-gate-ink outline-none focus:border-blue-400"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gate-muted">
+                      {t.mqttPass}
+                    </span>
+                    <input
+                      type="password"
+                      value={mqttPass}
+                      onChange={(e) => setMqttPass(e.target.value)}
+                      autoComplete="current-password"
+                      className="w-full rounded-xl border border-gate-line bg-gate-bg px-3 py-2.5 text-sm text-gate-ink outline-none focus:border-blue-400"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      saveMqttLocalConfig({
+                        host: mqttHost,
+                        username: mqttUser,
+                        password: mqttPass,
+                      });
+                      onToast?.(t.mqttSavedToast);
+                      onMqttSaved?.();
+                      onOpenChange(false);
+                    }}
+                    className="w-full rounded-2xl bg-blue-500 py-3 text-sm font-bold text-white active:bg-blue-600"
+                  >
+                    {t.mqttSave}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="mt-3 overflow-hidden rounded-[26px] bg-gate-surface shadow-sm ring-1 ring-gate-line">

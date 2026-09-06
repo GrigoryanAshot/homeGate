@@ -157,6 +157,13 @@ export type SmartGateMessages = {
   wifiSetupStep4: string;
   wifiSetupStep5: string;
   wifiSetupReset: string;
+  mqttSettingsTitle: string;
+  mqttSettingsHint: string;
+  mqttHost: string;
+  mqttUser: string;
+  mqttPass: string;
+  mqttSave: string;
+  mqttSavedToast: string;
   forDevelopers: string;
   connectSpecialist: string;
   toastSpecialistRequested: string;
@@ -337,6 +344,14 @@ const en: SmartGateMessages = {
   wifiSetupStep5: "Phone rejoins home Wi‑Fi. LED steady, then scan the device QR in the app.",
   wifiSetupReset:
     "Wrong Wi‑Fi? Hold the BOOT button on the ESP32-C3 ~3.5 seconds until it blinks, then set up again.",
+  mqttSettingsTitle: "MQTT (gate connection)",
+  mqttSettingsHint:
+    "Same HiveMQ host, username, and password as in the ESP config.h / old app gear menu.",
+  mqttHost: "Broker host",
+  mqttUser: "Username",
+  mqttPass: "Password",
+  mqttSave: "Save & reconnect",
+  mqttSavedToast: "MQTT saved — reconnecting…",
   forDevelopers: "For developers",
   connectSpecialist: "Contact a service specialist",
   toastSpecialistRequested: "A specialist will contact you shortly",
@@ -524,6 +539,14 @@ const hy: SmartGateMessages = {
   wifiSetupStep5: "Հեռախոսը վերադարձրեք տան Wi‑Fi։ LED-ը կայուն է, ապա սկանավորեք QR-ը հավելվածում։",
   wifiSetupReset:
     "Սխալ Wi‑Fi՞ Սեղմած պահեք ESP32-C3-ի BOOT կոճակը ~3.5 վրկ մինչև թարթի, ապա նորից կարգավորեք։",
+  mqttSettingsTitle: "MQTT (դռան կապ)",
+  mqttSettingsHint:
+    "Նույն HiveMQ host, username և password, ինչ ESP config.h-ում / հին հավելվածի կարգավորումներում։",
+  mqttHost: "Broker host",
+  mqttUser: "Username",
+  mqttPass: "Password",
+  mqttSave: "Պահել և միանալ",
+  mqttSavedToast: "MQTT-ը պահվեց — միանում է…",
   forDevelopers: "Ծրագրավորողների համար",
   connectSpecialist: "Միանալ սպասարկող մասնագետին",
   toastSpecialistRequested: "Մասնագետը շուտով կկապվի ձեզ հետ",
@@ -711,6 +734,14 @@ const ru: SmartGateMessages = {
   wifiSetupStep5: "Верните телефон в домашний Wi‑Fi. LED горит ровно — сканируйте QR в приложении.",
   wifiSetupReset:
     "Неверный Wi‑Fi? Удерживайте BOOT на ESP32-C3 ~3.5 с до мигания, затем настройте снова.",
+  mqttSettingsTitle: "MQTT (связь с воротами)",
+  mqttSettingsHint:
+    "Тот же HiveMQ host, username и password, что в ESP config.h / старом приложении.",
+  mqttHost: "Broker host",
+  mqttUser: "Username",
+  mqttPass: "Password",
+  mqttSave: "Сохранить и подключить",
+  mqttSavedToast: "MQTT сохранён — подключаемся…",
   forDevelopers: "Для разработчиков",
   connectSpecialist: "Связаться со специалистом",
   toastSpecialistRequested: "Специалист скоро свяжется с вами",
