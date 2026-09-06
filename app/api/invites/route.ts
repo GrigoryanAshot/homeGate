@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   addInviteToAllowList,
   removeInviteFromAllowList,
+  type MqttCreds,
 } from "@/lib/smartgate/acl-mqtt";
 import {
   buildInviteUrl,
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
     name?: string;
     rule?: ControllerAccessRule;
     id?: string;
+    mqtt?: MqttCreds;
   };
 
   try {
@@ -47,7 +49,7 @@ export async function POST(req: Request) {
   });
 
   try {
-    await addInviteToAllowList(id);
+    await addInviteToAllowList(id, body.mqtt);
   } catch (e) {
     console.error("ACL add failed", e);
     return NextResponse.json(
@@ -65,7 +67,7 @@ export async function POST(req: Request) {
 
 /** Revoke invite — link stops working */
 export async function DELETE(req: Request) {
-  let body: { id?: string };
+  let body: { id?: string; mqtt?: MqttCreds };
   try {
     body = await req.json();
   } catch {
@@ -78,7 +80,7 @@ export async function DELETE(req: Request) {
   }
 
   try {
-    await removeInviteFromAllowList(id);
+    await removeInviteFromAllowList(id, body.mqtt);
   } catch (e) {
     console.error("ACL remove failed", e);
     return NextResponse.json(

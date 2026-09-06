@@ -21,6 +21,7 @@ import type {
   GateAccessHistoryEntry,
   GateController,
 } from "@/lib/smartgate/types";
+import { getMqttConfig } from "@/lib/smartgate/types";
 import { useLocale } from "./LocaleProvider";
 import { useGates } from "./GatesProvider";
 import { AlarmWheelTimePicker, TIME_NOW } from "./WheelTimePicker";
@@ -279,10 +280,20 @@ export function ControllersPanel({
   function removeController(id: string) {
     void (async () => {
       try {
+        const mqtt = getMqttConfig();
         await fetch("/api/invites", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({
+            id,
+            mqtt: {
+              host: mqtt.host,
+              username: mqtt.username,
+              password: mqtt.password,
+              port: mqtt.port,
+              path: mqtt.path,
+            },
+          }),
         });
       } catch {
         /* still remove locally */
@@ -305,6 +316,7 @@ export function ControllersPanel({
       rangeToTime,
     );
     const controllerId = crypto.randomUUID();
+    const mqtt = getMqttConfig();
 
     setSaving(true);
     try {
@@ -316,6 +328,13 @@ export function ControllersPanel({
           name: trimmed,
           rule,
           id: controllerId,
+          mqtt: {
+            host: mqtt.host,
+            username: mqtt.username,
+            password: mqtt.password,
+            port: mqtt.port,
+            path: mqtt.path,
+          },
         }),
       });
 

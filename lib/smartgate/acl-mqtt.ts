@@ -5,22 +5,46 @@ export const TOPIC_ACL = "home/gate/acl";
 
 type AclPayload = { v: 1; allow: string[] };
 
-function brokerUrl(): { url: string; username: string; password: string } {
+export type MqttCreds = {
+  host?: string;
+  username?: string;
+  password?: string;
+  port?: number;
+  path?: string;
+};
+
+type AclRead =
+  | { status: "ok"; allow: string[] }
+  | { status: "unavailable"; allow: string[] };
+
+function brokerUrl(creds?: MqttCreds): {
+  url: string;
+  username: string;
+  password: string;
+} {
   const host =
+    creds?.host?.trim() ||
     process.env.MQTT_HOST ||
     process.env.NEXT_PUBLIC_MQTT_HOST ||
     "3c391676ced3426b8300afc7d6b4961e.s1.eu.hivemq.cloud";
   const username =
+    creds?.username?.trim() ||
     process.env.MQTT_USER ||
     process.env.NEXT_PUBLIC_MQTT_USER ||
     "Gate1";
   const password =
-    process.env.MQTT_PASS ||
-    process.env.NEXT_PUBLIC_MQTT_PASS ||
+    creds?.password ??
+    process.env.MQTT_PASS ??
+    process.env.NEXT_PUBLIC_MQTT_PASS ??
     "Ash7289...";
-  // WebSocket like the app (HiveMQ Cloud)
-  const port = Number(process.env.MQTT_WS_PORT || 8884);
-  const path = process.env.MQTT_WS_PATH || "/mqtt";
+  const port = Number(
+    creds?.port || process.env.MQTT_WS_PORT || process.env.NEXT_PUBLIC_MQTT_PORT || 8884,
+  );
+  const path =
+    creds?.path ||
+    process.env.MQTT_WS_PATH ||
+    process.env.NEXT_PUBLIC_MQTT_PATH ||
+    "/mqtt";
   return {
     url: `wss://${host}:${port}${path}`,
     username,
@@ -31,17 +55,23 @@ function brokerUrl(): { url: string; username: string; password: string } {
 const globalAcl = globalThis as unknown as {
   __gateAclAllow?: string[];
   __gateAclAt?: number;
+  __gateAclKnown?: boolean;
 };
 
-function cacheGet(): string[] | null {
-  if (!globalAcl.__gateAclAllow) return null;
-  if (Date.now() - (globalAcl.__gateAclAt ?? 0) > 60_000) return null;
-  return globalAcl.__gateAclAllow;
+function cacheGet(): { allow: string[]; known: boolean } | null {
+  if (globalAcl.__gateAclAt == null) return null;
+  // Keep warm for 5 minutes on the same serverless instance
+  if (Date.now() - globalAcl.__gateAclAt > 300_000) return null;
+  return {
+    allow: globalAcl.__gateAclAllow ?? [],
+    known: Boolean(globalAcl.__gateAclKnown),
+  };
 }
 
-function cacheSet(allow: string[]) {
+function cacheSet(allow: string[], known: boolean) {
   globalAcl.__gateAclAllow = allow;
   globalAcl.__gateAclAt = Date.now();
+  globalAcl.__gateAclKnown = known;
 }
 
 function parseAcl(raw: string): string[] {
@@ -56,36 +86,41 @@ function parseAcl(raw: string): string[] {
   return [];
 }
 
-/** Read current allow-list (retained MQTT), with short in-memory cache */
-export function readInviteAllowList(): Promise<string[]> {
+/** Read allow-list. status unavailable = MQTT/timeout — do NOT treat as revoked. */
+export function readInviteAllowList(creds?: MqttCreds): Promise<AclRead> {
   const cached = cacheGet();
-  if (cached) return Promise.resolve(cached);
+  if (cached?.known) {
+    return Promise.resolve({ status: "ok", allow: cached.allow });
+  }
 
-  const { url, username, password } = brokerUrl();
+  const { url, username, password } = brokerUrl(creds);
 
   return new Promise((resolve) => {
     let settled = false;
-    const finish = (allow: string[]) => {
+    const finish = (result: AclRead) => {
       if (settled) return;
       settled = true;
-      cacheSet(allow);
+      if (result.status === "ok") cacheSet(result.allow, true);
       try {
         client.end(true);
       } catch {
         /* ignore */
       }
-      resolve(allow);
+      resolve(result);
     };
 
     const client = mqtt.connect(url, {
       username,
       password,
       clientId: `homegate-acl-r-${Math.random().toString(16).slice(2, 8)}`,
-      connectTimeout: 8000,
+      connectTimeout: 6000,
       reconnectPeriod: 0,
     });
 
-    const timer = setTimeout(() => finish(cacheGet() ?? []), 6000);
+    // No retained ACL yet → timeout → unavailable (not an empty revoke-all)
+    const timer = setTimeout(() => {
+      finish({ status: "unavailable", allow: cacheGet()?.allow ?? [] });
+    }, 4500);
 
     client.on("connect", () => {
       client.subscribe(TOPIC_ACL, { qos: 0 });
@@ -94,20 +129,23 @@ export function readInviteAllowList(): Promise<string[]> {
     client.on("message", (topic, payload) => {
       if (topic !== TOPIC_ACL) return;
       clearTimeout(timer);
-      finish(parseAcl(payload.toString()));
+      finish({ status: "ok", allow: parseAcl(payload.toString()) });
     });
 
     client.on("error", () => {
       clearTimeout(timer);
-      finish(cacheGet() ?? []);
+      finish({ status: "unavailable", allow: cacheGet()?.allow ?? [] });
     });
   });
 }
 
-export async function writeInviteAllowList(allow: string[]): Promise<void> {
+export async function writeInviteAllowList(
+  allow: string[],
+  creds?: MqttCreds,
+): Promise<void> {
   const unique = [...new Set(allow)];
-  cacheSet(unique);
-  const { url, username, password } = brokerUrl();
+  cacheSet(unique, true);
+  const { url, username, password } = brokerUrl(creds);
   const body: AclPayload = { v: 1, allow: unique };
 
   return new Promise((resolve, reject) => {
@@ -158,18 +196,36 @@ export async function writeInviteAllowList(allow: string[]): Promise<void> {
   });
 }
 
-export async function addInviteToAllowList(id: string): Promise<void> {
-  const allow = await readInviteAllowList();
+export async function addInviteToAllowList(
+  id: string,
+  creds?: MqttCreds,
+): Promise<void> {
+  const read = await readInviteAllowList(creds);
+  const allow =
+    read.status === "ok" ? [...read.allow] : [...(cacheGet()?.allow ?? [])];
   if (!allow.includes(id)) allow.push(id);
-  await writeInviteAllowList(allow);
+  await writeInviteAllowList(allow, creds);
 }
 
-export async function removeInviteFromAllowList(id: string): Promise<void> {
-  const allow = await readInviteAllowList();
-  await writeInviteAllowList(allow.filter((x) => x !== id));
+export async function removeInviteFromAllowList(
+  id: string,
+  creds?: MqttCreds,
+): Promise<void> {
+  const read = await readInviteAllowList(creds);
+  const allow =
+    read.status === "ok" ? [...read.allow] : [...(cacheGet()?.allow ?? [])];
+  await writeInviteAllowList(
+    allow.filter((x) => x !== id),
+    creds,
+  );
 }
 
-export async function isInviteAllowed(id: string): Promise<boolean> {
-  const allow = await readInviteAllowList();
-  return allow.includes(id);
+/** yes = on list, no = explicitly revoked, unknown = could not read ACL */
+export async function inviteAllowStatus(
+  id: string,
+  creds?: MqttCreds,
+): Promise<"yes" | "no" | "unknown"> {
+  const read = await readInviteAllowList(creds);
+  if (read.status !== "ok") return "unknown";
+  return read.allow.includes(id) ? "yes" : "no";
 }

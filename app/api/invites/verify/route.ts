@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isInviteAllowed } from "@/lib/smartgate/acl-mqtt";
+import { inviteAllowStatus } from "@/lib/smartgate/acl-mqtt";
 import {
   checkOrBindInviteDevice,
   getClientIp,
@@ -33,16 +33,16 @@ export async function GET(req: Request) {
     );
   }
 
-  // Removed from owner's list → ACL no longer contains this id
-  const allowed = await isInviteAllowed(result.payload.id);
-  if (!allowed) {
+  // Only block when ACL was read successfully and id is missing.
+  // MQTT timeout / auth errors must NOT look like "owner removed access".
+  const allow = await inviteAllowStatus(result.payload.id);
+  if (allow === "no") {
     return NextResponse.json(
       { valid: false, reason: "revoked" },
       { status: 403 },
     );
   }
 
-  // Timed/once invites can still lock to first device
   if (result.payload.rule.type !== "unlimited") {
     const bind = checkOrBindInviteDevice(
       result.payload.id,
