@@ -22,7 +22,13 @@
 #define DEVICE_ID "demo-gate-001"
 #define DEVICE_SECRET "secret-demo-001"
 
+// Cloud device register (HTTP). Keep OFF for snappy MQTT like the old S3 firmware.
+// LAN URLs that are offline block the chip for 10–15s and delay Open/Stop/Close.
+#define ENABLE_CLOUD_REGISTER 0
 #define API_BASE_URL "http://192.168.1.100:3000"
+
+// NTP is optional (TLS works with setInsecure without it)
+#define ENABLE_NTP_SYNC 0
 
 #define TOPIC_COMMAND "home/gate/command"
 #define TOPIC_STATUS "home/gate/status"

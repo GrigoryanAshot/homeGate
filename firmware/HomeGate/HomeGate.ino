@@ -148,6 +148,9 @@ void publishStatus() {
 }
 
 bool registerWithCloud() {
+#if !ENABLE_CLOUD_REGISTER
+  return false;
+#else
   if (WiFi.status() != WL_CONNECTED) return false;
 
   String url = String(API_BASE_URL) + "/api/devices/register";
@@ -155,8 +158,8 @@ bool registerWithCloud() {
   Serial.println(url);
 
   HTTPClient http;
-  http.setConnectTimeout(10000);
-  http.setTimeout(15000);
+  http.setConnectTimeout(2000);
+  http.setTimeout(3000);
 
   bool began = false;
   WiFiClientSecure httpsClient;
@@ -164,7 +167,7 @@ bool registerWithCloud() {
 
   if (url.startsWith("https://")) {
     httpsClient.setInsecure();
-    httpsClient.setHandshakeTimeout(20);
+    httpsClient.setHandshakeTimeout(5);
     began = http.begin(httpsClient, url);
   } else {
     began = http.begin(httpClient, url);
@@ -197,17 +200,19 @@ bool registerWithCloud() {
 
   if (code == 200 && resp.indexOf("\"ok\":true") >= 0) {
     cloudRegistered = true;
-    Serial.println("Registered in DB (FREE until claimed / keep BUSY if owned).");
-    blinkStatusLed(3, 50, 50);
+    Serial.println("Registered in DB");
     return true;
   }
 
   Serial.println("Register failed — will retry");
-  blinkStatusLed(2, 120, 120);
   return false;
+#endif
 }
 
 void ensureRegistered() {
+#if !ENABLE_CLOUD_REGISTER
+  return;
+#else
   if (cloudRegistered) return;
   const unsigned long now = millis();
   if (now - lastRegisterAttempt < REGISTER_RETRY_MS && lastRegisterAttempt != 0) {
@@ -215,6 +220,7 @@ void ensureRegistered() {
   }
   lastRegisterAttempt = now;
   registerWithCloud();
+#endif
 }
 
 String normalizeCommand(const char *raw, unsigned int len) {
@@ -274,12 +280,16 @@ void connectWifi() {
   cloudRegistered = false;
   lastRegisterAttempt = 0;
 
-  // SoftAP portal if needed, then STA
   wifiEnsureConnected();
-  syncTime();
 
+#if ENABLE_NTP_SYNC
+  syncTime();
+#endif
+
+#if ENABLE_CLOUD_REGISTER
   lastRegisterAttempt = millis();
   registerWithCloud();
+#endif
 }
 
 const char *mqttStateText(int state) {
@@ -376,12 +386,16 @@ void setup() {
   Serial.begin(115200);
   delay(800);
   Serial.println();
-  Serial.println("HomeGate ESP32-C3 Super Mini (PC817)");
+  Serial.println("HomeGate ESP32-C3 — MQTT remote (S3-style, no blocking HTTP)");
   Serial.println("Opto: UP=GPIO3 DOWN=GPIO5 STOP=GPIO10");
   Serial.print("Device: ");
   Serial.println(DEVICE_ID);
+#if ENABLE_CLOUD_REGISTER
   Serial.print("API: ");
   Serial.println(API_BASE_URL);
+#else
+  Serial.println("Cloud register: OFF (fast MQTT)");
+#endif
   Serial.println("Wi-Fi: SoftAP · hold BOOT to reset Wi-Fi");
 
   connectWifi();
@@ -389,16 +403,20 @@ void setup() {
 }
 
 void loop() {
+  // MQTT first — same priority as old S3 firmware
+  ensureMqtt();
+  mqtt.loop();
+
+  pollPulse();
   wifiPollResetButton();
   pollStopButton();
-  pollPulse();
 
   if (WiFi.status() != WL_CONNECTED) {
     connectWifi();
+    return;
   }
 
   ensureRegistered();
-  ensureMqtt();
   mqtt.loop();
 
   if (updateMoveState()) {
