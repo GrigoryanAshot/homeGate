@@ -31,6 +31,11 @@ unsigned long lastStatusMs = 0;
 unsigned long lastRegisterAttempt = 0;
 bool cloudRegistered = false;
 
+// Non-blocking opto pulse (never delay() in MQTT path)
+int activePulsePin = -1;
+unsigned long pulseEndMs = 0;
+bool statusDirty = false;
+
 void setStatusLed(bool on) {
 #if STATUS_LED_ACTIVE_LOW
   digitalWrite(STATUS_LED_PIN, on ? LOW : HIGH);
@@ -52,36 +57,44 @@ void allOptoOff() {
   digitalWrite(PIN_UP, LOW);
   digitalWrite(PIN_DOWN, LOW);
   digitalWrite(PIN_STOP, LOW);
+  activePulsePin = -1;
 }
 
-/** Drive PC817 LED: GPIO HIGH = transistor ON (button pressed). */
-void pulseOpto(int pin) {
+/** Start a short button press; returns immediately so STOP can interrupt. */
+void startPulse(int pin) {
   allOptoOff();
   digitalWrite(pin, HIGH);
-  delay(PULSE_MS);
-  digitalWrite(pin, LOW);
+  activePulsePin = pin;
+  pulseEndMs = millis() + PULSE_MS;
+}
+
+void pollPulse() {
+  if (activePulsePin < 0) return;
+  if ((long)(millis() - pulseEndMs) < 0) return;
+  digitalWrite(activePulsePin, LOW);
+  activePulsePin = -1;
 }
 
 void doOpen() {
   lastAction = 0;
-  pulseOpto(PIN_UP);
+  startPulse(PIN_UP);
   doorState = "opening";
   moveAt = millis();
-  blinkStatusLed(1, 40, 40);
+  statusDirty = true;
 }
 
 void doClose() {
   lastAction = 1;
-  pulseOpto(PIN_DOWN);
+  startPulse(PIN_DOWN);
   doorState = "closing";
   moveAt = millis();
-  blinkStatusLed(2, 40, 40);
+  statusDirty = true;
 }
 
 void doStop() {
-  pulseOpto(PIN_STOP);
+  startPulse(PIN_STOP);
   doorState = "stopped";
-  blinkStatusLed(3, 30, 30);
+  statusDirty = true;
 }
 
 void pollStopButton() {
@@ -226,6 +239,7 @@ void handleCommand(const String &cmd) {
   Serial.print("MQTT command: ");
   Serial.println(cmd);
 
+  // Instant remote: pulse now, publish status later in loop (no blocking)
   if (cmd == "OPEN" || cmd == "UP" || cmd.startsWith("OPEN")) {
     doOpen();
   } else if (cmd == "CLOSE" || cmd == "DOWN" || cmd.startsWith("CLOSE")) {
@@ -234,9 +248,7 @@ void handleCommand(const String &cmd) {
     doStop();
   } else {
     Serial.println("Unknown command");
-    return;
   }
-  publishStatus();
 }
 
 void onMqttMessage(char *topic, byte *payload, unsigned int length) {
@@ -379,6 +391,7 @@ void setup() {
 void loop() {
   wifiPollResetButton();
   pollStopButton();
+  pollPulse();
 
   if (WiFi.status() != WL_CONNECTED) {
     connectWifi();
@@ -388,12 +401,15 @@ void loop() {
   ensureMqtt();
   mqtt.loop();
 
-  // Publish as soon as open/close motion finishes (don't wait 30s)
   if (updateMoveState()) {
-    publishStatus();
+    statusDirty = true;
   }
 
-  if (mqtt.connected() && millis() - lastStatusMs > 30000) {
+  if (mqtt.connected() && statusDirty) {
+    statusDirty = false;
+    lastStatusMs = millis();
+    publishStatus();
+  } else if (mqtt.connected() && millis() - lastStatusMs > 30000) {
     lastStatusMs = millis();
     publishStatus();
   }

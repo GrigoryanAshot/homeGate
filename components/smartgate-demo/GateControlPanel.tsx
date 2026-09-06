@@ -18,11 +18,10 @@ const stateBadgeStyle: Record<GateState, string> = {
 };
 
 export function GateControlPanel({
-  busy,
   gateState,
   onCommand,
 }: {
-  busy: boolean;
+  busy?: boolean;
   gateState: GateState;
   onCommand: (command: GateCommand) => void;
 }) {
@@ -49,9 +48,8 @@ export function GateControlPanel({
         <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
-            disabled={busy}
             onClick={() => onCommand("OPEN")}
-            className="control-btn-primary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 disabled:opacity-40"
+            className="control-btn-primary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 active:scale-[0.98]"
           >
             <IconChevronUp className="h-8 w-8" />
             <span className="text-base font-bold">{t.open}</span>
@@ -59,9 +57,8 @@ export function GateControlPanel({
 
           <button
             type="button"
-            disabled={busy}
             onClick={() => onCommand("CLOSE")}
-            className="control-btn-secondary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 disabled:opacity-40"
+            className="control-btn-secondary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 active:scale-[0.98]"
           >
             <IconChevronDown className="h-8 w-8" />
             <span className="text-base font-bold">{t.close}</span>
@@ -70,9 +67,8 @@ export function GateControlPanel({
 
         <button
           type="button"
-          disabled={busy}
           onClick={() => onCommand("STOP")}
-          className="control-btn-danger flex min-h-[52px] w-full items-center justify-center gap-2 px-4 disabled:opacity-40"
+          className="control-btn-danger flex min-h-[52px] w-full items-center justify-center gap-2 px-4 active:scale-[0.98]"
         >
           <IconStop className="h-5 w-5" />
           <span className="text-base font-bold">{t.stop}</span>

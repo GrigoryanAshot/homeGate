@@ -10,7 +10,7 @@ import type {
 } from "@/lib/smartgate/types";
 import { getMqttConfig, getMqttConfigForGate } from "@/lib/smartgate/types";
 
-/** Match firmware MOVE_MS */
+/** Match firmware MOVE_MS — UI settle only, never blocks buttons */
 const MOVE_SETTLE_MS = 12_000;
 
 const MOTION_STATES = new Set<GateState>(["opening", "closing"]);
@@ -43,7 +43,6 @@ export function useSmartGateMqtt({
 
   const [connection, setConnection] = useState<ConnectionStatus>("connecting");
   const [gateState, setGateState] = useState<GateState>("closed");
-  const [busy, setBusy] = useState(false);
   const [mqttConfigured, setMqttConfigured] = useState(false);
 
   const clearSettleTimer = useCallback(() => {
@@ -83,19 +82,17 @@ export function useSmartGateMqtt({
       clientId: `smartgate-${Math.random().toString(16).slice(2, 10)}`,
       reconnectPeriod: 4000,
       connectTimeout: 15000,
-      // Avoid resubscribe storms wiping UI state every few seconds
       resubscribe: true,
     });
 
     clientRef.current = client;
 
     const clearStaleRetained = (settled: GateState) => {
-      // Overwrite sticky retained "opening" on the broker so it stops coming back
       try {
         client.publish(
           config.topicStatus,
           JSON.stringify({ state: settled, online: true, source: "app-correct" }),
-          { qos: 1, retain: true },
+          { qos: 0, retain: true },
         );
       } catch {
         /* ignore */
@@ -106,7 +103,6 @@ export function useSmartGateMqtt({
       const recentCommand =
         Date.now() - lastCommandAtRef.current < MOVE_SETTLE_MS;
 
-      // Stale retained motion (no recent OPEN/CLOSE from this phone) → settle now
       if (MOTION_STATES.has(raw) && !recentCommand) {
         const settled = settleMotion(raw);
         clearSettleTimer();
@@ -133,7 +129,7 @@ export function useSmartGateMqtt({
 
     client.on("connect", () => {
       setConnection("online");
-      client.subscribe(config.topicStatus, { qos: 1 });
+      client.subscribe(config.topicStatus, { qos: 0 });
     });
 
     client.on("reconnect", () => setConnection("connecting"));
@@ -157,43 +153,34 @@ export function useSmartGateMqtt({
     };
   }, [mockMode, gateId, configEpoch, clearSettleTimer]);
 
-  useEffect(() => {
-    setBusy(false);
-  }, [gateId]);
-
   const sendCommand = useCallback(
     (command: GateCommand) => {
-      if (busy) return false;
-      setBusy(true);
       onCommandSentRef.current?.(command);
 
       if (mockMode) {
         lastCommandAtRef.current = Date.now();
-        if (command === "OPEN") setGateState("opening");
-        else if (command === "CLOSE") setGateState("closing");
-        else setGateState("stopped");
         clearSettleTimer();
         if (command === "OPEN") {
+          setGateState("opening");
           settleTimerRef.current = window.setTimeout(() => {
             setGateState("open");
             settleTimerRef.current = null;
           }, 2400);
         } else if (command === "CLOSE") {
+          setGateState("closing");
           settleTimerRef.current = window.setTimeout(() => {
             setGateState("closed");
             settleTimerRef.current = null;
           }, 2400);
+        } else {
+          setGateState("stopped");
         }
-        window.setTimeout(() => setBusy(false), 500);
         return true;
       }
 
       const client = clientRef.current;
       const config = configRef.current;
-      if (!client?.connected) {
-        setBusy(false);
-        return false;
-      }
+      if (!client?.connected) return false;
 
       lastCommandAtRef.current = Date.now();
       clearSettleTimer();
@@ -213,19 +200,18 @@ export function useSmartGateMqtt({
         setGateState("stopped");
       }
 
-      client.publish(config.topicCommand, command, { qos: 1 }, () => {
-        setBusy(false);
-      });
+      // Fire-and-forget — do not wait for broker ACK (that was the 5–6s lag)
+      client.publish(config.topicCommand, command, { qos: 0 });
       return true;
     },
-    [busy, clearSettleTimer, mockMode],
+    [clearSettleTimer, mockMode],
   );
 
   return {
     connection,
     gateState,
     setGateState,
-    busy,
+    busy: false,
     sendCommand,
     mqttConfigured,
   };
