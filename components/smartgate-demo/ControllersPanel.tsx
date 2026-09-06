@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { IconActivity, IconUsers } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
@@ -12,10 +12,14 @@ import {
   formatControllerAccess,
   formatHistoryWhen,
 } from "@/lib/smartgate/controllers";
-import type { ControllerAccessRule, GateController } from "@/lib/smartgate/types";
 import {
-  SEED_ACCESS_HISTORY,
-  SEED_CONTROLLERS,
+  loadControllers,
+  saveControllers,
+} from "@/lib/smartgate/controllers-store";
+import type {
+  ControllerAccessRule,
+  GateAccessHistoryEntry,
+  GateController,
 } from "@/lib/smartgate/types";
 import { useLocale } from "./LocaleProvider";
 import { useGates } from "./GatesProvider";
@@ -183,10 +187,23 @@ export function ControllersPanel({
   const { locale, t } = useLocale();
   const { selectedGateId } = useGates();
   const [panelView, setPanelView] = useState<PanelView>("list");
-  const [controllers, setControllers] = useState<GateController[]>(() => [
-    ...SEED_CONTROLLERS,
-  ]);
-  const history = SEED_ACCESS_HISTORY;
+  const [controllers, setControllers] = useState<GateController[]>([]);
+  const [history] = useState<GateAccessHistoryEntry[]>([]);
+  const readyToPersist = useRef(false);
+
+  useEffect(() => {
+    setControllers(loadControllers());
+    // Next controllers change (user edits) may persist; skip the hydrate write
+    const t = window.setTimeout(() => {
+      readyToPersist.current = true;
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!readyToPersist.current) return;
+    saveControllers(controllers);
+  }, [controllers]);
 
   const [name, setName] = useState("");
   const [preset, setPreset] = useState<RulePreset>("unlimited");
@@ -260,8 +277,19 @@ export function ControllersPanel({
   }
 
   function removeController(id: string) {
-    setControllers((prev) => prev.filter((c) => c.id !== id));
-    onToast?.(t.toastControllerRemoved);
+    void (async () => {
+      try {
+        await fetch("/api/invites", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+      } catch {
+        /* still remove locally */
+      }
+      setControllers((prev) => prev.filter((c) => c.id !== id));
+      onToast?.(t.toastControllerRemoved);
+    })();
   }
 
   async function addController() {

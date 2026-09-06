@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import { isInviteAllowed } from "@/lib/smartgate/acl-mqtt";
 import {
   checkOrBindInviteDevice,
   getClientIp,
 } from "@/lib/smartgate/invite-device";
 import { verifyInviteAccess } from "@/lib/smartgate/invites";
+
+export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -30,7 +33,16 @@ export async function GET(req: Request) {
     );
   }
 
-  // Unlimited family links work on any phone. Device lock only for timed/once invites.
+  // Removed from owner's list → ACL no longer contains this id
+  const allowed = await isInviteAllowed(result.payload.id);
+  if (!allowed) {
+    return NextResponse.json(
+      { valid: false, reason: "revoked" },
+      { status: 403 },
+    );
+  }
+
+  // Timed/once invites can still lock to first device
   if (result.payload.rule.type !== "unlimited") {
     const bind = checkOrBindInviteDevice(
       result.payload.id,

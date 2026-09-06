@@ -92,6 +92,7 @@ export type SmartGateMessages = {
   inviteLoading: string;
   inviteInvalid: string;
   inviteExpired: string;
+  inviteRevoked: string;
   inviteNotStarted: string;
   inviteUsed: string;
   inviteOtherDevice: string;
@@ -268,6 +269,7 @@ const en: SmartGateMessages = {
   inviteLoading: "Checking access…",
   inviteInvalid: "This link is not valid.",
   inviteExpired: "This access has expired.",
+  inviteRevoked: "This access was removed by the owner.",
   inviteNotStarted: "Access has not started yet.",
   inviteUsed: "This one-time link was already used.",
   inviteOtherDevice:
@@ -463,6 +465,7 @@ const hy: SmartGateMessages = {
   inviteLoading: "Մուտքը ստուգվում է…",
   inviteInvalid: "Հղումը անվավեր է։",
   inviteExpired: "Մուտքի ժամկետը ավարտվել է։",
+  inviteRevoked: "Սեփականատերը հանել է այս մուտքը։",
   inviteNotStarted: "Մուտքը դեռ չի սկսվել։",
   inviteUsed: "Մեկանգամյա հղումը արդեն օգտագործվել է։",
   inviteOtherDevice:
@@ -658,6 +661,7 @@ const ru: SmartGateMessages = {
   inviteLoading: "Проверка доступа…",
   inviteInvalid: "Ссылка недействительна.",
   inviteExpired: "Срок доступа истёк.",
+  inviteRevoked: "Владелец удалил этот доступ.",
   inviteNotStarted: "Доступ ещё не начался.",
   inviteUsed: "Одноразовая ссылка уже использована.",
   inviteOtherDevice:

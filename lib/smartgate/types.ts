@@ -36,57 +36,9 @@ export interface GateAccessHistoryEntry {
   timestamp: number;
 }
 
-export const SEED_CONTROLLERS: GateController[] = [
-  {
-    id: "c1",
-    name: "Անի",
-    rule: { type: "unlimited" },
-    grantedAt: Date.now() - 86400000 * 120,
-  },
-  {
-    id: "c2",
-    name: "Առաքիչ",
-    rule: {
-      type: "hours",
-      durationMs: 24 * 60 * 60 * 1000,
-      expiresAt: Date.now() + 86400000 * 2,
-    },
-    grantedAt: Date.now() - 3600000,
-  },
-  {
-    id: "c3",
-    name: "Հյուր #1042",
-    rule: { type: "once", expiresAt: Date.now() + 86400000 },
-    grantedAt: Date.now() - 7200000,
-  },
-];
+export const SEED_CONTROLLERS: GateController[] = [];
 
-export const SEED_ACCESS_HISTORY: GateAccessHistoryEntry[] = [
-  {
-    id: "h1",
-    userName: "Անի",
-    action: "CLOSE",
-    timestamp: Date.now() - 3600000,
-  },
-  {
-    id: "h2",
-    userName: "Admin",
-    action: "OPEN",
-    timestamp: Date.now() - 7200000,
-  },
-  {
-    id: "h3",
-    userName: "Առաքիչ",
-    action: "OPEN",
-    timestamp: Date.now() - 86400000,
-  },
-  {
-    id: "h4",
-    userName: "Admin",
-    action: "CLOSE",
-    timestamp: Date.now() - 90000000,
-  },
-];
+export const SEED_ACCESS_HISTORY: GateAccessHistoryEntry[] = [];
 
 export type GuestPassDuration = "1h" | "24h" | "once";
 

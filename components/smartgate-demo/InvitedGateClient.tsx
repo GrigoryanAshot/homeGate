@@ -46,6 +46,7 @@ function InvitedGateInner({ token }: { token: string }) {
           if (reason === "expired") setError(t.inviteExpired);
           else if (reason === "not_started") setError(t.inviteNotStarted);
           else if (reason === "used") setError(t.inviteUsed);
+          else if (reason === "revoked") setError(t.inviteRevoked);
           else if (reason === "other_device") setError(t.inviteOtherDevice);
           else setError(t.inviteInvalid);
           setInvite(null);
