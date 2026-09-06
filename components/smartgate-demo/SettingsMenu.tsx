@@ -7,7 +7,6 @@ import {
   IconClose,
   IconSettings,
 } from "@/components/ui/icons";
-import { Toggle } from "@/components/ui/primitives";
 import { localeLabels, SUPPORTED_LOCALES } from "@/lib/smartgate/i18n";
 import { cn } from "@/lib/utils";
 import { useLocale } from "./LocaleProvider";
