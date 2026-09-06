@@ -10,8 +10,15 @@ import type {
 } from "@/lib/smartgate/types";
 import { getMqttConfig, getMqttConfigForGate } from "@/lib/smartgate/types";
 
-/** Match firmware MOVE_MS — UI settle only, never blocks buttons */
-const MOVE_SETTLE_MS = 12_000;
+/** Opto wiring on this unit is reversed vs labels — swap MQTT OPEN/CLOSE only. */
+const SWAP_OPEN_CLOSE_MQTT = true;
+
+function mqttWireCommand(command: GateCommand): GateCommand {
+  if (!SWAP_OPEN_CLOSE_MQTT) return command;
+  if (command === "OPEN") return "CLOSE";
+  if (command === "CLOSE") return "OPEN";
+  return command;
+}
 
 const MOTION_STATES = new Set<GateState>(["opening", "closing"]);
 
@@ -201,7 +208,8 @@ export function useSmartGateMqtt({
       }
 
       // Fire-and-forget — do not wait for broker ACK (that was the 5–6s lag)
-      client.publish(config.topicCommand, command, { qos: 0 });
+      // UI keeps Open/Close meaning; MQTT payload swapped for reversed opto wiring
+      client.publish(config.topicCommand, mqttWireCommand(command), { qos: 0 });
       return true;
     },
     [clearSettleTimer, mockMode],
