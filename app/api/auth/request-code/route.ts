@@ -19,7 +19,16 @@ export async function POST(req: Request) {
         : result.error === "invalid_email"
           ? 400
           : 502;
-    return NextResponse.json({ ok: false, error: result.error }, { status });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: result.error,
+        ...(result.retryAfterSec != null
+          ? { retryAfterSec: result.retryAfterSec }
+          : {}),
+      },
+      { status },
+    );
   }
 
   return NextResponse.json({

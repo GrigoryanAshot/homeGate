@@ -200,7 +200,9 @@ export type SmartGateMessages = {
   authDevCodeHint: (code: string) => string;
   authInvalidEmail: string;
   authRateLimited: string;
+  authRateLimitedWait: (sec: number) => string;
   authSendFailed: string;
+  authCheckSpamHint: string;
   authInvalidCode: string;
   authCodeSentToast: string;
   authSignedInToast: string;
@@ -429,7 +431,9 @@ const en: SmartGateMessages = {
   authDevCodeHint: (code) => `Dev mode — your code is ${code}`,
   authInvalidEmail: "Enter a valid email address.",
   authRateLimited: "Wait a moment, then request a new code.",
+  authRateLimitedWait: (sec) => `Wait ${sec}s, then request a new code.`,
   authSendFailed: "Could not send email. Try again.",
+  authCheckSpamHint: "No email? Check Spam / Promotions. Subject starts with “SmartGate login code”.",
   authInvalidCode: "Wrong or expired code.",
   authCodeSentToast: "Check your email for the code",
   authSignedInToast: "Signed in",
@@ -666,7 +670,10 @@ const hy: SmartGateMessages = {
   authDevCodeHint: (code) => `Dev ռեժիմ — ձեր կոդը ${code}`,
   authInvalidEmail: "Մուտքագրեք վավեր էլ․ փոստ։",
   authRateLimited: "Սպասեք մի պահ, ապա նորից խնդրեք կոդ։",
+  authRateLimitedWait: (sec) => `Սպասեք ${sec} վրկ, ապա նորից խնդրեք կոդ։`,
   authSendFailed: "Չհաջողվեց ուղարկել։ Փորձեք նորից։",
+  authCheckSpamHint:
+    "Նամակ չկա՞ Ստուգեք Spam / Առաջարկներ։ Թեման՝ «SmartGate login code».",
   authInvalidCode: "Սխալ կամ ժամկետանց կոդ։",
   authCodeSentToast: "Ստուգեք էլ․ փոստը կոդի համար",
   authSignedInToast: "Մուտք գործեցիք",
@@ -903,7 +910,10 @@ const ru: SmartGateMessages = {
   authDevCodeHint: (code) => `Dev‑режим — ваш код ${code}`,
   authInvalidEmail: "Введите корректный email.",
   authRateLimited: "Подождите немного и запросите код снова.",
+  authRateLimitedWait: (sec) => `Подождите ${sec} с и запросите код снова.`,
   authSendFailed: "Не удалось отправить письмо. Попробуйте ещё раз.",
+  authCheckSpamHint:
+    "Нет письма? Проверьте Спам / Промоакции. Тема: «SmartGate login code».",
   authInvalidCode: "Неверный или просроченный код.",
   authCodeSentToast: "Проверьте почту — там код",
   authSignedInToast: "Вы вошли",
