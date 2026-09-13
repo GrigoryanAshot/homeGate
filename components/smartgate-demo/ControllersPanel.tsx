@@ -13,6 +13,7 @@ import {
   formatHistoryWhen,
 } from "@/lib/smartgate/controllers";
 import {
+  CONTROLLERS_CHANGED_EVENT,
   loadControllers,
   saveControllers,
 } from "@/lib/smartgate/controllers-store";
@@ -199,6 +200,20 @@ export function ControllersPanel({
       readyToPersist.current = true;
     }, 0);
     return () => window.clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const onExternalClear = () => {
+      readyToPersist.current = false;
+      setControllers([]);
+      setPanelView("list");
+      window.setTimeout(() => {
+        readyToPersist.current = true;
+      }, 0);
+    };
+    window.addEventListener(CONTROLLERS_CHANGED_EVENT, onExternalClear);
+    return () =>
+      window.removeEventListener(CONTROLLERS_CHANGED_EVENT, onExternalClear);
   }, []);
 
   useEffect(() => {

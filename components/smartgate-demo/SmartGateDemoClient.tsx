@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
+import { clearControllers } from "@/lib/smartgate/controllers-store";
 import type { GateCommand, GateState } from "@/lib/smartgate/types";
+import { getMqttConfig } from "@/lib/smartgate/types";
 import { AddGateScanModal } from "./AddGateScanModal";
 import { BottomNav, type DemoView } from "./BottomNav";
 import { ControllersPanel } from "./ControllersPanel";
@@ -66,6 +68,29 @@ function SmartGateDemoInner() {
     [sendCommand, showToast, t.toastCommandFailed],
   );
 
+  /** SoftAP again + revoke every shared invite (no physical BOOT needed). */
+  const handleWifiReset = useCallback(() => {
+    const mqtt = getMqttConfig();
+    clearControllers();
+    void fetch("/api/invites", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clearAll: true,
+        mqtt: {
+          host: mqtt.host,
+          username: mqtt.username,
+          password: mqtt.password,
+          port: mqtt.port,
+          path: mqtt.path,
+        },
+      }),
+    }).catch(() => {
+      /* local list already cleared; ACL best-effort */
+    });
+    return sendWifiReset();
+  }, [sendWifiReset]);
+
   return (
     <div className="app-shell bg-gate-bg text-gate-ink">
       <div className="pointer-events-none fixed inset-0 bg-gate-mesh" />
@@ -77,7 +102,7 @@ function SmartGateDemoInner() {
           onSettingsOpenChange={setSettingsOpen}
           onToast={showToast}
           onMqttSaved={() => setMqttEpoch((n) => n + 1)}
-          onWifiReset={sendWifiReset}
+          onWifiReset={handleWifiReset}
           mqttOnline={mqttConfigured && connection === "online"}
         />
 

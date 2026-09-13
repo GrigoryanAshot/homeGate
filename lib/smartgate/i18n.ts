@@ -349,12 +349,13 @@ const en: SmartGateMessages = {
   wifiSetupStep4: "Choose your home Wi‑Fi from the list, type the password → Save & Connect.",
   wifiSetupStep5: "Phone rejoins home Wi‑Fi. LED steady, then scan the device QR in the app.",
   wifiSetupReset:
-    "Wrong Wi‑Fi? In Settings tap “Reset gate Wi‑Fi”, or hold BOOT on the ESP ~3.5s until it blinks.",
-  wifiResetAction: "Reset gate Wi‑Fi",
+    "Wrong Wi‑Fi or full reset? In Settings tap “Reset gate setup”. Removes shared members and SoftAP comes back (gate must be online). BOOT hold ~3.5s is only a backup if the box is offline.",
+  wifiResetAction: "Reset gate setup",
   wifiResetConfirm:
-    "Clear saved Wi‑Fi on the gate box? LED will blink fast — join TouchGate-XXXX and pick your network again.",
-  wifiResetSentToast: "Wi‑Fi reset sent — join TouchGate-XXXX, open 192.168.4.1",
-  wifiResetNeedMqtt: "Connect to the gate (MQTT) first, then reset Wi‑Fi.",
+    "Reset like first setup? This clears gate Wi‑Fi, removes all shared members, and you’ll join TouchGate-XXXX to pick home Wi‑Fi again.",
+  wifiResetSentToast:
+    "Reset sent — shared access cleared. Join TouchGate-XXXX, open 192.168.4.1",
+  wifiResetNeedMqtt: "Connect to the gate (MQTT) first, then reset.",
   mqttSettingsTitle: "MQTT (gate connection)",
   mqttSettingsHint:
     "Same HiveMQ host, username, and password as in the ESP config.h / old app gear menu.",
@@ -550,12 +551,13 @@ const hy: SmartGateMessages = {
   wifiSetupStep4: "Ցանկից ընտրեք տան Wi‑Fi‑ը, մուտքագրեք գաղտնաբառը → Save & Connect։",
   wifiSetupStep5: "Հեռախոսը վերադարձրեք տան Wi‑Fi։ LED-ը կայուն է, ապա սկանավորեք QR-ը հավելվածում։",
   wifiSetupReset:
-    "Սխալ Wi‑Fi՞ Կարգավորումներում սեղմեք «Վերակայել դարպասի Wi‑Fi», կամ BOOT ~3.5 վրկ։",
-  wifiResetAction: "Վերակայել դարպասի Wi‑Fi",
+    "Սխալ Wi‑Fi կամ լրիվ վերակայո՞ւմ։ Կարգավորումներում՝ «Վերակայել դարպասի կարգավորումը»։ Կջնջվեն բաժանված մուտքերը, SoftAP կվերադառնա (դուռը պետք է online լինի)։ BOOT ~3.5 վրկ՝ միայն եթե տուփը offline է։",
+  wifiResetAction: "Վերակայել դարպասի կարգավորումը",
   wifiResetConfirm:
-    "Ջնջե՞լ պահված Wi‑Fi‑ը։ LED-ը արագ կթարթի — միացեք TouchGate-XXXX և նորից ընտրեք ցանցը։",
-  wifiResetSentToast: "Wi‑Fi reset ուղարկվեց — միացեք TouchGate-XXXX, բացեք 192.168.4.1",
-  wifiResetNeedMqtt: "Նախ միացեք դռանը (MQTT), ապա վերակայեք Wi‑Fi‑ը։",
+    "Վերակայե՞լ ինչպես առաջին անգամ։ Կջնջվի Wi‑Fi‑ը, կհեռացվեն բոլոր բաժանված անդամները, ապա միացեք TouchGate-XXXX և նորից ընտրեք ցանցը։",
+  wifiResetSentToast:
+    "Reset ուղարկվեց — բաժանումները մաքրվեցին։ Միացեք TouchGate-XXXX, բացեք 192.168.4.1",
+  wifiResetNeedMqtt: "Նախ միացեք դռանը (MQTT), ապա վերակայեք։",
   mqttSettingsTitle: "MQTT (դռան կապ)",
   mqttSettingsHint:
     "Նույն HiveMQ host, username և password, ինչ ESP config.h-ում / հին հավելվածի կարգավորումներում։",
@@ -751,12 +753,13 @@ const ru: SmartGateMessages = {
   wifiSetupStep4: "Выберите домашний Wi‑Fi из списка, введите пароль → Save & Connect.",
   wifiSetupStep5: "Верните телефон в домашний Wi‑Fi. LED горит ровно — сканируйте QR в приложении.",
   wifiSetupReset:
-    "Неверный Wi‑Fi? В настройках нажмите «Сбросить Wi‑Fi ворот» или удерживайте BOOT ~3.5 с.",
-  wifiResetAction: "Сбросить Wi‑Fi ворот",
+    "Неверный Wi‑Fi или полный сброс? В настройках — «Сбросить настройку ворот». Удалит общий доступ и вернёт SoftAP (ворота должны быть online). BOOT ~3.5 с — запасной вариант, если блок офлайн.",
+  wifiResetAction: "Сбросить настройку ворот",
   wifiResetConfirm:
-    "Очистить сохранённый Wi‑Fi? LED быстро мигнёт — подключитесь к TouchGate-XXXX и выберите сеть снова.",
-  wifiResetSentToast: "Сброс Wi‑Fi отправлен — подключитесь к TouchGate-XXXX, откройте 192.168.4.1",
-  wifiResetNeedMqtt: "Сначала подключитесь к воротам (MQTT), затем сбрасывайте Wi‑Fi.",
+    "Сбросить как при первой настройке? Очистится Wi‑Fi ворот, удалятся все общие доступы — затем подключитесь к TouchGate-XXXX и выберите сеть снова.",
+  wifiResetSentToast:
+    "Сброс отправлен — общий доступ очищен. Подключитесь к TouchGate-XXXX, откройте 192.168.4.1",
+  wifiResetNeedMqtt: "Сначала подключитесь к воротам (MQTT), затем сбрасывайте.",
   mqttSettingsTitle: "MQTT (связь с воротами)",
   mqttSettingsHint:
     "Тот же HiveMQ host, username и password, что в ESP config.h / старом приложении.",

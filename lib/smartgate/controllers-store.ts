@@ -1,6 +1,7 @@
 import type { ControllerAccessRule, GateController } from "./types";
 
 export const CONTROLLERS_STORAGE_KEY = "smartgate-controllers";
+export const CONTROLLERS_CHANGED_EVENT = "smartgate-controllers-changed";
 
 export function loadControllers(): GateController[] {
   if (typeof window === "undefined") return [];
@@ -23,6 +24,13 @@ export function saveControllers(controllers: GateController[]) {
     CONTROLLERS_STORAGE_KEY,
     JSON.stringify(controllers),
   );
+}
+
+/** Owner factory reset — wipe local share list and notify UI. */
+export function clearControllers() {
+  if (typeof window === "undefined") return;
+  saveControllers([]);
+  window.dispatchEvent(new Event(CONTROLLERS_CHANGED_EVENT));
 }
 
 export function upsertController(

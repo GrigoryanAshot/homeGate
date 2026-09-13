@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   addInviteToAllowList,
   removeInviteFromAllowList,
+  writeInviteAllowList,
   type MqttCreds,
 } from "@/lib/smartgate/acl-mqtt";
 import {
@@ -65,13 +66,26 @@ export async function POST(req: Request) {
   });
 }
 
-/** Revoke invite — link stops working */
+/** Revoke invite — link stops working. Pass clearAll to wipe every shared member. */
 export async function DELETE(req: Request) {
-  let body: { id?: string; mqtt?: MqttCreds };
+  let body: { id?: string; clearAll?: boolean; mqtt?: MqttCreds };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (body.clearAll) {
+    try {
+      await writeInviteAllowList([], body.mqtt);
+    } catch (e) {
+      console.error("ACL clear failed", e);
+      return NextResponse.json(
+        { error: "Could not clear invites on broker" },
+        { status: 502 },
+      );
+    }
+    return NextResponse.json({ ok: true, cleared: true });
   }
 
   const id = body.id?.trim();
