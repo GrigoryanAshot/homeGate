@@ -50,7 +50,7 @@ export async function POST(req: Request) {
   });
 
   try {
-    await addInviteToAllowList(id, body.mqtt);
+    await addInviteToAllowList(id, body.mqtt, gateId);
   } catch (e) {
     console.error("ACL add failed", e);
     return NextResponse.json(
@@ -68,16 +68,23 @@ export async function POST(req: Request) {
 
 /** Revoke invite — link stops working. Pass clearAll to wipe every shared member. */
 export async function DELETE(req: Request) {
-  let body: { id?: string; clearAll?: boolean; mqtt?: MqttCreds };
+  let body: {
+    id?: string;
+    clearAll?: boolean;
+    gateId?: string;
+    mqtt?: MqttCreds;
+  };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  const gateId = body.gateId?.trim();
+
   if (body.clearAll) {
     try {
-      await writeInviteAllowList([], body.mqtt);
+      await writeInviteAllowList([], body.mqtt, gateId);
     } catch (e) {
       console.error("ACL clear failed", e);
       return NextResponse.json(
@@ -94,7 +101,7 @@ export async function DELETE(req: Request) {
   }
 
   try {
-    await removeInviteFromAllowList(id, body.mqtt);
+    await removeInviteFromAllowList(id, body.mqtt, gateId);
   } catch (e) {
     console.error("ACL remove failed", e);
     return NextResponse.json(

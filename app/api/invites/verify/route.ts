@@ -35,7 +35,11 @@ export async function GET(req: Request) {
 
   // Only block when ACL was read successfully and id is missing.
   // MQTT timeout / auth errors must NOT look like "owner removed access".
-  const allow = await inviteAllowStatus(result.payload.id);
+  const allow = await inviteAllowStatus(
+    result.payload.id,
+    undefined,
+    result.payload.gateId,
+  );
   if (allow === "no") {
     return NextResponse.json(
       { valid: false, reason: "revoked" },

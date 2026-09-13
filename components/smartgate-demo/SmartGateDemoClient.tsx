@@ -14,6 +14,7 @@ import { GateControlPanel } from "./GateControlPanel";
 import { GatesProvider, useGates } from "./GatesProvider";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
 import { ThemeProvider } from "./ThemeProvider";
+import { AuthProvider } from "./AuthProvider";
 
 function SmartGateDemoInner() {
   const { t } = useLocale();
@@ -77,6 +78,7 @@ function SmartGateDemoInner() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         clearAll: true,
+        gateId: selectedGateId,
         mqtt: {
           host: mqtt.host,
           username: mqtt.username,
@@ -89,7 +91,7 @@ function SmartGateDemoInner() {
       /* local list already cleared; ACL best-effort */
     });
     return sendWifiReset();
-  }, [sendWifiReset]);
+  }, [sendWifiReset, selectedGateId]);
 
   return (
     <div className="app-shell bg-gate-bg text-gate-ink">
@@ -155,9 +157,11 @@ export function SmartGateDemoClient() {
   return (
     <LocaleProvider>
       <ThemeProvider>
-        <GatesProvider>
-          <SmartGateDemoInner />
-        </GatesProvider>
+        <AuthProvider>
+          <GatesProvider>
+            <SmartGateDemoInner />
+          </GatesProvider>
+        </AuthProvider>
       </ThemeProvider>
     </LocaleProvider>
   );

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useLocale } from "./LocaleProvider";
 import { useTheme } from "./ThemeProvider";
 import { WifiSetupGuide } from "./WifiSetupGuide";
+import { ProfileAuthSection } from "./ProfileAuthSection";
 import { getMqttConfig, saveMqttLocalConfig } from "@/lib/smartgate/types";
 
 export function SettingsMenu({
@@ -113,6 +114,10 @@ export function SettingsMenu({
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <div className="mb-3">
+              <ProfileAuthSection onToast={onToast} />
+            </div>
+
             <div className="overflow-hidden rounded-[26px] bg-gate-surface shadow-sm ring-1 ring-gate-line">
               <button
                 type="button"

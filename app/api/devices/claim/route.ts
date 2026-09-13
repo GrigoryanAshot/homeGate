@@ -1,26 +1,30 @@
 import { NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/auth/server";
 import { claimDevice } from "@/lib/db/devices";
 
 export const runtime = "nodejs";
 
 /**
  * Phone claims a FREE device after QR scan.
- * Body: { deviceId, secret, ownerId, name? }
+ * Body: { deviceId, secret, name? } — owner from signed-in profile.
  */
 export async function POST(req: Request) {
   try {
+    const session = await getSessionUser();
+    if (!session) {
+      return NextResponse.json(
+        { ok: false, error: "auth_required" },
+        { status: 401 },
+      );
+    }
+
     const body = (await req.json()) as {
       deviceId?: string;
       secret?: string;
-      ownerId?: string;
       name?: string;
     };
 
-    if (
-      !body.deviceId?.trim() ||
-      !body.secret?.trim() ||
-      !body.ownerId?.trim()
-    ) {
+    if (!body.deviceId?.trim() || !body.secret?.trim()) {
       return NextResponse.json(
         { ok: false, error: "missing_fields" },
         { status: 400 },
@@ -30,7 +34,7 @@ export async function POST(req: Request) {
     const result = await claimDevice({
       deviceId: body.deviceId,
       secret: body.secret,
-      ownerId: body.ownerId,
+      ownerId: session.id,
       name: body.name,
     });
 

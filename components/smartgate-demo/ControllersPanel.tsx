@@ -301,6 +301,7 @@ export function ControllersPanel({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             id,
+            gateId: selectedGateId,
             mqtt: {
               host: mqtt.host,
               username: mqtt.username,

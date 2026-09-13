@@ -19,6 +19,7 @@ import {
 } from "@/lib/smartgate/gates-store";
 import { setActiveGateId } from "@/lib/smartgate/gate-id";
 import type { Locale } from "@/lib/smartgate/i18n";
+import { useAuth } from "./AuthProvider";
 
 type GatesContextValue = {
   gates: UserGate[];
@@ -27,15 +28,55 @@ type GatesContextValue = {
   selectGate: (id: string) => void;
   addGateFromScan: (name: string, deviceId?: string) => UserGate;
   suggestNextGateName: (locale: Locale) => string;
+  refreshFromServer: () => Promise<void>;
 };
 
 const GatesContext = createContext<GatesContextValue | null>(null);
 
 export function GatesProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [gates, setGates] = useState<UserGate[]>(() => loadUserGates());
   const [selectedGateId, setSelectedGateId] = useState(() =>
     loadSelectedGateId(loadUserGates()[0]?.id ?? "gate-1"),
   );
+
+  const refreshFromServer = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/devices/mine", { credentials: "include" });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        devices?: { id: string; name: string | null; claimedAt: string | null }[];
+      };
+      const remote = (data.devices ?? []).map((d) => ({
+        id: d.id,
+        name: d.name?.trim() || d.id,
+        createdAt: d.claimedAt ? Date.parse(d.claimedAt) : Date.now(),
+      }));
+      if (remote.length === 0) return;
+      setGates((prev) => {
+        const byId = new Map(prev.map((g) => [g.id, g]));
+        for (const g of remote) {
+          const existing = byId.get(g.id);
+          byId.set(g.id, {
+            id: g.id,
+            name: g.name,
+            createdAt: existing?.createdAt ?? g.createdAt,
+          });
+        }
+        return Array.from(byId.values());
+      });
+      setSelectedGateId((cur) =>
+        remote.some((g) => g.id === cur) ? cur : remote[0].id,
+      );
+    } catch {
+      /* keep local */
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void refreshFromServer();
+  }, [refreshFromServer]);
 
   useEffect(() => {
     saveUserGates(gates);
@@ -85,6 +126,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       selectGate,
       addGateFromScan,
       suggestNextGateName,
+      refreshFromServer,
     }),
     [
       gates,
@@ -93,6 +135,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       selectGate,
       addGateFromScan,
       suggestNextGateName,
+      refreshFromServer,
     ],
   );
 

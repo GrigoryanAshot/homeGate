@@ -158,13 +158,22 @@ export function saveMqttLocalConfig(partial: {
   window.localStorage.setItem("homegate.mqtt.pass", partial.password);
 }
 
-/** Per-gate MQTT topics for multi-device setups */
+/** Per-gate MQTT topics — must match ESP: home/gate/{productId}/command|status */
 export function getMqttConfigForGate(gateId?: string): MqttConfig {
   const base = getMqttConfig();
-  // Current C3 firmware listens on shared home/gate/* (same as old app).
-  // Per-gate topics later when each ESP uses home/{deviceId}/command.
-  void gateId;
-  return base;
+  const id = gateId?.trim();
+  if (!id || id === "gate-1" || id.startsWith("gate-")) {
+    // Legacy local placeholder — keep shared topics for old demos
+    return base;
+  }
+  const prefix =
+    process.env.NEXT_PUBLIC_MQTT_TOPIC_PREFIX?.replace(/\/$/, "") ||
+    "home/gate";
+  return {
+    ...base,
+    topicCommand: `${prefix}/${id}/command`,
+    topicStatus: `${prefix}/${id}/status`,
+  };
 }
 
 export function formatRelativeTime(timestamp: number): string {

@@ -8,15 +8,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Factory ESP / controller. Id is permanent; ownership changes FREE <-> BUSY.
+/// App account — any email (Gmail, iCloud, Outlook, …)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  devices   Device[]
+}
+
+/// One-time email login code
+model EmailLoginCode {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+/// Factory ESP / controller. Id = product/sticker number (permanent).
 model Device {
   id         String   @id
   /// SHA-256 of factory secret (never store raw secret)
   secretHash String
   /// FREE | BUSY
   status     String   @default("FREE")
-  /// Owner account id (local phone key for now; real auth later)
+  /// ESP hardware id (MAC-based), set on first SoftAP+register
+  chipId     String?  @unique
+  /// Owner User.id (email profile)
   ownerId    String?
+  owner      User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   /// Display name chosen by owner on claim
   name       String?
   claimedAt  DateTime?

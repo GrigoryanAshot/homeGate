@@ -174,6 +174,37 @@ export type SmartGateMessages = {
   toastSpecialistRequested: string;
   creditBefore: string;
   creditAfter: string;
+  authLoading: string;
+  authProfileTitle: string;
+  authProfileHint: string;
+  authNameLabel: string;
+  authNamePlaceholder: string;
+  authNameSave: string;
+  authNameSaving: string;
+  authNameNeededHint: string;
+  authNameRequired: string;
+  authNameSaveFailed: string;
+  authNameSavedToast: string;
+  authSignOut: string;
+  authSignInTitle: string;
+  authSignInHint: string;
+  authEmailPlaceholder: string;
+  authSendCode: string;
+  authSending: string;
+  authCodeSentTo: (email: string) => string;
+  authCodePlaceholder: string;
+  authVerifyCode: string;
+  authVerifying: string;
+  authChangeEmail: string;
+  authDevCodeHint: (code: string) => string;
+  authInvalidEmail: string;
+  authRateLimited: string;
+  authSendFailed: string;
+  authInvalidCode: string;
+  authCodeSentToast: string;
+  authSignedInToast: string;
+  authSignedOutToast: string;
+  authRequiredToClaim: string;
   gateStates: Record<GateState, string>;
 };
 
@@ -369,6 +400,39 @@ const en: SmartGateMessages = {
   toastSpecialistRequested: "A specialist will contact you shortly",
   creditBefore: "System developed and maintained by ",
   creditAfter: "",
+  authLoading: "Loading profile…",
+  authProfileTitle: "Your profile",
+  authProfileHint:
+    "Gates you claim are saved to this email. Use Gmail, iCloud Mail, Outlook, or any other email.",
+  authNameLabel: "Your name",
+  authNamePlaceholder: "e.g. Ashot",
+  authNameSave: "Save name",
+  authNameSaving: "Saving…",
+  authNameNeededHint: "Add your name so family invites show who shared access.",
+  authNameRequired: "Enter your name.",
+  authNameSaveFailed: "Could not save name. Try again.",
+  authNameSavedToast: "Name saved",
+  authSignOut: "Sign out",
+  authSignInTitle: "Sign in",
+  authSignInHint:
+    "Enter your email (Gmail, iCloud, Outlook, …). We’ll send a 6‑digit code — no password.",
+  authEmailPlaceholder: "you@gmail.com",
+  authSendCode: "Send login code",
+  authSending: "Sending…",
+  authCodeSentTo: (email) => `Code sent to ${email}`,
+  authCodePlaceholder: "000000",
+  authVerifyCode: "Verify & sign in",
+  authVerifying: "Checking…",
+  authChangeEmail: "Use a different email",
+  authDevCodeHint: (code) => `Dev mode — your code is ${code}`,
+  authInvalidEmail: "Enter a valid email address.",
+  authRateLimited: "Wait a moment, then request a new code.",
+  authSendFailed: "Could not send email. Try again.",
+  authInvalidCode: "Wrong or expired code.",
+  authCodeSentToast: "Check your email for the code",
+  authSignedInToast: "Signed in",
+  authSignedOutToast: "Signed out",
+  authRequiredToClaim: "Sign in from Settings first, then claim this gate.",
   gateStates: {
     closed: "Gate is closed",
     open: "Gate is open",
@@ -571,6 +635,39 @@ const hy: SmartGateMessages = {
   toastSpecialistRequested: "Մասնագետը շուտով կկապվի ձեզ հետ",
   creditBefore: "Համակարգը մշակվել է և սպասարկվում է ",
   creditAfter: "-ի կողմից",
+  authLoading: "Պրոֆիլը բեռնվում է…",
+  authProfileTitle: "Ձեր պրոֆիլը",
+  authProfileHint:
+    "Ձեր դարպասները կապված են այս էլ․ փոստին։ Gmail, iCloud, Outlook կամ այլ։",
+  authNameLabel: "Ձեր անունը",
+  authNamePlaceholder: "օր. Աշոտ",
+  authNameSave: "Պահել անունը",
+  authNameSaving: "Պահվում է…",
+  authNameNeededHint: "Ավելացրեք անունը, որ հրավերներում երևա ով է կիսել մուտքը։",
+  authNameRequired: "Մուտքագրեք անունը։",
+  authNameSaveFailed: "Չհաջողվեց պահել անունը։",
+  authNameSavedToast: "Անունը պահվեց",
+  authSignOut: "Դուրս գալ",
+  authSignInTitle: "Մուտք",
+  authSignInHint:
+    "Մուտքագրեք էլ․ փոստը (Gmail, iCloud, Outlook…)։ Կուղարկենք 6‑անիշ կոդ — գաղտնաբառ պետք չէ։",
+  authEmailPlaceholder: "you@gmail.com",
+  authSendCode: "Ուղարկել կոդը",
+  authSending: "Ուղարկվում է…",
+  authCodeSentTo: (email) => `Կոդն ուղարկվել է ${email}`,
+  authCodePlaceholder: "000000",
+  authVerifyCode: "Հաստատել և մտնել",
+  authVerifying: "Ստուգում…",
+  authChangeEmail: "Այլ էլ․ փոստ",
+  authDevCodeHint: (code) => `Dev ռեժիմ — ձեր կոդը ${code}`,
+  authInvalidEmail: "Մուտքագրեք վավեր էլ․ փոստ։",
+  authRateLimited: "Սպասեք մի պահ, ապա նորից խնդրեք կոդ։",
+  authSendFailed: "Չհաջողվեց ուղարկել։ Փորձեք նորից։",
+  authInvalidCode: "Սխալ կամ ժամկետանց կոդ։",
+  authCodeSentToast: "Ստուգեք էլ․ փոստը կոդի համար",
+  authSignedInToast: "Մուտք գործեցիք",
+  authSignedOutToast: "Դուրս եկաք",
+  authRequiredToClaim: "Նախ Settings‑ից մուտք գործեք, ապա կապեք դարպասը։",
   gateStates: {
     closed: "Դարպասը փակ է",
     open: "Դարպասը բաց է",
@@ -773,6 +870,39 @@ const ru: SmartGateMessages = {
   toastSpecialistRequested: "Специалист скоро свяжется с вами",
   creditBefore: "Система разработана и обслуживается ",
   creditAfter: "",
+  authLoading: "Загрузка профиля…",
+  authProfileTitle: "Ваш профиль",
+  authProfileHint:
+    "Ворота привязаны к этому email. Gmail, iCloud Mail, Outlook или любой другой.",
+  authNameLabel: "Ваше имя",
+  authNamePlaceholder: "напр. Ашот",
+  authNameSave: "Сохранить имя",
+  authNameSaving: "Сохранение…",
+  authNameNeededHint: "Укажите имя — в приглашениях будет видно, кто дал доступ.",
+  authNameRequired: "Введите имя.",
+  authNameSaveFailed: "Не удалось сохранить имя.",
+  authNameSavedToast: "Имя сохранено",
+  authSignOut: "Выйти",
+  authSignInTitle: "Вход",
+  authSignInHint:
+    "Введите email (Gmail, iCloud, Outlook…). Пришлём 6‑значный код — без пароля.",
+  authEmailPlaceholder: "you@gmail.com",
+  authSendCode: "Отправить код",
+  authSending: "Отправка…",
+  authCodeSentTo: (email) => `Код отправлен на ${email}`,
+  authCodePlaceholder: "000000",
+  authVerifyCode: "Подтвердить и войти",
+  authVerifying: "Проверка…",
+  authChangeEmail: "Другой email",
+  authDevCodeHint: (code) => `Dev‑режим — ваш код ${code}`,
+  authInvalidEmail: "Введите корректный email.",
+  authRateLimited: "Подождите немного и запросите код снова.",
+  authSendFailed: "Не удалось отправить письмо. Попробуйте ещё раз.",
+  authInvalidCode: "Неверный или просроченный код.",
+  authCodeSentToast: "Проверьте почту — там код",
+  authSignedInToast: "Вы вошли",
+  authSignedOutToast: "Вы вышли",
+  authRequiredToClaim: "Сначала войдите в Settings, затем привяжите ворота.",
   gateStates: {
     closed: "Ворота закрыты",
     open: "Ворота открыты",

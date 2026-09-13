@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { getOrCreateOwnerId } from "@/lib/smartgate/owner-id";
 import {
   parsePairPayload,
   type PairPayload,
 } from "@/lib/smartgate/pair-qr";
+import { useAuth } from "./AuthProvider";
 import { useGates } from "./GatesProvider";
 import { useLocale } from "./LocaleProvider";
 import { BackButton } from "./BackButton";
@@ -27,6 +27,7 @@ export function AddGateScanModal({
   onAdded?: (gateName: string) => void;
 }) {
   const { locale, t } = useLocale();
+  const { user } = useAuth();
   const { addGateFromScan, suggestNextGateName } = useGates();
   const [mounted, setMounted] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
@@ -97,16 +98,20 @@ export function AddGateScanModal({
 
   async function handleSave() {
     if (!pair || !name.trim()) return;
+    if (!user) {
+      setError(t.authRequiredToClaim);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const res = await fetch("/api/devices/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           deviceId: pair.deviceId,
           secret: pair.secret,
-          ownerId: getOrCreateOwnerId(),
           name: name.trim(),
         }),
       });
@@ -117,7 +122,8 @@ export function AddGateScanModal({
       };
 
       if (!res.ok || !data.ok) {
-        if (data.error === "already_in_use") setError(t.deviceAlreadyInUse);
+        if (data.error === "auth_required") setError(t.authRequiredToClaim);
+        else if (data.error === "already_in_use") setError(t.deviceAlreadyInUse);
         else if (data.error === "not_found") setError(t.deviceNotFound);
         else if (data.error === "invalid_secret") setError(t.deviceQrInvalid);
         else setError(t.deviceClaimFailed);
@@ -165,6 +171,11 @@ export function AddGateScanModal({
 
         {step === "scan" ? (
           <>
+            {!user && (
+              <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-100">
+                {t.authRequiredToClaim}
+              </p>
+            )}
             <p className="mb-3 text-sm leading-relaxed text-gate-muted">
               {t.scanGateHintCamera}
             </p>

@@ -4,14 +4,16 @@ import { registerDevice } from "@/lib/db/devices";
 export const runtime = "nodejs";
 
 /**
- * ESP first internet connect — register factory id + secret as FREE.
- * Body: { deviceId: string, secret: string }
+ * ESP after SoftAP — bind chip to an existing FREE/BUSY factory product.
+ * Body: { deviceId, secret, chipId? }
+ * Product rows must be pre-seeded (stickers). Does not create new IDs.
  */
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as {
       deviceId?: string;
       secret?: string;
+      chipId?: string;
     };
 
     if (!body.deviceId?.trim() || !body.secret?.trim()) {
@@ -21,11 +23,21 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = await registerDevice(body.deviceId, body.secret);
+    const result = await registerDevice(
+      body.deviceId,
+      body.secret,
+      body.chipId,
+    );
     if (!result.ok) {
+      const status =
+        result.error === "not_found"
+          ? 404
+          : result.error === "chip_in_use"
+            ? 409
+            : 401;
       return NextResponse.json(
         { ok: false, error: result.error },
-        { status: 401 },
+        { status },
       );
     }
 

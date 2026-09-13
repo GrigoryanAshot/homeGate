@@ -1,14 +1,11 @@
 /*
-  HomeGate — ESP32-C3 Super Mini
-  1) Wi‑Fi from phone (SoftAP portal → NVS)  [step 4]
-  2) Register DEVICE_ID + DEVICE_SECRET → API (FREE until claimed)  [step 3]
-  3) MQTT HiveMQ — OPEN / CLOSE / STOP
+  HomeGate — ESP32-C3 Super Mini (universal production firmware)
+  1) SoftAP: bind sticker product → pick home Wi‑Fi
+  2) Register product+chip → cloud DB (FREE until owner claims in app)
+  3) MQTT per product: home/gate/{productId}/command|status
 
   Library: PubSubClient (Nick O'Leary)
   Board: ESP32C3 Dev Module · USB CDC On Boot: Enabled
-
-  Setup: join Wi‑Fi "TouchGate-XXXX" → open http://192.168.4.1
-  Reset Wi‑Fi: hold BOOT ~3.5s
 */
 
 #include <WiFi.h>
@@ -18,20 +15,20 @@
 #include <ctype.h>
 #include <time.h>
 #include "config.h"
+#include "device_identity.h"
 #include "wifi_provision.h"
 
 WiFiClientSecure mqttTls;
 PubSubClient mqtt(mqttTls);
 
 String doorState = "closed";
-int lastAction = 0;  // 0=up 1=down
+int lastAction = 0;
 unsigned long moveAt = 0;
 unsigned long lastReconnectAttempt = 0;
 unsigned long lastStatusMs = 0;
 unsigned long lastRegisterAttempt = 0;
 bool cloudRegistered = false;
 
-// Non-blocking opto pulse (never delay() in MQTT path)
 int activePulsePin = -1;
 unsigned long pulseEndMs = 0;
 bool statusDirty = false;
@@ -60,7 +57,6 @@ void allOptoOff() {
   activePulsePin = -1;
 }
 
-/** Start a short button press; returns immediately so STOP can interrupt. */
 void startPulse(int pin) {
   allOptoOff();
   digitalWrite(pin, HIGH);
@@ -134,14 +130,15 @@ bool updateMoveState() {
 void publishStatus() {
   if (!mqtt.connected()) return;
   updateMoveState();
-  char payload[220];
+  char payload[280];
   snprintf(
     payload,
     sizeof(payload),
-    "{\"state\":\"%s\",\"online\":true,\"registered\":%s,\"deviceId\":\"%s\",\"ip\":\"%s\"}",
+    "{\"state\":\"%s\",\"online\":true,\"registered\":%s,\"deviceId\":\"%s\",\"chipId\":\"%s\",\"ip\":\"%s\"}",
     doorState.c_str(),
     cloudRegistered ? "true" : "false",
-    DEVICE_ID,
+    DEVICE_PRODUCT_ID,
+    DEVICE_CHIP_ID,
     WiFi.localIP().toString().c_str()
   );
   mqtt.publish(TOPIC_STATUS, payload, true);
@@ -152,14 +149,15 @@ bool registerWithCloud() {
   return false;
 #else
   if (WiFi.status() != WL_CONNECTED) return false;
+  if (!deviceHasProduct()) return false;
 
   String url = String(API_BASE_URL) + "/api/devices/register";
   Serial.print("Cloud register → ");
   Serial.println(url);
 
   HTTPClient http;
-  http.setConnectTimeout(2000);
-  http.setTimeout(3000);
+  http.setConnectTimeout(2500);
+  http.setTimeout(4000);
 
   bool began = false;
   WiFiClientSecure httpsClient;
@@ -167,7 +165,7 @@ bool registerWithCloud() {
 
   if (url.startsWith("https://")) {
     httpsClient.setInsecure();
-    httpsClient.setHandshakeTimeout(5);
+    httpsClient.setHandshakeTimeout(8);
     began = http.begin(httpsClient, url);
   } else {
     began = http.begin(httpClient, url);
@@ -180,13 +178,14 @@ bool registerWithCloud() {
 
   http.addHeader("Content-Type", "application/json");
 
-  char body[192];
+  char body[320];
   snprintf(
     body,
     sizeof(body),
-    "{\"deviceId\":\"%s\",\"secret\":\"%s\"}",
-    DEVICE_ID,
-    DEVICE_SECRET
+    "{\"deviceId\":\"%s\",\"secret\":\"%s\",\"chipId\":\"%s\"}",
+    DEVICE_PRODUCT_ID,
+    DEVICE_PRODUCT_SECRET,
+    DEVICE_CHIP_ID
   );
 
   const int code = http.POST(body);
@@ -200,8 +199,13 @@ bool registerWithCloud() {
 
   if (code == 200 && resp.indexOf("\"ok\":true") >= 0) {
     cloudRegistered = true;
-    Serial.println("Registered in DB");
+    Serial.println("Registered / refreshed in DB");
     return true;
+  }
+
+  // Sticker not in factory DB yet — still allow MQTT for installers
+  if (code == 404) {
+    Serial.println("Product not in factory DB — seed sticker ID first");
   }
 
   Serial.println("Register failed — will retry");
@@ -245,7 +249,6 @@ void handleCommand(const String &cmd) {
   Serial.print("MQTT command: ");
   Serial.println(cmd);
 
-  // Instant remote: pulse now, publish status later in loop (no blocking)
   if (cmd == "OPEN" || cmd == "UP" || cmd.startsWith("OPEN")) {
     doOpen();
   } else if (cmd == "CLOSE" || cmd == "DOWN" || cmd.startsWith("CLOSE")) {
@@ -255,7 +258,6 @@ void handleCommand(const String &cmd) {
   } else if (
     cmd == "WIFI_RESET" || cmd == "WIFI_SETUP" || cmd.startsWith("WIFI_RESET")
   ) {
-    // App / MQTT: wipe saved Wi‑Fi → reboot into SoftAP pick-network portal
     wifiFactoryResetAndReboot();
   } else {
     Serial.println("Unknown command");
@@ -313,8 +315,17 @@ const char *mqttStateText(int state) {
 }
 
 bool connectMqtt() {
+  if (!deviceHasProduct()) {
+    Serial.println("MQTT skipped — no product bound");
+    return false;
+  }
+
   Serial.print("MQTT connect ");
   Serial.println(MQTT_HOST);
+  Serial.print("Topics: ");
+  Serial.print(TOPIC_COMMAND);
+  Serial.print(" / ");
+  Serial.println(TOPIC_STATUS);
 
   IPAddress ip;
   if (!WiFi.hostByName(MQTT_HOST, ip)) {
@@ -337,15 +348,16 @@ bool connectMqtt() {
   mqtt.setKeepAlive(45);
   mqtt.setSocketTimeout(30);
 
-  String clientId =
-    String(MQTT_CLIENT_ID) + "-" + String((uint32_t)ESP.getEfuseMac(), HEX);
-  Serial.print("DeviceId: ");
-  Serial.println(DEVICE_ID);
+  Serial.print("Product: ");
+  Serial.println(DEVICE_PRODUCT_ID);
+  Serial.print("Chip: ");
+  Serial.println(DEVICE_CHIP_ID);
   Serial.print("ClientId: ");
-  Serial.println(clientId);
+  Serial.println(MQTT_CLIENT_ID_RUNTIME);
   Serial.flush();
 
-  const bool ok = mqtt.connect(clientId.c_str(), MQTT_USER, MQTT_PASS);
+  const bool ok =
+    mqtt.connect(MQTT_CLIENT_ID_RUNTIME, MQTT_USER, MQTT_PASS);
   if (!ok) {
     const int st = mqtt.state();
     Serial.print("MQTT failed, state=");
@@ -359,7 +371,8 @@ bool connectMqtt() {
   }
 
   mqtt.subscribe(TOPIC_COMMAND, 1);
-  Serial.println("MQTT connected + subscribed " TOPIC_COMMAND);
+  Serial.print("MQTT connected + subscribed ");
+  Serial.println(TOPIC_COMMAND);
   setStatusLed(true);
   publishStatus();
   return true;
@@ -391,24 +404,26 @@ void setup() {
   Serial.begin(115200);
   delay(800);
   Serial.println();
-  Serial.println("HomeGate ESP32-C3 — MQTT remote (S3-style, no blocking HTTP)");
+  Serial.println("HomeGate ESP32-C3 — universal production build");
   Serial.println("Opto: UP=GPIO3 DOWN=GPIO5 STOP=GPIO10");
-  Serial.print("Device: ");
-  Serial.println(DEVICE_ID);
+
+  deviceLoadIdentity();
+  Serial.print("Chip: ");
+  Serial.println(DEVICE_CHIP_ID);
+  Serial.print("Product: ");
+  Serial.println(deviceHasProduct() ? DEVICE_PRODUCT_ID : "(none — SoftAP)");
 #if ENABLE_CLOUD_REGISTER
   Serial.print("API: ");
   Serial.println(API_BASE_URL);
 #else
-  Serial.println("Cloud register: OFF (fast MQTT)");
+  Serial.println("Cloud register: OFF");
 #endif
-  Serial.println("Wi-Fi: SoftAP · hold BOOT to reset Wi-Fi");
 
   connectWifi();
   connectMqtt();
 }
 
 void loop() {
-  // MQTT first — same priority as old S3 firmware
   ensureMqtt();
   mqtt.loop();
 

@@ -1,17 +1,6 @@
 import { createHash, timingSafeEqual } from "crypto";
-import { PrismaClient, type Device } from "@prisma/client";
-
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+import type { Device } from "@prisma/client";
+import { prisma } from "./client";
 
 export type DeviceStatus = "FREE" | "BUSY";
 export const DeviceStatus = {
@@ -20,6 +9,7 @@ export const DeviceStatus = {
 } as const;
 
 export type { Device };
+export { prisma };
 
 export function hashDeviceSecret(secret: string): string {
   return createHash("sha256").update(secret, "utf8").digest("hex");
@@ -35,6 +25,7 @@ export function secretsMatch(rawSecret: string, secretHash: string): boolean {
 export type DevicePublic = {
   id: string;
   status: DeviceStatus;
+  chipId: string | null;
   ownerId: string | null;
   name: string | null;
   claimedAt: string | null;
@@ -46,6 +37,7 @@ export function toPublicDevice(device: Device): DevicePublic {
   return {
     id: device.id,
     status: device.status as DeviceStatus,
+    chipId: device.chipId,
     ownerId: device.ownerId,
     name: device.name,
     claimedAt: device.claimedAt?.toISOString() ?? null,
@@ -55,34 +47,68 @@ export function toPublicDevice(device: Device): DevicePublic {
 }
 
 /**
- * ESP first online: register factory id + secret as FREE.
- * If already exists and secret matches → refresh lastSeenAt (idempotent).
+ * ESP online after SoftAP: product must already exist (factory seed).
+ * Binds chipId + refreshes lastSeenAt. Does NOT create new product rows.
  */
-export async function registerDevice(deviceId: string, secret: string) {
+export async function registerDevice(
+  deviceId: string,
+  secret: string,
+  chipId?: string,
+) {
   const id = deviceId.trim();
-  const secretHash = hashDeviceSecret(secret);
+  const chip = chipId?.trim() || null;
 
   const existing = await prisma.device.findUnique({ where: { id } });
-  if (existing) {
-    if (!secretsMatch(secret, existing.secretHash)) {
-      return { ok: false as const, error: "invalid_secret" as const };
-    }
-    const updated = await prisma.device.update({
-      where: { id },
-      data: { lastSeenAt: new Date() },
-    });
-    return { ok: true as const, device: toPublicDevice(updated), created: false };
+  if (!existing) {
+    return { ok: false as const, error: "not_found" as const };
+  }
+  if (!secretsMatch(secret, existing.secretHash)) {
+    return { ok: false as const, error: "invalid_secret" as const };
   }
 
+  if (chip) {
+    const taken = await prisma.device.findFirst({
+      where: { chipId: chip, NOT: { id } },
+    });
+    if (taken) {
+      return { ok: false as const, error: "chip_in_use" as const };
+    }
+  }
+
+  const updated = await prisma.device.update({
+    where: { id },
+    data: {
+      lastSeenAt: new Date(),
+      ...(chip ? { chipId: chip } : {}),
+    },
+  });
+  return { ok: true as const, device: toPublicDevice(updated), created: false };
+}
+
+/** Pre-create FREE sticker products for factory print run. */
+export async function seedFactoryDevice(deviceId: string, secret: string) {
+  const id = deviceId.trim();
+  const secretHash = hashDeviceSecret(secret);
+  const existing = await prisma.device.findUnique({ where: { id } });
+  if (existing) {
+    return { ok: true as const, device: toPublicDevice(existing), created: false };
+  }
   const created = await prisma.device.create({
     data: {
       id,
       secretHash,
       status: DeviceStatus.FREE,
-      lastSeenAt: new Date(),
     },
   });
   return { ok: true as const, device: toPublicDevice(created), created: true };
+}
+
+export async function listDevicesForOwner(ownerId: string) {
+  const rows = await prisma.device.findMany({
+    where: { ownerId },
+    orderBy: { claimedAt: "desc" },
+  });
+  return rows.map(toPublicDevice);
 }
 
 /**

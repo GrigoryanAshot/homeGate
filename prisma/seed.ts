@@ -8,31 +8,37 @@ function hash(secret: string) {
 }
 
 /** Demo factory units — QR payload: smartgate://pair?id=...&s=... */
-const SEED = [
-  {
-    id: "demo-gate-001",
-    secret: "secret-demo-001",
-    status: "FREE",
-    ownerId: null as string | null,
-    name: null as string | null,
-  },
-  {
-    id: "demo-gate-002",
-    secret: "secret-demo-002",
-    status: "FREE",
-    ownerId: null,
-    name: null,
-  },
-  {
-    id: "demo-gate-busy",
-    secret: "secret-demo-busy",
-    status: "BUSY",
-    ownerId: "other-owner",
-    name: "Someone else's gate",
-  },
-];
-
 async function main() {
+  const other = await prisma.user.upsert({
+    where: { email: "other-owner@example.com" },
+    create: { email: "other-owner@example.com", name: "Other owner" },
+    update: {},
+  });
+
+  const SEED = [
+    {
+      id: "demo-gate-001",
+      secret: "secret-demo-001",
+      status: "FREE",
+      ownerId: null as string | null,
+      name: null as string | null,
+    },
+    {
+      id: "demo-gate-002",
+      secret: "secret-demo-002",
+      status: "FREE",
+      ownerId: null,
+      name: null,
+    },
+    {
+      id: "demo-gate-busy",
+      secret: "secret-demo-busy",
+      status: "BUSY",
+      ownerId: other.id,
+      name: "Someone else's gate",
+    },
+  ];
+
   for (const row of SEED) {
     await prisma.device.upsert({
       where: { id: row.id },

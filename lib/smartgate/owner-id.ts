@@ -1,6 +1,7 @@
+/** @deprecated Prefer signed-in AuthProvider user.id */
 const OWNER_STORAGE_KEY = "smartgate-owner-id";
 
-/** Local stand-in for a real user account until auth ships. */
+/** Legacy local id — claim now requires email profile session. */
 export function getOrCreateOwnerId(): string {
   if (typeof window === "undefined") return "server";
   try {
