@@ -2,30 +2,35 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import {
   getSessionUser,
-  setSessionCookie,
+  withSessionCookie,
 } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 
-/** Fresh profile from DB (name can change after sign-in). */
 export async function GET() {
   const session = await getSessionUser();
   if (!session) {
     return NextResponse.json({ ok: true, user: null });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.id } });
-  if (!user) {
-    return NextResponse.json({ ok: true, user: null });
+  try {
+    const user = await prisma.user.findUnique({ where: { id: session.id } });
+    if (!user) {
+      return NextResponse.json({ ok: true, user: null });
+    }
+    return NextResponse.json({
+      ok: true,
+      user: { id: user.id, email: user.email, name: user.name },
+    });
+  } catch (e) {
+    console.error("[auth/me GET]", e);
+    return NextResponse.json(
+      { ok: false, error: "server_error" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({
-    ok: true,
-    user: { id: user.id, email: user.email, name: user.name },
-  });
 }
 
-/** Update display name on the signed-in profile. */
 export async function PATCH(req: Request) {
   const session = await getSessionUser();
   if (!session) {
@@ -50,19 +55,26 @@ export async function PATCH(req: Request) {
     );
   }
 
-  const user = await prisma.user.update({
-    where: { id: session.id },
-    data: { name },
-  });
+  try {
+    const user = await prisma.user.update({
+      where: { id: session.id },
+      data: { name },
+    });
 
-  await setSessionCookie({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-  });
-
-  return NextResponse.json({
-    ok: true,
-    user: { id: user.id, email: user.email, name: user.name },
-  });
+    const res = NextResponse.json({
+      ok: true,
+      user: { id: user.id, email: user.email, name: user.name },
+    });
+    return withSessionCookie(res, {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    });
+  } catch (e) {
+    console.error("[auth/me PATCH]", e);
+    return NextResponse.json(
+      { ok: false, error: "server_error" },
+      { status: 500 },
+    );
+  }
 }

@@ -185,6 +185,7 @@ export type SmartGateMessages = {
   authNameRequired: string;
   authNameSaveFailed: string;
   authNameSavedToast: string;
+  authNameSavedHint: string;
   authSignOut: string;
   authSignInTitle: string;
   authSignInHint: string;
@@ -412,6 +413,7 @@ const en: SmartGateMessages = {
   authNameRequired: "Enter your name.",
   authNameSaveFailed: "Could not save name. Try again.",
   authNameSavedToast: "Name saved",
+  authNameSavedHint: "Done. Close Settings, then add your gate with the sticker QR.",
   authSignOut: "Sign out",
   authSignInTitle: "Sign in",
   authSignInHint:
@@ -647,6 +649,8 @@ const hy: SmartGateMessages = {
   authNameRequired: "Մուտքագրեք անունը։",
   authNameSaveFailed: "Չհաջողվեց պահել անունը։",
   authNameSavedToast: "Անունը պահվեց",
+  authNameSavedHint:
+    "Պատրաստ է։ Փակեք Կարգավորումները, ապա ավելացրեք դարպասը QR‑ով։",
   authSignOut: "Դուրս գալ",
   authSignInTitle: "Մուտք",
   authSignInHint:
@@ -882,6 +886,8 @@ const ru: SmartGateMessages = {
   authNameRequired: "Введите имя.",
   authNameSaveFailed: "Не удалось сохранить имя.",
   authNameSavedToast: "Имя сохранено",
+  authNameSavedHint:
+    "Готово. Закройте настройки и добавьте ворота по QR со стикера.",
   authSignOut: "Выйти",
   authSignInTitle: "Вход",
   authSignInHint:

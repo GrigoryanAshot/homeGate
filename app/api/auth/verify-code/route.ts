@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyLoginCode } from "@/lib/auth/login";
-import { setSessionCookie } from "@/lib/auth/server";
+import { withSessionCookie } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 
@@ -20,7 +20,6 @@ export async function POST(req: Request) {
     );
   }
 
-  await setSessionCookie(result.user);
-
-  return NextResponse.json({ ok: true, user: result.user });
+  const res = NextResponse.json({ ok: true, user: result.user });
+  return withSessionCookie(res, result.user);
 }

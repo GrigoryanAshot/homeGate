@@ -169,6 +169,11 @@ export function ProfileAuthSection({
           >
             {busy ? t.authNameSaving : t.authNameSave}
           </button>
+          {user.name && !nameDirty && (
+            <p className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold leading-relaxed text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-100">
+              {t.authNameSavedHint}
+            </p>
+          )}
           {!user.name && (
             <p className="mt-2 text-xs leading-relaxed text-amber-800 dark:text-amber-200">
               {t.authNameNeededHint}
