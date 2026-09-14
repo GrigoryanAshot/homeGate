@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getActiveShareById } from "@/lib/db/shares";
 import { inviteAllowStatus } from "@/lib/smartgate/acl-mqtt";
 import {
   checkOrBindInviteDevice,
@@ -33,18 +34,28 @@ export async function GET(req: Request) {
     );
   }
 
-  // Only block when ACL was read successfully and id is missing.
-  // MQTT timeout / auth errors must NOT look like "owner removed access".
-  const allow = await inviteAllowStatus(
-    result.payload.id,
-    undefined,
-    result.payload.gateId,
-  );
-  if (allow === "no") {
-    return NextResponse.json(
-      { valid: false, reason: "revoked" },
-      { status: 403 },
+  // DB is source of truth when the share exists (per-gate isolation).
+  const dbShare = await getActiveShareById(result.payload.id);
+  if (dbShare) {
+    if (dbShare.deviceId !== result.payload.gateId) {
+      return NextResponse.json(
+        { valid: false, reason: "revoked" },
+        { status: 403 },
+      );
+    }
+  } else {
+    // Legacy invite (pre-DB): only block when ACL was read and id is missing.
+    const allow = await inviteAllowStatus(
+      result.payload.id,
+      undefined,
+      result.payload.gateId,
     );
+    if (allow === "no") {
+      return NextResponse.json(
+        { valid: false, reason: "revoked" },
+        { status: 403 },
+      );
+    }
   }
 
   if (result.payload.rule.type !== "unlimited") {

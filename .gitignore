@@ -29,3 +29,5 @@ node_modules/
 .next/
 out/
 tsconfig.tsbuildinfo
+.vercel
+.env*.local

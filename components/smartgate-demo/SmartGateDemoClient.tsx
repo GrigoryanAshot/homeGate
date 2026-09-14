@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
-import { clearControllers } from "@/lib/smartgate/controllers-store";
+import { clearControllersForGate } from "@/lib/smartgate/controllers-store";
 import type { GateCommand, GateState } from "@/lib/smartgate/types";
 import { getMqttConfig } from "@/lib/smartgate/types";
 import { AddGateScanModal } from "./AddGateScanModal";
@@ -18,7 +18,7 @@ import { AuthProvider } from "./AuthProvider";
 
 function SmartGateDemoInner() {
   const { t } = useLocale();
-  const { selectedGateId } = useGates();
+  const { selectedGateId, selectGate, removeGate } = useGates();
   const [view, setView] = useState<DemoView>("control");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -30,7 +30,6 @@ function SmartGateDemoInner() {
   useEffect(() => {
     try {
       window.localStorage.removeItem("smartgate-presentation");
-      // Face ID disabled for now — clear any leftover lock
       window.localStorage.removeItem("smartgate-biometric-enabled");
       window.localStorage.removeItem("smartgate-biometric-cred");
       window.localStorage.removeItem("smartgate-biometric-unlocked");
@@ -69,16 +68,16 @@ function SmartGateDemoInner() {
     [sendCommand, showToast, t.toastCommandFailed],
   );
 
-  /** SoftAP again + revoke every shared invite (no physical BOOT needed). */
-  const handleWifiReset = useCallback(() => {
+  const clearSharesForGate = useCallback((gateId: string) => {
+    clearControllersForGate(gateId);
     const mqtt = getMqttConfig();
-    clearControllers();
     void fetch("/api/invites", {
       method: "DELETE",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         clearAll: true,
-        gateId: selectedGateId,
+        gateId,
         mqtt: {
           host: mqtt.host,
           username: mqtt.username,
@@ -88,10 +87,38 @@ function SmartGateDemoInner() {
         },
       }),
     }).catch(() => {
-      /* local list already cleared; ACL best-effort */
+      /* best-effort */
     });
-    return sendWifiReset();
-  }, [sendWifiReset, selectedGateId]);
+  }, []);
+
+  /** SoftAP again + revoke shared invites for THIS gate only. */
+  const handleWifiReset = useCallback(
+    (gateId?: string) => {
+      const id = gateId ?? selectedGateId;
+      clearSharesForGate(id);
+      return sendWifiReset(id);
+    },
+    [sendWifiReset, selectedGateId, clearSharesForGate],
+  );
+
+  const handleRemoveGate = useCallback(
+    async (gateId: string) => {
+      clearSharesForGate(gateId);
+      // SoftAP reset only if this gate is the one currently online
+      if (gateId === selectedGateId && mqttConfigured && connection === "online") {
+        sendWifiReset(gateId);
+      }
+      await removeGate(gateId);
+    },
+    [
+      clearSharesForGate,
+      selectedGateId,
+      mqttConfigured,
+      connection,
+      sendWifiReset,
+      removeGate,
+    ],
+  );
 
   return (
     <div className="app-shell bg-gate-bg text-gate-ink">
@@ -104,7 +131,7 @@ function SmartGateDemoInner() {
           onSettingsOpenChange={setSettingsOpen}
           onToast={showToast}
           onMqttSaved={() => setMqttEpoch((n) => n + 1)}
-          onWifiReset={handleWifiReset}
+          onWifiReset={() => handleWifiReset()}
           mqttOnline={mqttConfigured && connection === "online"}
         />
 
@@ -120,6 +147,13 @@ function SmartGateDemoInner() {
               <GateCardsRow
                 onAddGate={() => setScanOpen(true)}
                 connection={connection}
+                mqttOnline={mqttConfigured && connection === "online"}
+                onResetGate={(id) => {
+                  selectGate(id);
+                  return handleWifiReset(id);
+                }}
+                onRemoveGate={handleRemoveGate}
+                onToast={showToast}
               />
               <GateControlPanel
                 busy={busy}

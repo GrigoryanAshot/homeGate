@@ -14,8 +14,8 @@ import {
 } from "@/lib/smartgate/controllers";
 import {
   CONTROLLERS_CHANGED_EVENT,
-  loadControllers,
-  saveControllers,
+  loadControllersForGate,
+  saveControllersForGate,
 } from "@/lib/smartgate/controllers-store";
 import type {
   ControllerAccessRule,
@@ -25,6 +25,7 @@ import type {
 import { getMqttConfig } from "@/lib/smartgate/types";
 import { useLocale } from "./LocaleProvider";
 import { useGates } from "./GatesProvider";
+import { useAuth } from "./AuthProvider";
 import { AlarmWheelTimePicker, TIME_NOW } from "./WheelTimePicker";
 import { BackButton } from "./BackButton";
 
@@ -187,25 +188,74 @@ export function ControllersPanel({
   onToast?: (message: string) => void;
 }) {
   const { locale, t } = useLocale();
-  const { selectedGateId } = useGates();
+  const { selectedGateId, selectedGate } = useGates();
+  const { user } = useAuth();
   const [panelView, setPanelView] = useState<PanelView>("list");
   const [controllers, setControllers] = useState<GateController[]>([]);
   const [history] = useState<GateAccessHistoryEntry[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const readyToPersist = useRef(false);
+  const gateIdRef = useRef(selectedGateId);
 
   useEffect(() => {
-    setControllers(loadControllers());
-    // Next controllers change (user edits) may persist; skip the hydrate write
-    const t = window.setTimeout(() => {
+    gateIdRef.current = selectedGateId;
+    readyToPersist.current = false;
+    setControllers(loadControllersForGate(selectedGateId));
+    setPanelView("list");
+    setEditingId(null);
+
+    let cancelled = false;
+    async function hydrateFromServer() {
+      if (!user || selectedGateId.startsWith("gate-")) return;
+      try {
+        const res = await fetch(
+          `/api/invites?gateId=${encodeURIComponent(selectedGateId)}`,
+          { credentials: "include" },
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          shares?: {
+            id: string;
+            name: string;
+            rule: ControllerAccessRule;
+            grantedAt: number;
+          }[];
+          source?: string;
+        };
+        if (data.source !== "db" || !Array.isArray(data.shares)) return;
+        if (gateIdRef.current !== selectedGateId) return;
+        const list = data.shares.map((s) => ({
+          id: s.id,
+          name: s.name,
+          rule: s.rule,
+          grantedAt: s.grantedAt,
+        }));
+        setControllers(list);
+        saveControllersForGate(selectedGateId, list);
+      } catch {
+        /* keep local */
+      }
+    }
+    void hydrateFromServer();
+
+    const tmr = window.setTimeout(() => {
       readyToPersist.current = true;
     }, 0);
-    return () => window.clearTimeout(t);
-  }, []);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(tmr);
+    };
+  }, [selectedGateId, user]);
 
   useEffect(() => {
-    const onExternalClear = () => {
+    const onExternalClear = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ gateId?: string }>).detail;
+      const clearedId = detail?.gateId;
+      if (clearedId && clearedId !== "*" && clearedId !== selectedGateId) {
+        return;
+      }
       readyToPersist.current = false;
-      setControllers([]);
+      setControllers(loadControllersForGate(selectedGateId));
       setPanelView("list");
       window.setTimeout(() => {
         readyToPersist.current = true;
@@ -214,12 +264,12 @@ export function ControllersPanel({
     window.addEventListener(CONTROLLERS_CHANGED_EVENT, onExternalClear);
     return () =>
       window.removeEventListener(CONTROLLERS_CHANGED_EVENT, onExternalClear);
-  }, []);
+  }, [selectedGateId]);
 
   useEffect(() => {
     if (!readyToPersist.current) return;
-    saveControllers(controllers);
-  }, [controllers]);
+    saveControllersForGate(selectedGateId, controllers);
+  }, [controllers, selectedGateId]);
 
   const [name, setName] = useState("");
   const [preset, setPreset] = useState<RulePreset>("unlimited");
@@ -231,7 +281,6 @@ export function ControllersPanel({
   const [shareName, setShareName] = useState("");
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const qrWrapRef = useRef<HTMLDivElement>(null);
 
   const minEndMinutes = useMemo(() => {
@@ -298,6 +347,7 @@ export function ControllersPanel({
         const mqtt = getMqttConfig();
         await fetch("/api/invites", {
           method: "DELETE",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             id,
@@ -323,6 +373,10 @@ export function ControllersPanel({
     const trimmed = name.trim();
     if (!trimmed) return;
     if (preset === "range" && (!rangeFrom || !rangeTo)) return;
+    if (!selectedGateId.startsWith("gate-") && !user) {
+      onToast?.(t.authRequiredToClaim);
+      return;
+    }
 
     const rule = buildRule(
       preset,
@@ -338,6 +392,7 @@ export function ControllersPanel({
     try {
       const res = await fetch("/api/invites", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           gateId: selectedGateId,
@@ -408,18 +463,60 @@ export function ControllersPanel({
       rangeTo,
       rangeToTime,
     );
+    const mqtt = getMqttConfig();
+    const id = editingId;
 
-    setControllers((prev) =>
-      prev.map((c) =>
-        c.id === editingId ? { ...c, name: trimmed, rule } : c,
-      ),
-    );
-    setEditingId(null);
-    setName("");
-    setPreset("unlimited");
-    resetRangeFields();
-    setPanelView("list");
-    onToast?.(t.toastAccessUpdated);
+    void (async () => {
+      setSaving(true);
+      try {
+        const res = await fetch("/api/invites", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id,
+            gateId: selectedGateId,
+            name: trimmed,
+            rule,
+            mqtt: {
+              host: mqtt.host,
+              username: mqtt.username,
+              password: mqtt.password,
+              port: mqtt.port,
+              path: mqtt.path,
+            },
+          }),
+        });
+
+        let url: string | undefined;
+        if (res.ok) {
+          const data = (await res.json()) as { url?: string };
+          url = data.url;
+        }
+
+        setControllers((prev) =>
+          prev.map((c) =>
+            c.id === id ? { ...c, name: trimmed, rule } : c,
+          ),
+        );
+        setEditingId(null);
+        setName("");
+        setPreset("unlimited");
+        resetRangeFields();
+        if (url) {
+          setShareUrl(url);
+          setShareName(trimmed);
+          setPanelView("share");
+        } else {
+          setPanelView("list");
+        }
+        onToast?.(t.toastAccessUpdated);
+      } catch {
+        onToast?.(t.toastCommandFailed);
+      } finally {
+        setSaving(false);
+      }
+    })();
   }
 
   function openPreviewGuest() {
@@ -794,6 +891,9 @@ export function ControllersPanel({
           <IconUsers className="h-5 w-5" />
         </div>
         <h2 className="text-lg font-bold text-gate-ink">{t.controllersTitle}</h2>
+        <p className="mt-1 text-xs font-semibold text-blue-700">
+          {selectedGate?.name}
+        </p>
         <p className="mt-1 text-xs leading-relaxed text-gate-muted">
           {t.controllersIntro}
         </p>

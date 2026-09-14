@@ -73,7 +73,7 @@ inline void deviceRebuildTopics() {
     MQTT_TOPIC_PREFIX,
     id.c_str()
   );
-  snprintf(deviceMqttClientIdBuf(), 48, "hg-%s", chip.c_str());
+  snprintf(deviceMqttClientIdBuf(), 48, "%s", chip.c_str());
 }
 
 inline void deviceLoadIdentity() {

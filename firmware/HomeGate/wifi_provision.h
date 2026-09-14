@@ -54,12 +54,14 @@ inline void wifiClearCreds() {
   Serial.println("WiFi credentials cleared (NVS)");
 }
 
+/** Simple STA connect — same style as the build that worked on this router. */
 inline bool wifiTryConnectSta(const String &ssid, const String &pass, uint32_t timeoutMs) {
   if (ssid.length() == 0) return false;
 
   Serial.print("STA connect: ");
   Serial.println(ssid);
   WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
   WiFi.setHostname(deviceChipIdRef().c_str());
   WiFi.begin(ssid.c_str(), pass.c_str());
 

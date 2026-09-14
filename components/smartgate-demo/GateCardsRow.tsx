@@ -4,17 +4,26 @@ import { cn } from "@/lib/utils";
 import { IconGate } from "@/components/ui/icons";
 import type { ConnectionStatus } from "@/lib/smartgate/types";
 import { ConnectionLed } from "./ConnectionBadge";
+import { GateCardMenu } from "./GateCardMenu";
 import { useGates } from "./GatesProvider";
 import { useLocale } from "./LocaleProvider";
 
 export function GateCardsRow({
   onAddGate,
   connection,
+  mqttOnline,
+  onResetGate,
+  onRemoveGate,
+  onToast,
 }: {
   onAddGate: () => void;
   connection: ConnectionStatus;
+  mqttOnline: boolean;
+  onResetGate: (gateId: string) => boolean;
+  onRemoveGate: (gateId: string) => Promise<void>;
+  onToast?: (message: string) => void;
 }) {
-  const { gates, selectedGateId, selectGate } = useGates();
+  const { gates, selectedGateId, selectGate, renameGate } = useGates();
   const { t } = useLocale();
 
   return (
@@ -27,35 +36,47 @@ export function GateCardsRow({
         {gates.map((gate) => {
           const selected = gate.id === selectedGateId;
           return (
-            <button
+            <div
               key={gate.id}
-              type="button"
-              onClick={() => selectGate(gate.id)}
               className={cn(
-                "relative flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-2xl border-2 px-3 py-3 text-center transition active:scale-[0.98]",
+                "relative flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-2xl border-2 px-3 py-3 text-center transition",
                 selected
                   ? "border-blue-400 bg-blue-50 shadow-sm dark:bg-blue-500/15"
-                  : "border-gate-line bg-gate-surface hover:border-blue-200 hover:bg-blue-50/40 dark:hover:bg-blue-500/10",
+                  : "border-gate-line bg-gate-surface",
               )}
             >
+              <GateCardMenu
+                gate={gate}
+                mqttOnline={mqttOnline}
+                onRename={renameGate}
+                onReset={onResetGate}
+                onRemove={onRemoveGate}
+                onToast={onToast}
+              />
               <ConnectionLed
-                status={connection}
+                status={selected ? connection : "offline"}
                 className="pointer-events-none absolute right-2.5 top-2.5"
               />
-              <span
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl",
-                  selected
-                    ? "bg-blue-500 text-white"
-                    : "bg-slate-100 text-gate-muted",
-                )}
+              <button
+                type="button"
+                onClick={() => selectGate(gate.id)}
+                className="flex w-full flex-col items-center gap-1.5 pt-4 active:scale-[0.98]"
               >
-                <IconGate className="h-5 w-5" />
-              </span>
-              <span className="line-clamp-2 text-sm font-bold leading-tight text-gate-ink">
-                {gate.name}
-              </span>
-            </button>
+                <span
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl",
+                    selected
+                      ? "bg-blue-500 text-white"
+                      : "bg-slate-100 text-gate-muted",
+                  )}
+                >
+                  <IconGate className="h-5 w-5" />
+                </span>
+                <span className="line-clamp-2 text-sm font-bold leading-tight text-gate-ink">
+                  {gate.name}
+                </span>
+              </button>
+            </div>
           );
         })}
 
@@ -74,4 +95,3 @@ export function GateCardsRow({
     </div>
   );
 }
-

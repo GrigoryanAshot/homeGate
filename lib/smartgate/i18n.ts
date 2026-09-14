@@ -32,6 +32,15 @@ export type SmartGateMessages = {
   deviceQrInvalid: string;
   deviceClaimFailed: string;
   toastGateAdded: (name: string) => string;
+  gateMenuHint: string;
+  gateRenameAction: string;
+  gateRenameLabel: string;
+  gateResetAction: string;
+  gateResetConfirm: (name: string) => string;
+  gateRemoveAction: string;
+  gateRemoveConfirm: (name: string) => string;
+  toastGateRenamed: string;
+  toastGateRemoved: string;
   guestViewSubtitle: string;
   previewGuestView: string;
   changeAccess: string;
@@ -244,6 +253,17 @@ const en: SmartGateMessages = {
   deviceQrInvalid: "Invalid QR / pair code.",
   deviceClaimFailed: "Could not claim device. Try again.",
   toastGateAdded: (name) => `${name} added`,
+  gateMenuHint: "This gate only",
+  gateRenameAction: "Rename gate",
+  gateRenameLabel: "Gate name",
+  gateResetAction: "Reset Wi‑Fi & clear shares",
+  gateResetConfirm: (name) =>
+    `Reset “${name}” only? Clears this gate’s Wi‑Fi and its shared users. Other gates are not touched.`,
+  gateRemoveAction: "Remove gate from my account",
+  gateRemoveConfirm: (name) =>
+    `Remove “${name}” from your account? Its shared users are cleared. Other gates stay.`,
+  toastGateRenamed: "Gate renamed",
+  toastGateRemoved: "Gate removed",
   guestViewSubtitle: "Shared access — open & close only",
   previewGuestView: "Preview guest screen",
   changeAccess: "Change",
@@ -261,7 +281,7 @@ const en: SmartGateMessages = {
   tabShareHint: "Who can control the gate",
   controllersTitle: "Other controllers",
   controllersIntro:
-    "People who can open or close your gate from their phone.",
+    "People who can open this gate. Each gate has its own member list — they never mix.",
   addController: "Add person",
   removeController: "Remove",
   viewHistory: "Open / close history",
@@ -383,12 +403,12 @@ const en: SmartGateMessages = {
   wifiSetupStep4: "Choose your home Wi‑Fi from the list, type the password → Save & Connect.",
   wifiSetupStep5: "Phone rejoins home Wi‑Fi. LED steady, then scan the device QR in the app.",
   wifiSetupReset:
-    "Wrong Wi‑Fi or full reset? In Settings tap “Reset gate setup”. Removes shared members and SoftAP comes back (gate must be online). BOOT hold ~3.5s is only a backup if the box is offline.",
-  wifiResetAction: "Reset gate setup",
+    "Wrong Wi‑Fi? Use the gear on that gate card (or Settings → Reset). Clears only that gate’s shares and brings SoftAP back. Other gates stay.",
+  wifiResetAction: "Reset selected gate setup",
   wifiResetConfirm:
-    "Reset like first setup? This clears gate Wi‑Fi, removes all shared members, and you’ll join TouchGate-XXXX to pick home Wi‑Fi again.",
+    "Reset the selected gate only? Clears its Wi‑Fi and its shared members. Other gates are not touched.",
   wifiResetSentToast:
-    "Reset sent — shared access cleared. Join TouchGate-XXXX, open 192.168.4.1",
+    "Reset sent for this gate — join TouchGate-XXXX, open 192.168.4.1",
   wifiResetNeedMqtt: "Connect to the gate (MQTT) first, then reset.",
   mqttSettingsTitle: "MQTT (gate connection)",
   mqttSettingsHint:
@@ -482,6 +502,17 @@ const hy: SmartGateMessages = {
   deviceQrInvalid: "Անվավեր QR / զուգավորման կոդ։",
   deviceClaimFailed: "Չհաջողվեց կապել սարքը։ Փորձեք նորից։",
   toastGateAdded: (name) => `${name} ավելացվեց`,
+  gateMenuHint: "Միայն այս դարպասը",
+  gateRenameAction: "Վերանվանել",
+  gateRenameLabel: "Դարպասի անուն",
+  gateResetAction: "Վերակայել Wi‑Fi և մաքրել բաժանումները",
+  gateResetConfirm: (name) =>
+    `Վերակայե՞լ միայն «${name}»-ը։ Կջնջվի այս դարպասի Wi‑Fi‑ը և իր բաժանված օգտատերերը։ Մյուս դարպասները չեն փոխվի։`,
+  gateRemoveAction: "Հեռացնել իմ հաշվից",
+  gateRemoveConfirm: (name) =>
+    `Հեռացնե՞լ «${name}»-ը ձեր հաշվից։ Կմաքրվեն միայն իր բաժանված օգտատերերը։ Մյուս դարպասները կմնան։`,
+  toastGateRenamed: "Անունը փոխվեց",
+  toastGateRemoved: "Դարպասը հեռացվեց",
   guestViewSubtitle: "Համօգտագործված մուտք — միայն բացել/փակել",
   previewGuestView: "Տեսնել հյուրի էկրանը",
   changeAccess: "Փոփոխել",
@@ -499,7 +530,7 @@ const hy: SmartGateMessages = {
   tabShareHint: "Ով կարող է կառավարել",
   controllersTitle: "Այլ կառավարողներ",
   controllersIntro:
-    "Մարդիկ, ովքեր կարող են բացել | փակել դարպասն իրենց հեռախոսով",
+    "Մարդիկ, ովքեր կարող են բացել այս դարպասը։ Յուրաքանչյուր դարպաս ունի իր անդամների ցանկը — չեն խառնվում։",
   addController: "Ավելացնել",
   removeController: "Հեռացնել",
   viewHistory: "Բացելու/Փակելու պատմություն",
@@ -621,12 +652,12 @@ const hy: SmartGateMessages = {
   wifiSetupStep4: "Ցանկից ընտրեք տան Wi‑Fi‑ը, մուտքագրեք գաղտնաբառը → Save & Connect։",
   wifiSetupStep5: "Հեռախոսը վերադարձրեք տան Wi‑Fi։ LED-ը կայուն է, ապա սկանավորեք QR-ը հավելվածում։",
   wifiSetupReset:
-    "Սխալ Wi‑Fi կամ լրիվ վերակայո՞ւմ։ Կարգավորումներում՝ «Վերակայել դարպասի կարգավորումը»։ Կջնջվեն բաժանված մուտքերը, SoftAP կվերադառնա (դուռը պետք է online լինի)։ BOOT ~3.5 վրկ՝ միայն եթե տուփը offline է։",
-  wifiResetAction: "Վերակայել դարպասի կարգավորումը",
+    "Սխալ Wi‑Fi՞։ Դարպասի քարտի ⚙ կամ Կարգավորումներ → Վերակայել։ Մաքրում է միայն այդ դարպասի բաժանումները և SoftAP։ Մյուս դարպասները մնում են։",
+  wifiResetAction: "Վերակայել ընտրված դարպասը",
   wifiResetConfirm:
-    "Վերակայե՞լ ինչպես առաջին անգամ։ Կջնջվի Wi‑Fi‑ը, կհեռացվեն բոլոր բաժանված անդամները, ապա միացեք TouchGate-XXXX և նորից ընտրեք ցանցը։",
+    "Վերակայե՞լ միայն ընտրված դարպասը։ Կջնջվի նրա Wi‑Fi‑ը և իր բաժանված անդամները։ Մյուս դարպասները չեն փոխվի։",
   wifiResetSentToast:
-    "Reset ուղարկվեց — բաժանումները մաքրվեցին։ Միացեք TouchGate-XXXX, բացեք 192.168.4.1",
+    "Reset ուղարկվեց այս դարպասին — միացեք TouchGate-XXXX, բացեք 192.168.4.1",
   wifiResetNeedMqtt: "Նախ միացեք դռանը (MQTT), ապա վերակայեք։",
   mqttSettingsTitle: "MQTT (դռան կապ)",
   mqttSettingsHint:
@@ -722,6 +753,17 @@ const ru: SmartGateMessages = {
   deviceQrInvalid: "Неверный QR / код привязки.",
   deviceClaimFailed: "Не удалось привязать устройство. Попробуйте снова.",
   toastGateAdded: (name) => `${name} добавлены`,
+  gateMenuHint: "Только эти ворота",
+  gateRenameAction: "Переименовать",
+  gateRenameLabel: "Название ворот",
+  gateResetAction: "Сбросить Wi‑Fi и доступы",
+  gateResetConfirm: (name) =>
+    `Сбросить только «${name}»? Очистится Wi‑Fi этих ворот и их общие пользователи. Другие ворота не затронуты.`,
+  gateRemoveAction: "Удалить из моего аккаунта",
+  gateRemoveConfirm: (name) =>
+    `Удалить «${name}» из аккаунта? Очистятся только их общие пользователи. Другие ворота останутся.`,
+  toastGateRenamed: "Название изменено",
+  toastGateRemoved: "Ворота удалены",
   guestViewSubtitle: "Общий доступ — только открыть/закрыть",
   previewGuestView: "Экран гостя",
   changeAccess: "Изменить",
@@ -739,7 +781,7 @@ const ru: SmartGateMessages = {
   tabShareHint: "Кто может управлять",
   controllersTitle: "Другие пользователи",
   controllersIntro:
-    "Люди, которые могут открывать или закрывать ворота со своего телефона.",
+    "Люди, которые могут открывать эти ворота. У каждых ворот свой список — они не смешиваются.",
   addController: "Добавить",
   removeController: "Удалить",
   viewHistory: "История открытий",
@@ -861,12 +903,12 @@ const ru: SmartGateMessages = {
   wifiSetupStep4: "Выберите домашний Wi‑Fi из списка, введите пароль → Save & Connect.",
   wifiSetupStep5: "Верните телефон в домашний Wi‑Fi. LED горит ровно — сканируйте QR в приложении.",
   wifiSetupReset:
-    "Неверный Wi‑Fi или полный сброс? В настройках — «Сбросить настройку ворот». Удалит общий доступ и вернёт SoftAP (ворота должны быть online). BOOT ~3.5 с — запасной вариант, если блок офлайн.",
-  wifiResetAction: "Сбросить настройку ворот",
+    "Неверный Wi‑Fi? Шестерёнка на карточке ворот (или Настройки → Сброс). Очищает только доступы этих ворот и SoftAP. Другие ворота остаются.",
+  wifiResetAction: "Сбросить выбранные ворота",
   wifiResetConfirm:
-    "Сбросить как при первой настройке? Очистится Wi‑Fi ворот, удалятся все общие доступы — затем подключитесь к TouchGate-XXXX и выберите сеть снова.",
+    "Сбросить только выбранные ворота? Очистится их Wi‑Fi и их общие пользователи. Другие ворота не затронуты.",
   wifiResetSentToast:
-    "Сброс отправлен — общий доступ очищен. Подключитесь к TouchGate-XXXX, откройте 192.168.4.1",
+    "Сброс отправлен для этих ворот — подключитесь к TouchGate-XXXX, откройте 192.168.4.1",
   wifiResetNeedMqtt: "Сначала подключитесь к воротам (MQTT), затем сбрасывайте.",
   mqttSettingsTitle: "MQTT (связь с воротами)",
   mqttSettingsHint:

@@ -210,10 +210,18 @@ export async function addInviteToAllowList(
 ): Promise<void> {
   const topic = topicAcl(gateId);
   const read = await readInviteAllowList(creds, gateId);
-  const allow =
-    read.status === "ok"
-      ? [...read.allow]
-      : [...(cacheGet(topic)?.allow ?? [])];
+  // Never replace ACL with a guessed list on MQTT timeout — that wiped family shares.
+  if (read.status !== "ok") {
+    const cached = cacheGet(topic);
+    if (!cached?.known) {
+      throw new Error("ACL read unavailable — refusing to overwrite");
+    }
+    const allow = [...cached.allow];
+    if (!allow.includes(id)) allow.push(id);
+    await writeInviteAllowList(allow, creds, gateId);
+    return;
+  }
+  const allow = [...read.allow];
   if (!allow.includes(id)) allow.push(id);
   await writeInviteAllowList(allow, creds, gateId);
 }
@@ -225,12 +233,20 @@ export async function removeInviteFromAllowList(
 ): Promise<void> {
   const topic = topicAcl(gateId);
   const read = await readInviteAllowList(creds, gateId);
-  const allow =
-    read.status === "ok"
-      ? [...read.allow]
-      : [...(cacheGet(topic)?.allow ?? [])];
+  if (read.status !== "ok") {
+    const cached = cacheGet(topic);
+    if (!cached?.known) {
+      throw new Error("ACL read unavailable — refusing to overwrite");
+    }
+    await writeInviteAllowList(
+      cached.allow.filter((x) => x !== id),
+      creds,
+      gateId,
+    );
+    return;
+  }
   await writeInviteAllowList(
-    allow.filter((x) => x !== id),
+    read.allow.filter((x) => x !== id),
     creds,
     gateId,
   );

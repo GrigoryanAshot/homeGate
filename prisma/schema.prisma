@@ -47,7 +47,26 @@ model Device {
   lastSeenAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  shares     GateShare[]
 
   @@index([status])
   @@index([ownerId])
+}
+
+/// Shared access for one gate only — never mixed across devices.
+model GateShare {
+  id        String    @id
+  deviceId  String
+  device    Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  name      String
+  /// JSON ControllerAccessRule
+  ruleJson  String
+  /// Signed invite token (for resend / verify)
+  token     String
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([deviceId])
+  @@index([deviceId, revokedAt])
 }

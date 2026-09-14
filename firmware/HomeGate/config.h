@@ -22,6 +22,8 @@
 #define MQTT_PORT 8883
 #define MQTT_USER "Gate1"
 #define MQTT_PASS "Ash7289..."
+// Used only when DNS returns 0.0.0.0 (some home routers break DNS for IoT)
+#define MQTT_HOST_FALLBACK_IP "46.137.47.218"
 
 // Topics: {MQTT_TOPIC_PREFIX}/{productId}/command|status
 #define MQTT_TOPIC_PREFIX "home/gate"

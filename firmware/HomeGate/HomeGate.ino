@@ -156,8 +156,8 @@ bool registerWithCloud() {
   Serial.println(url);
 
   HTTPClient http;
-  http.setConnectTimeout(2500);
-  http.setTimeout(4000);
+  http.setConnectTimeout(8000);
+  http.setTimeout(12000);
 
   bool began = false;
   WiFiClientSecure httpsClient;
@@ -165,7 +165,7 @@ bool registerWithCloud() {
 
   if (url.startsWith("https://")) {
     httpsClient.setInsecure();
-    httpsClient.setHandshakeTimeout(8);
+    httpsClient.setHandshakeTimeout(15);
     began = http.begin(httpsClient, url);
   } else {
     began = http.begin(httpClient, url);
@@ -293,10 +293,8 @@ void connectWifi() {
   syncTime();
 #endif
 
-#if ENABLE_CLOUD_REGISTER
-  lastRegisterAttempt = millis();
-  registerWithCloud();
-#endif
+  // MQTT first (opens the gate). Cloud register is best-effort later in loop —
+  // broken router DNS makes HTTPS to Vercel fail with HTTP -1.
 }
 
 const char *mqttStateText(int state) {
@@ -314,6 +312,26 @@ const char *mqttStateText(int state) {
   }
 }
 
+bool resolveMqttHost(IPAddress &ip) {
+  // Prefer hostname; if router DNS fails (0.0.0.0), use HiveMQ fallback IP.
+  ip = IPAddress(0, 0, 0, 0);
+  Serial.print("DNS ");
+  Serial.print(MQTT_HOST);
+  Serial.print(" → ");
+  const bool ok = WiFi.hostByName(MQTT_HOST, ip);
+  Serial.println(ip);
+  if (ok && !(ip[0] == 0 && ip[1] == 0 && ip[2] == 0 && ip[3] == 0)) {
+    return true;
+  }
+
+  Serial.print("DNS failed — using fallback IP ");
+  Serial.println(MQTT_HOST_FALLBACK_IP);
+  if (ip.fromString(MQTT_HOST_FALLBACK_IP)) {
+    return true;
+  }
+  return false;
+}
+
 bool connectMqtt() {
   if (!deviceHasProduct()) {
     Serial.println("MQTT skipped — no product bound");
@@ -328,11 +346,10 @@ bool connectMqtt() {
   Serial.println(TOPIC_STATUS);
 
   IPAddress ip;
-  if (!WiFi.hostByName(MQTT_HOST, ip)) {
-    Serial.println("DNS failed");
+  if (!resolveMqttHost(ip)) {
     return false;
   }
-  Serial.print("DNS OK -> ");
+  Serial.print("MQTT via IP ");
   Serial.println(ip);
 
   mqttTls.stop();
@@ -342,7 +359,8 @@ bool connectMqtt() {
   mqttTls.setHandshakeTimeout(30);
   mqttTls.setTimeout(30);
 
-  mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  // Use resolved IP — more reliable than hostname on some captive Wi‑Fi
+  mqtt.setServer(ip, MQTT_PORT);
   mqtt.setCallback(onMqttMessage);
   mqtt.setBufferSize(512);
   mqtt.setKeepAlive(45);

@@ -27,11 +27,17 @@ type GatesContextValue = {
   selectedGate: UserGate;
   selectGate: (id: string) => void;
   addGateFromScan: (name: string, deviceId?: string) => UserGate;
+  renameGate: (id: string, name: string) => Promise<boolean>;
+  removeGate: (id: string) => Promise<boolean>;
   suggestNextGateName: (locale: Locale) => string;
   refreshFromServer: () => Promise<void>;
 };
 
 const GatesContext = createContext<GatesContextValue | null>(null);
+
+function fallbackGate(): UserGate {
+  return { id: "gate-1", name: "Դարպաս 1", createdAt: Date.now() };
+}
 
 export function GatesProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -54,20 +60,29 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
         createdAt: d.claimedAt ? Date.parse(d.claimedAt) : Date.now(),
       }));
       if (remote.length === 0) return;
+
       setGates((prev) => {
-        const byId = new Map(prev.map((g) => [g.id, g]));
-        for (const g of remote) {
-          const existing = byId.get(g.id);
-          byId.set(g.id, {
-            id: g.id,
-            name: g.name,
-            createdAt: existing?.createdAt ?? g.createdAt,
-          });
-        }
-        return Array.from(byId.values());
+        const remoteIds = new Set(remote.map((g) => g.id));
+        const locals = prev.filter(
+          (g) => g.id.startsWith("gate-") && !remoteIds.has(g.id),
+        );
+        return [
+          ...remote.map((g) => {
+            const existing = prev.find((p) => p.id === g.id);
+            return {
+              id: g.id,
+              name: g.name,
+              createdAt: existing?.createdAt ?? g.createdAt,
+            };
+          }),
+          ...locals,
+        ];
       });
+
       setSelectedGateId((cur) =>
-        remote.some((g) => g.id === cur) ? cur : remote[0].id,
+        remote.some((g) => g.id === cur) || cur.startsWith("gate-")
+          ? cur
+          : remote[0].id,
       );
     } catch {
       /* keep local */
@@ -88,7 +103,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
   }, [selectedGateId]);
 
   const selectedGate = useMemo(
-    () => gates.find((g) => g.id === selectedGateId) ?? gates[0],
+    () => gates.find((g) => g.id === selectedGateId) ?? gates[0] ?? fallbackGate(),
     [gates, selectedGateId],
   );
 
@@ -113,6 +128,60 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
     [gates],
   );
 
+  const renameGate = useCallback(
+    async (id: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return false;
+
+      if (user && !id.startsWith("gate-")) {
+        try {
+          const res = await fetch(`/api/devices/${encodeURIComponent(id)}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: trimmed }),
+          });
+          if (!res.ok) return false;
+        } catch {
+          return false;
+        }
+      }
+
+      setGates((prev) =>
+        prev.map((g) => (g.id === id ? { ...g, name: trimmed } : g)),
+      );
+      return true;
+    },
+    [user],
+  );
+
+  const removeGate = useCallback(
+    async (id: string) => {
+      if (user && !id.startsWith("gate-")) {
+        try {
+          const res = await fetch(`/api/devices/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          if (!res.ok && res.status !== 404) return false;
+        } catch {
+          return false;
+        }
+      }
+
+      setGates((prev) => {
+        const next = prev.filter((g) => g.id !== id);
+        const final = next.length > 0 ? next : [fallbackGate()];
+        setSelectedGateId((cur) => (cur === id ? final[0].id : cur));
+        return final;
+      });
+      return true;
+    },
+    [user],
+  );
+
   const suggestNextGateName = useCallback(
     (locale: Locale) => nextGateDefaultName(gates.length, locale),
     [gates.length],
@@ -125,6 +194,8 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       selectedGate,
       selectGate,
       addGateFromScan,
+      renameGate,
+      removeGate,
       suggestNextGateName,
       refreshFromServer,
     }),
@@ -134,6 +205,8 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       selectedGate,
       selectGate,
       addGateFromScan,
+      renameGate,
+      removeGate,
       suggestNextGateName,
       refreshFromServer,
     ],
