@@ -15,6 +15,7 @@ import { GatesProvider, useGates } from "./GatesProvider";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
 import { ThemeProvider } from "./ThemeProvider";
 import { AuthProvider } from "./AuthProvider";
+import { AuthWelcomeGate } from "./AuthWelcomeGate";
 
 function SmartGateDemoInner() {
   const { t } = useLocale();
@@ -184,9 +185,11 @@ export function SmartGateDemoClient() {
     <LocaleProvider>
       <ThemeProvider>
         <AuthProvider>
-          <GatesProvider>
-            <SmartGateDemoInner />
-          </GatesProvider>
+          <AuthWelcomeGate>
+            <GatesProvider>
+              <SmartGateDemoInner />
+            </GatesProvider>
+          </AuthWelcomeGate>
         </AuthProvider>
       </ThemeProvider>
     </LocaleProvider>

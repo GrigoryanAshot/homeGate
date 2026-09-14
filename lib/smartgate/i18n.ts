@@ -217,6 +217,8 @@ export type SmartGateMessages = {
   authSignedInToast: string;
   authSignedOutToast: string;
   authRequiredToClaim: string;
+  authWelcomeHint: string;
+  authWelcomeNameRequired: string;
   gateStates: Record<GateState, string>;
 };
 
@@ -435,11 +437,11 @@ const en: SmartGateMessages = {
   authNameRequired: "Enter your name.",
   authNameSaveFailed: "Could not save name. Try again.",
   authNameSavedToast: "Name saved",
-  authNameSavedHint: "Done. Close Settings, then add your gate with the sticker QR.",
+  authNameSavedHint: "Done. You can add your gate with the sticker QR.",
   authSignOut: "Sign out",
-  authSignInTitle: "Sign in",
+  authSignInTitle: "Sign in to continue",
   authSignInHint:
-    "Enter your email (Gmail, iCloud, Outlook, …). We’ll send a 6‑digit code — no password.",
+    "Gates and shares are saved to your email. Enter Gmail, iCloud, Outlook, or any email — we’ll send a 6‑digit code (no password).",
   authEmailPlaceholder: "you@gmail.com",
   authSendCode: "Send login code",
   authSending: "Sending…",
@@ -458,7 +460,10 @@ const en: SmartGateMessages = {
   authCodeSentToast: "Check your email for the code",
   authSignedInToast: "Signed in",
   authSignedOutToast: "Signed out",
-  authRequiredToClaim: "Sign in from Settings first, then claim this gate.",
+  authRequiredToClaim: "Sign in first, then claim this gate.",
+  authWelcomeHint:
+    "Create your profile first — then add gates, control them, and share with family.",
+  authWelcomeNameRequired: "Save your name above to open the app.",
   gateStates: {
     closed: "Gate is closed",
     open: "Gate is open",
@@ -687,7 +692,7 @@ const hy: SmartGateMessages = {
   authNameSavedHint:
     "Պատրաստ է։ Փակեք Կարգավորումները, ապա ավելացրեք դարպասը QR‑ով։",
   authSignOut: "Դուրս գալ",
-  authSignInTitle: "Մուտք",
+  authSignInTitle: "Մուտք՝ շարունակելու համար",
   authSignInHint:
     "Մուտքագրեք էլ․ փոստը (Gmail, iCloud, Outlook…)։ Կուղարկենք 6‑անիշ կոդ — գաղտնաբառ պետք չէ։",
   authEmailPlaceholder: "you@gmail.com",
@@ -709,7 +714,10 @@ const hy: SmartGateMessages = {
   authCodeSentToast: "Ստուգեք էլ․ փոստը կոդի համար",
   authSignedInToast: "Մուտք գործեցիք",
   authSignedOutToast: "Դուրս եկաք",
-  authRequiredToClaim: "Նախ Settings‑ից մուտք գործեք, ապա կապեք դարպասը։",
+  authRequiredToClaim: "Նախ մուտք գործեք, ապա կապեք դարպասը։",
+  authWelcomeHint:
+    "Նախ ստեղծեք պրոֆիլ — հետո ավելացրեք դարպասները, կառավարեք և կիսվեք ընտանիքի հետ։",
+  authWelcomeNameRequired: "Պահպանեք անունը վերևում՝ հավելվածը բացելու համար։",
   gateStates: {
     closed: "Դարպասը փակ է",
     open: "Դարպասը բաց է",
@@ -938,7 +946,7 @@ const ru: SmartGateMessages = {
   authNameSavedHint:
     "Готово. Закройте настройки и добавьте ворота по QR со стикера.",
   authSignOut: "Выйти",
-  authSignInTitle: "Вход",
+  authSignInTitle: "Войдите, чтобы продолжить",
   authSignInHint:
     "Введите email (Gmail, iCloud, Outlook…). Пришлём 6‑значный код — без пароля.",
   authEmailPlaceholder: "you@gmail.com",
@@ -960,7 +968,10 @@ const ru: SmartGateMessages = {
   authCodeSentToast: "Проверьте почту — там код",
   authSignedInToast: "Вы вошли",
   authSignedOutToast: "Вы вышли",
-  authRequiredToClaim: "Сначала войдите в Settings, затем привяжите ворота.",
+  authRequiredToClaim: "Сначала войдите, затем привяжите ворота.",
+  authWelcomeHint:
+    "Сначала создайте профиль — потом добавляйте ворота, управляйте и делитесь с семьёй.",
+  authWelcomeNameRequired: "Сохраните имя выше, чтобы открыть приложение.",
   gateStates: {
     closed: "Ворота закрыты",
     open: "Ворота открыты",
