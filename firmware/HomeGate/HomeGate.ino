@@ -450,13 +450,6 @@ bool connectMqtt() {
   Serial.print(" / ");
   Serial.println(TOPIC_STATUS);
 
-  IPAddress ip;
-  if (!resolveMqttHost(ip)) {
-    return false;
-  }
-  Serial.print("MQTT via IP ");
-  Serial.println(ip);
-
   mqttTls.stop();
   delay(200);
 
@@ -464,8 +457,8 @@ bool connectMqtt() {
   mqttTls.setHandshakeTimeout(30);
   mqttTls.setTimeout(30);
 
-  // Use resolved IP — more reliable than hostname on some captive Wi‑Fi
-  mqtt.setServer(ip, MQTT_PORT);
+  // Prefer hostname (TLS SNI). IP-only breaks many cloud brokers including HiveMQ.
+  mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setCallback(onMqttMessage);
   mqtt.setBufferSize(512);
   mqtt.setKeepAlive(45);
@@ -479,8 +472,22 @@ bool connectMqtt() {
   Serial.println(MQTT_CLIENT_ID_RUNTIME);
   Serial.flush();
 
-  const bool ok =
-    mqtt.connect(MQTT_CLIENT_ID_RUNTIME, MQTT_USER, MQTT_PASS);
+  bool ok = mqtt.connect(MQTT_CLIENT_ID_RUNTIME, MQTT_USER, MQTT_PASS);
+
+  // Fallback: DNS broken on some routers — try known IP (may fail SNI)
+  if (!ok) {
+    IPAddress ip;
+    if (resolveMqttHost(ip)) {
+      Serial.print("MQTT hostname failed — retry via IP ");
+      Serial.println(ip);
+      mqttTls.stop();
+      delay(200);
+      mqttTls.setInsecure();
+      mqtt.setServer(ip, MQTT_PORT);
+      ok = mqtt.connect(MQTT_CLIENT_ID_RUNTIME, MQTT_USER, MQTT_PASS);
+    }
+  }
+
   if (!ok) {
     const int st = mqtt.state();
     Serial.print("MQTT failed, state=");
