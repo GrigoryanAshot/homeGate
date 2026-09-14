@@ -161,11 +161,17 @@ export async function unclaimDeviceForOwner(ownerId: string, deviceId: string) {
         status: "FREE",
         ownerId: null,
         name: null,
+        chipId: null,
         claimedAt: null,
         lastSeenAt: new Date(),
       },
     }),
   ]);
+
+  if (device.chipId) {
+    await prisma.chipBindOffer.deleteMany({ where: { chipId: device.chipId } });
+    await prisma.chipPending.deleteMany({ where: { chipId: device.chipId } });
+  }
 
   return { ok: true as const };
 }

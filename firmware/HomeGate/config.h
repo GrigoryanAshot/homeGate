@@ -7,11 +7,11 @@
 // Identity: chip from MAC; product ID from SoftAP sticker (NVS) — not compiled in.
 // -----------------------------------------------------------------------------
 
-// Optional factory/dev Wi‑Fi (NVS empty only). Leave empty for SoftAP setup.
+// Leave empty for production SoftAP (customer picks home Wi‑Fi).
 #define FACTORY_WIFI_SSID ""
 #define FACTORY_WIFI_PASS ""
 
-// Optional compile-time product (dev only). Prefer SoftAP sticker entry.
+// Leave empty for production — product comes from app QR claim after Wi‑Fi.
 #define FACTORY_PRODUCT_ID ""
 #define FACTORY_PRODUCT_SECRET ""
 

@@ -393,9 +393,10 @@ inline void wifiRunSoftApPortal() {
 }
 
 inline void wifiFactoryResetAndReboot() {
-  Serial.println("Wi-Fi factory reset → SoftAP on reboot");
+  Serial.println("Wi-Fi + product reset → SoftAP on reboot");
   blinkStatusLed(8, 40, 40);
   wifiClearCreds();
+  deviceClearProduct();
   delay(300);
   ESP.restart();
 }
@@ -421,13 +422,19 @@ inline bool wifiEnsureConnected() {
   String pass;
   wifiLoadCreds(ssid, pass);
 
-  if (ssid.length() == 0 && strlen(FACTORY_WIFI_SSID) > 0) {
-    ssid = FACTORY_WIFI_SSID;
-    pass = FACTORY_WIFI_PASS;
-    Serial.println("Using FACTORY_WIFI_* (NVS empty)");
+  // Prefer compile-time home Wi‑Fi when set (this board’s known network).
+  if (strlen(FACTORY_WIFI_SSID) > 0) {
+    Serial.print("Trying FACTORY_WIFI: ");
+    Serial.println(FACTORY_WIFI_SSID);
+    if (wifiTryConnectSta(
+          String(FACTORY_WIFI_SSID),
+          String(FACTORY_WIFI_PASS),
+          WIFI_CONNECT_TIMEOUT_MS)) {
+      return true;
+    }
+    Serial.println("FACTORY_WIFI failed — trying NVS / SoftAP");
   }
 
-  // SoftAP is Wi‑Fi only — sticker/product is claimed later in the phone app.
   if (ssid.length() > 0) {
     Serial.print("Trying saved Wi-Fi: ");
     Serial.println(ssid);
@@ -436,7 +443,7 @@ inline bool wifiEnsureConnected() {
     }
     Serial.println("Saved Wi-Fi failed — opening setup AP");
     blinkStatusLed(4, 80, 80);
-  } else {
+  } else if (strlen(FACTORY_WIFI_SSID) == 0) {
     Serial.println("No Wi-Fi saved — opening setup AP");
   }
 
@@ -451,9 +458,10 @@ inline void wifiPollResetButton() {
   if (pressed) {
     if (pressedAt == 0) pressedAt = millis();
     if (millis() - pressedAt >= WIFI_RESET_HOLD_MS) {
-      Serial.println("BOOT held — clearing Wi-Fi");
+      Serial.println("BOOT held — clearing Wi-Fi + product");
       blinkStatusLed(8, 40, 40);
       wifiClearCreds();
+      deviceClearProduct();
       delay(200);
       ESP.restart();
     }
