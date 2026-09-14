@@ -261,7 +261,7 @@ const en: SmartGateMessages = {
     `Reset “${name}” only? Clears this gate’s Wi‑Fi and its shared users. Other gates are not touched.`,
   gateRemoveAction: "Remove gate from my account",
   gateRemoveConfirm: (name) =>
-    `Remove “${name}” from your account? Its shared users are cleared. Other gates stay.`,
+    `Remove “${name}” from your account only? Shared users for this gate are cleared. The box keeps its Wi‑Fi — use Reset if you want SoftAP. Other gates stay.`,
   toastGateRenamed: "Gate renamed",
   toastGateRemoved: "Gate removed",
   guestViewSubtitle: "Shared access — open & close only",
@@ -510,7 +510,7 @@ const hy: SmartGateMessages = {
     `Վերակայե՞լ միայն «${name}»-ը։ Կջնջվի այս դարպասի Wi‑Fi‑ը և իր բաժանված օգտատերերը։ Մյուս դարպասները չեն փոխվի։`,
   gateRemoveAction: "Հեռացնել իմ հաշվից",
   gateRemoveConfirm: (name) =>
-    `Հեռացնե՞լ «${name}»-ը ձեր հաշվից։ Կմաքրվեն միայն իր բաժանված օգտատերերը։ Մյուս դարպասները կմնան։`,
+    `Հեռացնե՞լ «${name}»-ը միայն հաշվից։ Կմաքրվեն այս դարպասի բաժանումները։ Wi‑Fi չի ջնջվի — SoftAP-ի համար օգտագործեք Վերակայել։ Մյուս դարպասները կմնան։`,
   toastGateRenamed: "Անունը փոխվեց",
   toastGateRemoved: "Դարպասը հեռացվեց",
   guestViewSubtitle: "Համօգտագործված մուտք — միայն բացել/փակել",
@@ -761,7 +761,7 @@ const ru: SmartGateMessages = {
     `Сбросить только «${name}»? Очистится Wi‑Fi этих ворот и их общие пользователи. Другие ворота не затронуты.`,
   gateRemoveAction: "Удалить из моего аккаунта",
   gateRemoveConfirm: (name) =>
-    `Удалить «${name}» из аккаунта? Очистятся только их общие пользователи. Другие ворота останутся.`,
+    `Удалить «${name}» только из аккаунта? Очистятся доступы этих ворот. Wi‑Fi не сбрасывается — для SoftAP используйте Сброс. Другие ворота останутся.`,
   toastGateRenamed: "Название изменено",
   toastGateRemoved: "Ворота удалены",
   guestViewSubtitle: "Общий доступ — только открыть/закрыть",

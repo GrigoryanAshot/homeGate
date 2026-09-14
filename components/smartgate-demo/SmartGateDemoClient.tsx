@@ -103,21 +103,13 @@ function SmartGateDemoInner() {
 
   const handleRemoveGate = useCallback(
     async (gateId: string) => {
+      // Never WIFI_RESET on remove — that bricks the box SoftAP and can hit the
+      // wrong mental model (“remove from app” ≠ “wipe hardware”). Only unclaim
+      // this product + clear THIS gate’s shares.
       clearSharesForGate(gateId);
-      // SoftAP reset only if this gate is the one currently online
-      if (gateId === selectedGateId && mqttConfigured && connection === "online") {
-        sendWifiReset(gateId);
-      }
       await removeGate(gateId);
     },
-    [
-      clearSharesForGate,
-      selectedGateId,
-      mqttConfigured,
-      connection,
-      sendWifiReset,
-      removeGate,
-    ],
+    [clearSharesForGate, removeGate],
   );
 
   return (

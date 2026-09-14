@@ -85,11 +85,24 @@ export function GateCardMenu({
 
   async function doRemove() {
     if (!window.confirm(t.gateRemoveConfirm(gate.name))) return;
+    // Second check with product id so we never wipe the wrong mental card
+    if (
+      !window.confirm(
+        `${gate.name}\nID: ${gate.id}\n\nOK = remove THIS gate only.`,
+      )
+    ) {
+      return;
+    }
     setBusy(true);
-    await onRemove(gate.id);
-    setBusy(false);
-    onToast?.(t.toastGateRemoved);
-    setOpen(false);
+    try {
+      await onRemove(gate.id);
+      onToast?.(t.toastGateRemoved);
+      setOpen(false);
+    } catch {
+      onToast?.(t.toastCommandFailed);
+    } finally {
+      setBusy(false);
+    }
   }
 
   const overlay =
