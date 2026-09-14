@@ -54,6 +54,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       alreadyOwned: result.alreadyOwned,
+      chipBound: result.chipBound ?? null,
       device: result.device,
     });
   } catch (e) {

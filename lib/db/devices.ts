@@ -131,6 +131,16 @@ export async function claimDevice(input: {
   }
   if (device.status === DeviceStatus.BUSY) {
     if (device.ownerId === input.ownerId) {
+      let chipBound: string | null = null;
+      if (!device.chipId) {
+        try {
+          const { bindPendingChipToProduct } = await import("./chip-bind");
+          const bind = await bindPendingChipToProduct(id, input.secret);
+          if (bind.ok) chipBound = bind.chipId;
+        } catch (e) {
+          console.error("[claim] chip bind re-own", e);
+        }
+      }
       const updated = await prisma.device.update({
         where: { id },
         data: {
@@ -142,6 +152,7 @@ export async function claimDevice(input: {
         ok: true as const,
         device: toPublicDevice(updated),
         alreadyOwned: true,
+        chipBound,
       };
     }
     return { ok: false as const, error: "already_in_use" as const };
@@ -158,10 +169,25 @@ export async function claimDevice(input: {
     },
   });
 
+  // SoftAP is Wi‑Fi only — attach the ESP that just came online (if any).
+  let chipBound: string | null = null;
+  try {
+    const { bindPendingChipToProduct } = await import("./chip-bind");
+    const bind = await bindPendingChipToProduct(id, input.secret);
+    if (bind.ok) chipBound = bind.chipId;
+  } catch (e) {
+    console.error("[claim] chip bind", e);
+  }
+
+  const finalDevice = chipBound
+    ? await prisma.device.findUnique({ where: { id } })
+    : updated;
+
   return {
     ok: true as const,
-    device: toPublicDevice(updated),
+    device: toPublicDevice(finalDevice ?? updated),
     alreadyOwned: false,
+    chipBound,
   };
 }
 

@@ -1,7 +1,7 @@
 /*
   HomeGate — ESP32-C3 Super Mini (universal production firmware)
-  1) SoftAP: bind sticker product → pick home Wi‑Fi
-  2) Register product+chip → cloud DB (FREE until owner claims in app)
+  1) SoftAP: home Wi‑Fi only (big simple page)
+  2) Chip hello → wait for owner to claim sticker QR in the app
   3) MQTT per product: home/gate/{productId}/command|status
 
   Library: PubSubClient (Nick O'Leary)
@@ -27,6 +27,7 @@ unsigned long moveAt = 0;
 unsigned long lastReconnectAttempt = 0;
 unsigned long lastStatusMs = 0;
 unsigned long lastRegisterAttempt = 0;
+unsigned long lastChipPollAttempt = 0;
 bool cloudRegistered = false;
 
 int activePulsePin = -1;
@@ -151,7 +152,7 @@ bool registerWithCloud() {
   if (WiFi.status() != WL_CONNECTED) return false;
   if (!deviceHasProduct()) return false;
 
-  String url = String(API_BASE_URL) + "/api/devices/register";
+  String url = String(API_BASE_URL) + "/api/devices/chip";
   Serial.print("Cloud register → ");
   Serial.println(url);
 
@@ -178,14 +179,14 @@ bool registerWithCloud() {
 
   http.addHeader("Content-Type", "application/json");
 
-  char body[320];
+  char body[360];
   snprintf(
     body,
     sizeof(body),
-    "{\"deviceId\":\"%s\",\"secret\":\"%s\",\"chipId\":\"%s\"}",
+    "{\"chipId\":\"%s\",\"deviceId\":\"%s\",\"secret\":\"%s\"}",
+    DEVICE_CHIP_ID,
     DEVICE_PRODUCT_ID,
-    DEVICE_PRODUCT_SECRET,
-    DEVICE_CHIP_ID
+    DEVICE_PRODUCT_SECRET
   );
 
   const int code = http.POST(body);
@@ -203,7 +204,6 @@ bool registerWithCloud() {
     return true;
   }
 
-  // Sticker not in factory DB yet — still allow MQTT for installers
   if (code == 404) {
     Serial.println("Product not in factory DB — seed sticker ID first");
   }
@@ -213,10 +213,115 @@ bool registerWithCloud() {
 #endif
 }
 
+/** SoftAP is Wi‑Fi only — poll cloud until app claim assigns this chip a product. */
+bool pollProductFromCloud() {
+#if !ENABLE_CLOUD_REGISTER
+  return deviceHasProduct();
+#else
+  if (deviceHasProduct()) return true;
+  if (WiFi.status() != WL_CONNECTED) return false;
+
+  const unsigned long now = millis();
+  if (now - lastChipPollAttempt < 8000 && lastChipPollAttempt != 0) {
+    return false;
+  }
+  lastChipPollAttempt = now;
+
+  // Mark chip online (waiting)
+  {
+    String url = String(API_BASE_URL) + "/api/devices/chip";
+    HTTPClient http;
+    http.setConnectTimeout(6000);
+    http.setTimeout(8000);
+    WiFiClientSecure httpsClient;
+    WiFiClient httpClient;
+    bool began = false;
+    if (url.startsWith("https://")) {
+      httpsClient.setInsecure();
+      httpsClient.setHandshakeTimeout(12);
+      began = http.begin(httpsClient, url);
+    } else {
+      began = http.begin(httpClient, url);
+    }
+    if (began) {
+      http.addHeader("Content-Type", "application/json");
+      char body[120];
+      snprintf(body, sizeof(body), "{\"chipId\":\"%s\"}", DEVICE_CHIP_ID);
+      http.POST(body);
+      http.end();
+    }
+  }
+
+  // Poll for product assignment
+  String url = String(API_BASE_URL) + "/api/devices/chip?chipId=" +
+               String(DEVICE_CHIP_ID);
+  Serial.print("Chip poll → ");
+  Serial.println(url);
+
+  HTTPClient http;
+  http.setConnectTimeout(6000);
+  http.setTimeout(8000);
+  WiFiClientSecure httpsClient;
+  WiFiClient httpClient;
+  bool began = false;
+  if (url.startsWith("https://")) {
+    httpsClient.setInsecure();
+    httpsClient.setHandshakeTimeout(12);
+    began = http.begin(httpsClient, url);
+  } else {
+    began = http.begin(httpClient, url);
+  }
+  if (!began) return false;
+
+  const int code = http.GET();
+  const String resp = http.getString();
+  http.end();
+
+  Serial.print("Chip poll HTTP ");
+  Serial.print(code);
+  Serial.print(" ");
+  Serial.println(resp);
+
+  if (code != 200 || resp.indexOf("\"waiting\":true") >= 0) {
+    Serial.println("Waiting for owner to Add gate (scan QR) in the app…");
+    return false;
+  }
+
+  // crude parse: "productId":"..."
+  int pKey = resp.indexOf("\"productId\":\"");
+  int sKey = resp.indexOf("\"secret\":\"");
+  if (pKey < 0) return false;
+  pKey += 13;
+  int pEnd = resp.indexOf('"', pKey);
+  if (pEnd < 0) return false;
+  String productId = resp.substring(pKey, pEnd);
+
+  String secret = "";
+  if (sKey >= 0) {
+    sKey += 10;
+    int sEnd = resp.indexOf('"', sKey);
+    if (sEnd > sKey) secret = resp.substring(sKey, sEnd);
+  }
+
+  if (productId.length() == 0) return false;
+
+  deviceSaveProduct(productId, secret.length() > 0 ? secret : String("bound"));
+  Serial.print("Product assigned from cloud: ");
+  Serial.println(productId);
+  cloudRegistered = false;
+  blinkStatusLed(3, 100, 80);
+  return true;
+#endif
+}
+
 void ensureRegistered() {
 #if !ENABLE_CLOUD_REGISTER
   return;
 #else
+  if (!deviceHasProduct()) {
+    pollProductFromCloud();
+    return;
+  }
   if (cloudRegistered) return;
   const unsigned long now = millis();
   if (now - lastRegisterAttempt < REGISTER_RETRY_MS && lastRegisterAttempt != 0) {
@@ -429,7 +534,7 @@ void setup() {
   Serial.print("Chip: ");
   Serial.println(DEVICE_CHIP_ID);
   Serial.print("Product: ");
-  Serial.println(deviceHasProduct() ? DEVICE_PRODUCT_ID : "(none — SoftAP)");
+  Serial.println(deviceHasProduct() ? DEVICE_PRODUCT_ID : "(none — wait for app claim)");
 #if ENABLE_CLOUD_REGISTER
   Serial.print("API: ");
   Serial.println(API_BASE_URL);
@@ -438,7 +543,13 @@ void setup() {
 #endif
 
   connectWifi();
-  connectMqtt();
+  if (deviceHasProduct()) {
+    connectMqtt();
+  } else {
+    Serial.println("No product yet — chip will poll cloud after Wi‑Fi");
+    pollProductFromCloud();
+    if (deviceHasProduct()) connectMqtt();
+  }
 }
 
 void loop() {
@@ -455,6 +566,9 @@ void loop() {
   }
 
   ensureRegistered();
+  if (deviceHasProduct() && !mqtt.connected()) {
+    ensureMqtt();
+  }
   mqtt.loop();
 
   if (updateMoveState()) {

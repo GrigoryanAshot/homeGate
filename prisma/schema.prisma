@@ -53,6 +53,21 @@ model Device {
   @@index([ownerId])
 }
 
+/// ESP online after SoftAP Wi‑Fi, waiting for app claim to assign a sticker product.
+model ChipPending {
+  chipId     String   @id
+  lastSeenAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
+/// One-time handoff: product id + secret for ESP after owner claims sticker in the app.
+model ChipBindOffer {
+  chipId     String   @id
+  productId  String
+  secret     String
+  createdAt  DateTime @default(now())
+}
+
 /// Shared access for one gate only — never mixed across devices.
 model GateShare {
   id        String    @id

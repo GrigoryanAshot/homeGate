@@ -1,9 +1,9 @@
 #pragma once
 
 /*
-  SoftAP setup:
-  1) Bind sticker product ID (+ secret) if not saved
-  2) Pick home Wi‑Fi from scan + password → NVS → reboot
+  SoftAP setup (simple for 50+ users):
+  Home Wi‑Fi list + password only → reboot.
+  Sticker QR is scanned later in the phone app (Add gate).
 */
 
 #include <WiFi.h>
@@ -190,9 +190,9 @@ inline String wifiBuildPortalHtml() {
   options.reserve(n > 0 ? n * 80 : 64);
   if (n <= 0) {
     options =
-      "<option value=\"\" disabled selected>No networks found — use manual</option>";
+      "<option value=\"\" disabled selected>No networks — type name below</option>";
   } else {
-    options += "<option value=\"\" disabled selected>Select a network…</option>";
+    options += "<option value=\"\" disabled selected>Select your Wi‑Fi…</option>";
     for (int i = 0; i < n; i++) {
       const String ssid = WiFi.SSID(i);
       if (ssid.length() == 0) continue;
@@ -201,58 +201,51 @@ inline String wifiBuildPortalHtml() {
       options += esc;
       options += "\">";
       options += esc;
-      options += " · ";
-      options += String(WiFi.RSSI(i));
-      options += " dBm";
-      if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) options += " · open";
       options += "</option>";
     }
   }
   WiFi.scanDelete();
 
   String html;
-  html.reserve(3800 + options.length());
+  html.reserve(3200 + options.length());
   html +=
     "<!DOCTYPE html><html><head>"
     "<meta charset=\"utf-8\"/>"
     "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>"
     "<title>Touch SmartGate Wi-Fi</title>"
     "<style>"
-    "body{font-family:system-ui,sans-serif;background:#e8f2ff;margin:0;padding:24px;color:#0f172a}"
-    ".box{max-width:420px;margin:0 auto;background:#fff;border-radius:24px;padding:24px;"
+    "body{font-family:system-ui,sans-serif;background:#e8f2ff;margin:0;padding:20px;color:#0f172a}"
+    ".box{max-width:440px;margin:0 auto;background:#fff;border-radius:28px;padding:28px;"
     "box-shadow:0 12px 40px rgba(15,23,42,.12)}"
-    "h1{font-size:1.25rem;margin:0 0 8px}"
-    "p{color:#64748b;font-size:.9rem;line-height:1.45}"
-    "label{display:block;font-size:.75rem;font-weight:700;margin:14px 0 6px;color:#64748b}"
-    "select,input{width:100%;box-sizing:border-box;padding:14px 16px;border-radius:16px;"
-    "border:1px solid #cbd5e1;font-size:1rem;background:#fff}"
-    "button{width:100%;margin-top:14px;padding:16px;border:0;border-radius:18px;"
-    "background:#2563eb;color:#fff;font-weight:800;font-size:1rem}"
+    "h1{font-size:1.75rem;margin:0 0 12px;line-height:1.2}"
+    "p{color:#475569;font-size:1.05rem;line-height:1.5;margin:0 0 8px}"
+    "label{display:block;font-size:1rem;font-weight:800;margin:18px 0 8px;color:#0f172a}"
+    "select,input{width:100%;box-sizing:border-box;padding:18px 16px;border-radius:18px;"
+    "border:2px solid #94a3b8;font-size:1.15rem;background:#fff}"
+    "button{width:100%;margin-top:22px;padding:20px;border:0;border-radius:22px;"
+    "background:#2563eb;color:#fff;font-weight:800;font-size:1.25rem}"
     "a.btn{display:block;text-align:center;text-decoration:none;background:#e2e8f0;color:#0f172a;"
-    "margin-top:10px;padding:14px;border-radius:18px;font-weight:700}"
-    "small{display:block;margin-top:12px;color:#94a3b8;font-size:.75rem}"
+    "margin-top:12px;padding:16px;border-radius:18px;font-weight:700;font-size:1rem}"
+    "small{display:block;margin-top:16px;color:#94a3b8;font-size:.85rem}"
     "</style></head><body><div class=\"box\">"
     "<h1>Home Wi‑Fi</h1>"
-    "<p>Product <b>";
-  html += wifiHtmlEscape(deviceProductIdRef());
-  html +=
-    "</b> is linked to this box. Choose your network and password.</p>"
+    "<p>Choose your home network and type the password. That is all for this step.</p>"
     "<form method=\"POST\" action=\"/save\">"
     "<label>Network</label>"
     "<select name=\"ssid\" id=\"ssidSel\">";
   html += options;
   html +=
     "</select>"
-    "<label>Or type SSID (hidden network)</label>"
-    "<input name=\"ssid_manual\" maxlength=\"32\" placeholder=\"Optional — leave empty to use list\" "
+    "<label>Or type network name</label>"
+    "<input name=\"ssid_manual\" maxlength=\"32\" placeholder=\"Only if not in the list\" "
     "autocomplete=\"off\"/>"
     "<label>Password</label>"
     "<input name=\"pass\" type=\"password\" maxlength=\"64\" placeholder=\"Wi‑Fi password\" "
     "autocomplete=\"current-password\"/>"
     "<button type=\"submit\">Save &amp; Connect</button>"
     "</form>"
-    "<a class=\"btn\" href=\"/wifi\">Refresh network list</a>"
-    "<small>Step 2 of 2 · Device ";
+    "<a class=\"btn\" href=\"/wifi\">Refresh list</a>"
+    "<small>Box ";
   html += wifiHtmlEscape(deviceChipIdRef());
   html +=
     "</small></div></body></html>";
@@ -270,62 +263,26 @@ inline DNSServer &wifiPortalDns() {
 }
 
 inline void wifiHandlePortalRoot() {
-  if (!deviceHasProduct()) {
-    wifiPortalServer().send(200, "text/html", wifiBuildClaimHtml());
-  } else {
-    wifiPortalServer().sendHeader("Location", "/wifi", true);
-    wifiPortalServer().send(302, "text/plain", "");
-  }
+  wifiPortalServer().send(200, "text/html", wifiBuildPortalHtml());
 }
 
 inline void wifiHandleClaimGet() {
-  wifiPortalServer().send(200, "text/html", wifiBuildClaimHtml());
+  // Legacy URL — SoftAP is Wi‑Fi only now; sticker is scanned in the app.
+  wifiPortalServer().sendHeader("Location", "/", true);
+  wifiPortalServer().send(302, "text/plain", "");
 }
 
 inline void wifiHandleClaimPost() {
-  WebServer &server = wifiPortalServer();
-  String productId = server.hasArg("productId") ? server.arg("productId") : "";
-  String secret = server.hasArg("secret") ? server.arg("secret") : "";
-  productId.trim();
-  secret.trim();
-
-  if ((productId.length() == 0 || secret.length() == 0) && server.hasArg("qr")) {
-    String id;
-    String sec;
-    if (wifiParsePairPaste(server.arg("qr"), id, sec)) {
-      productId = id;
-      secret = sec;
-    }
-  }
-
-  if (productId.length() == 0 || secret.length() == 0) {
-    server.send(400, "text/plain", "Need product ID and secret (or paste QR)");
-    return;
-  }
-
-  deviceSaveProduct(productId, secret);
-  Serial.print("Product bound: ");
-  Serial.println(productId);
-
-  server.sendHeader("Location", "/wifi", true);
-  server.send(302, "text/plain", "");
+  wifiPortalServer().sendHeader("Location", "/", true);
+  wifiPortalServer().send(302, "text/plain", "");
 }
 
 inline void wifiHandleWifiPage() {
-  if (!deviceHasProduct()) {
-    wifiPortalServer().sendHeader("Location", "/", true);
-    wifiPortalServer().send(302, "text/plain", "");
-    return;
-  }
   wifiPortalServer().send(200, "text/html", wifiBuildPortalHtml());
 }
 
 inline void wifiHandlePortalSave() {
   WebServer &server = wifiPortalServer();
-  if (!deviceHasProduct()) {
-    server.send(400, "text/plain", "Bind product sticker first");
-    return;
-  }
   String ssid = server.hasArg("ssid_manual") ? server.arg("ssid_manual") : "";
   ssid.trim();
   if (ssid.length() == 0 && server.hasArg("ssid")) {
@@ -339,16 +296,37 @@ inline void wifiHandlePortalSave() {
   const String pass = server.hasArg("pass") ? server.arg("pass") : "";
   wifiSaveCreds(ssid, pass);
 
-  server.send(
-    200,
-    "text/html",
-    "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'/>"
-    "<title>Saved</title></head><body style='font-family:system-ui;padding:24px'>"
-    "<h1>Saved</h1><p>Rebooting… Join your home Wi‑Fi, open the Touch SmartGate app, "
-    "sign in, then scan the same sticker QR to claim ownership.</p>"
-    "</body></html>"
-  );
-  delay(700);
+  String html;
+  html.reserve(1800);
+  html +=
+    "<!DOCTYPE html><html><head>"
+    "<meta charset=\"utf-8\"/>"
+    "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>"
+    "<title>Saved</title>"
+    "<style>"
+    "body{font-family:system-ui,sans-serif;background:#e8f2ff;margin:0;padding:24px;color:#0f172a}"
+    ".box{max-width:440px;margin:0 auto;background:#fff;border-radius:28px;padding:28px}"
+    "h1{font-size:1.75rem;margin:0 0 14px}"
+    "ol{font-size:1.15rem;line-height:1.55;padding-left:1.3rem;color:#334155}"
+    "li{margin:10px 0}"
+    "a{display:block;margin-top:22px;text-align:center;padding:18px;border-radius:22px;"
+    "background:#2563eb;color:#fff;font-weight:800;font-size:1.2rem;text-decoration:none}"
+    "</style></head><body><div class=\"box\">"
+    "<h1>Wi‑Fi saved</h1>"
+    "<ol>"
+    "<li>Leave this page.</li>"
+    "<li>On your phone, join your <b>home Wi‑Fi</b> again.</li>"
+    "<li>Open the Touch SmartGate app.</li>"
+    "<li>Sign in, then tap <b>Add gate</b> and scan the QR on the box.</li>"
+    "</ol>"
+    "<a href=\"";
+  html += API_BASE_URL;
+  html +=
+    "/smartgate-demo\">Open app</a>"
+    "<p style=\"margin-top:16px;color:#64748b;font-size:1rem\">Box reboots now…</p>"
+    "</div></body></html>";
+  server.send(200, "text/html", html);
+  delay(1200);
   ESP.restart();
 }
 
@@ -364,8 +342,7 @@ inline void wifiRunSoftApPortal() {
   Serial.println("=== SETUP MODE ===");
   Serial.print("Join Wi-Fi: ");
   Serial.println(apSsid);
-  Serial.println("Open http://192.168.4.1");
-  Serial.println("1) Sticker product  2) Home Wi-Fi");
+  Serial.println("Open http://192.168.4.1 — home Wi‑Fi only");
   Serial.print("Chip: ");
   Serial.println(deviceChipIdRef());
   Serial.println("==================");
@@ -450,13 +427,7 @@ inline bool wifiEnsureConnected() {
     Serial.println("Using FACTORY_WIFI_* (NVS empty)");
   }
 
-  // Need sticker product before normal operation (unless factory product set)
-  if (!deviceHasProduct()) {
-    Serial.println("No product sticker bound — opening setup AP");
-    wifiRunSoftApPortal();
-    return false;
-  }
-
+  // SoftAP is Wi‑Fi only — sticker/product is claimed later in the phone app.
   if (ssid.length() > 0) {
     Serial.print("Trying saved Wi-Fi: ");
     Serial.println(ssid);

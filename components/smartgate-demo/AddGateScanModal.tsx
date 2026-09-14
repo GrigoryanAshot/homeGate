@@ -118,6 +118,7 @@ export function AddGateScanModal({
       const data = (await res.json()) as {
         ok: boolean;
         error?: string;
+        chipBound?: string | null;
         device?: { id: string; name: string | null };
       };
 
@@ -134,7 +135,11 @@ export function AddGateScanModal({
         data.device?.name || name.trim(),
         data.device?.id || pair.deviceId,
       );
-      onAdded?.(gate.name);
+      if (data.chipBound) {
+        onAdded?.(gate.name);
+      } else {
+        onAdded?.(gate.name);
+      }
       onClose();
     } catch {
       setError(t.deviceClaimFailed);
@@ -176,12 +181,12 @@ export function AddGateScanModal({
                 {t.authRequiredToClaim}
               </p>
             )}
-            <p className="mb-3 text-sm leading-relaxed text-gate-muted">
+            <p className="mb-4 text-base leading-relaxed text-gate-ink">
               {t.scanGateHintCamera}
             </p>
-            <details className="mb-3 rounded-2xl border border-gate-line bg-gate-bg/80 px-3 py-2">
-              <summary className="cursor-pointer text-sm font-bold text-gate-ink">
-                {t.wifiSetupTitle}
+            <details className="mb-4 rounded-2xl border border-gate-line bg-gate-bg/80 px-3 py-2">
+              <summary className="cursor-pointer text-base font-bold text-gate-ink">
+                {t.wifiSetupTitle} — {t.wifiSetupMenuHint}
               </summary>
               <div className="mt-2 pb-1">
                 <WifiSetupGuide compact />
@@ -195,7 +200,7 @@ export function AddGateScanModal({
                 onError={(message) => setError(message)}
               />
             ) : (
-              <div className="mx-auto mb-4 flex aspect-square w-full max-w-[280px] items-center justify-center rounded-2xl border-4 border-slate-800 bg-slate-900 text-sm text-white/80">
+              <div className="mx-auto mb-4 flex aspect-square w-full max-w-[280px] items-center justify-center rounded-2xl border-4 border-slate-800 bg-slate-900 text-base text-white/80">
                 {t.scanCameraStopped}
               </div>
             )}
@@ -208,7 +213,7 @@ export function AddGateScanModal({
                     setError(null);
                     setCameraOn(true);
                   }}
-                  className="flex-1 rounded-2xl bg-blue-500 py-3.5 text-sm font-bold text-white active:bg-blue-600"
+                  className="flex-1 rounded-2xl bg-blue-500 py-4 text-base font-bold text-white active:bg-blue-600"
                 >
                   {t.scanGateAction}
                 </button>
@@ -216,7 +221,7 @@ export function AddGateScanModal({
                 <button
                   type="button"
                   onClick={() => setCameraOn(false)}
-                  className="flex-1 rounded-2xl border border-gate-line bg-gate-bg py-3.5 text-sm font-bold text-gate-ink active:bg-gate-card"
+                  className="flex-1 rounded-2xl border border-gate-line bg-gate-bg py-4 text-base font-bold text-gate-ink active:bg-gate-card"
                 >
                   {t.scanCameraStop}
                 </button>
@@ -224,29 +229,21 @@ export function AddGateScanModal({
             </div>
 
             <div className="mt-4 space-y-2 border-t border-gate-line pt-4">
-              <button
-                type="button"
-                onClick={handleDemoScan}
-                className="w-full rounded-2xl border border-dashed border-blue-300 bg-blue-50 py-3 text-sm font-bold text-blue-800 active:bg-blue-100 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100"
-              >
-                {t.scanGateActionDemo}
-              </button>
-
-              <label className="mb-1 block text-xs font-semibold text-gate-muted">
+              <label className="mb-1 block text-sm font-semibold text-gate-muted">
                 {t.scanGatePasteLabel}
               </label>
               <input
                 type="text"
                 value={paste}
                 onChange={(e) => setPaste(e.target.value)}
-                placeholder="smartgate://pair?id=…&s=…"
-                className="mb-2 w-full rounded-2xl border border-gate-line bg-gate-bg px-4 py-3 text-sm outline-none ring-blue-400 focus:ring-2"
+                placeholder="84729103|secret  or  smartgate://pair?…"
+                className="mb-2 w-full rounded-2xl border border-gate-line bg-gate-bg px-4 py-3.5 text-base outline-none ring-blue-400 focus:ring-2"
               />
               <button
                 type="button"
                 disabled={!paste.trim()}
                 onClick={handlePasteClaim}
-                className="w-full rounded-2xl border border-gate-line bg-gate-bg py-3 text-sm font-bold text-gate-ink active:bg-gate-card disabled:opacity-45"
+                className="w-full rounded-2xl border border-gate-line bg-gate-bg py-3.5 text-base font-bold text-gate-ink active:bg-gate-card disabled:opacity-45"
               >
                 {t.scanGatePasteAction}
               </button>

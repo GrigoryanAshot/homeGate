@@ -228,27 +228,27 @@ const en: SmartGateMessages = {
   selectGate: "Gate",
   myGates: "My gates",
   addGate: "Add gate",
-  scanGateTitle: "Scan device QR",
+  scanGateTitle: "Add your gate",
   scanGateHint:
-    "Point your phone at the QR code on the gate remote or control box to add it.",
+    "Point the camera at the big QR on the gate box.",
   scanGateHintDb:
-    "Scan or paste the factory QR. Free devices can be claimed once — busy devices are rejected.",
+    "Scan the QR on the box. Each gate has its own code.",
   scanGateHintCamera:
-    "Point the camera at the QR on the gate box. Camera needs HTTPS (or localhost).",
-  scanGateAction: "Scan QR code",
-  scanGateActionDemo: "Use demo FREE device (no camera)",
+    "1) Gate box already on home Wi‑Fi · 2) Point the camera at the QR on the box · 3) Name the gate.",
+  scanGateAction: "Open camera",
+  scanGateActionDemo: "Demo: use test gate (no camera)",
   scanGateScanning: "Scanning…",
   scanCameraStarting: "Starting camera…",
   scanCameraStop: "Stop camera",
-  scanCameraStopped: "Camera off",
+  scanCameraStopped: "Camera off — tap Open camera",
   scanCameraPermissionDenied:
-    "Camera permission denied. Allow camera for this site, or paste the QR link below.",
+    "Camera blocked. Allow camera, or type the number under the QR below.",
   scanCameraUnavailable:
-    "Camera not available on this device. Paste the QR link or use the demo button.",
-  scanGateSuccess: "Device found — name your gate",
-  scanGateNameLabel: "Gate name",
-  scanGateSave: "Add gate",
-  scanGatePasteLabel: "Or paste QR / pair link",
+    "No camera. Type the ID and code from the sticker below.",
+  scanGateSuccess: "Found — give this gate a name",
+  scanGateNameLabel: "Name (e.g. Home gate)",
+  scanGateSave: "Save & open gate",
+  scanGatePasteLabel: "Or type ID and code from the sticker",
   scanGatePasteAction: "Use this code",
   deviceAlreadyInUse: "This device is already in use on another account.",
   deviceNotFound: "Device not found in database.",
@@ -396,16 +396,17 @@ const en: SmartGateMessages = {
   biometricCancelled: "Cancelled — action not allowed",
   biometricFailed: "Could not verify Face ID / fingerprint",
   wifiSetupTitle: "Set up gate Wi‑Fi",
-  wifiSetupMenuHint: "New box · SoftAP from phone",
+  wifiSetupMenuHint: "First time — phone joins TouchGate",
   wifiSetupIntro:
-    "The controller creates a temporary Wi‑Fi so you can give it your home network — no cable needed.",
-  wifiSetupStep1: "Power the gate box. Fast blinking LED = waiting for setup.",
-  wifiSetupStep2: "On your phone, join Wi‑Fi named TouchGate-XXXX (open network).",
-  wifiSetupStep3: "Open http://192.168.4.1 in the browser (or wait for the setup page).",
-  wifiSetupStep4: "Choose your home Wi‑Fi from the list, type the password → Save & Connect.",
-  wifiSetupStep5: "Phone rejoins home Wi‑Fi. LED steady, then scan the device QR in the app.",
+    "The box makes a temporary Wi‑Fi. You only enter your home network password here.",
+  wifiSetupStep1: "Power the gate box. LED blinks fast.",
+  wifiSetupStep2: "On the phone, join Wi‑Fi named TouchGate-XXXX (no password).",
+  wifiSetupStep3: "A page opens (or go to http://192.168.4.1).",
+  wifiSetupStep4: "Pick your home Wi‑Fi, type the password → Save.",
+  wifiSetupStep5:
+    "Join home Wi‑Fi again → open this app → Add gate → scan the QR on the box.",
   wifiSetupReset:
-    "Wrong Wi‑Fi? Use the gear on that gate card (or Settings → Reset). Clears only that gate’s shares and brings SoftAP back. Other gates stay.",
+    "Wrong Wi‑Fi? Use the gear on that gate (Reset). SoftAP comes back. Then Add gate again if needed.",
   wifiResetAction: "Reset selected gate setup",
   wifiResetConfirm:
     "Reset the selected gate only? Clears its Wi‑Fi and its shared members. Other gates are not touched.",
@@ -655,7 +656,8 @@ const hy: SmartGateMessages = {
   wifiSetupStep2: "Հեռախոսով միացեք TouchGate-XXXX Wi‑Fi-ին (բաց ցանց)։",
   wifiSetupStep3: "Բրաուզերում բացեք http://192.168.4.1 (կամ սպասեք էջին)։",
   wifiSetupStep4: "Ցանկից ընտրեք տան Wi‑Fi‑ը, մուտքագրեք գաղտնաբառը → Save & Connect։",
-  wifiSetupStep5: "Հեռախոսը վերադարձրեք տան Wi‑Fi։ LED-ը կայուն է, ապա սկանավորեք QR-ը հավելվածում։",
+  wifiSetupStep5:
+    "Վերադարձեք տան Wi‑Fi → բացեք հավելվածը → Ավելացնել դարպաս → սկանավորեք տուփի QR‑ը։",
   wifiSetupReset:
     "Սխալ Wi‑Fi՞։ Դարպասի քարտի ⚙ կամ Կարգավորումներ → Վերակայել։ Մաքրում է միայն այդ դարպասի բաժանումները և SoftAP։ Մյուս դարպասները մնում են։",
   wifiResetAction: "Վերակայել ընտրված դարպասը",
@@ -909,7 +911,8 @@ const ru: SmartGateMessages = {
   wifiSetupStep2: "На телефоне подключитесь к Wi‑Fi TouchGate-XXXX (открытая сеть).",
   wifiSetupStep3: "Откройте http://192.168.4.1 в браузере (или дождитесь страницы).",
   wifiSetupStep4: "Выберите домашний Wi‑Fi из списка, введите пароль → Save & Connect.",
-  wifiSetupStep5: "Верните телефон в домашний Wi‑Fi. LED горит ровно — сканируйте QR в приложении.",
+  wifiSetupStep5:
+    "Вернитесь в домашний Wi‑Fi → откройте приложение → Добавить ворота → сканируйте QR на корпусе.",
   wifiSetupReset:
     "Неверный Wi‑Fi? Шестерёнка на карточке ворот (или Настройки → Сброс). Очищает только доступы этих ворот и SoftAP. Другие ворота остаются.",
   wifiResetAction: "Сбросить выбранные ворота",

@@ -1,42 +1,47 @@
 /**
- * Factory: generate FREE product IDs + secrets for sticker print run.
+ * Factory: generate FREE numeric product IDs + secrets for sticker print.
  *
- *   npx tsx scripts/factory-seed.ts 50
- *   npx tsx scripts/factory-seed.ts 50 --prefix HG
+ *   npx tsx scripts/factory-seed.ts 100
+ *   npx tsx scripts/factory-seed.ts 100 --digits 8
  *
+ * IDs are random digits only (not sequential).
  * Prints CSV: productId,secret,qr
- * Inserts FREE rows into the database.
  */
-import { randomBytes } from "crypto";
+import { randomBytes, randomInt } from "crypto";
 import { prisma } from "../lib/db/client";
 import { seedFactoryDevice } from "../lib/db/devices";
 
+function randomNumericId(digits: number): string {
+  // First digit 1–9 so it doesn't look like a padded sequence
+  let id = String(randomInt(1, 10));
+  for (let i = 1; i < digits; i++) {
+    id += String(randomInt(0, 10));
+  }
+  return id;
+}
+
 async function main() {
   const count = Math.max(1, Number(process.argv[2] || 10));
-  const prefixIdx = process.argv.indexOf("--prefix");
-  const prefix =
-    prefixIdx >= 0 && process.argv[prefixIdx + 1]
-      ? process.argv[prefixIdx + 1]
-      : "HG";
+  const digitsIdx = process.argv.indexOf("--digits");
+  const digits = Math.min(
+    12,
+    Math.max(6, Number(digitsIdx >= 0 ? process.argv[digitsIdx + 1] : 8) || 8),
+  );
 
   console.log(`productId,secret,qr`);
   for (let i = 0; i < count; i++) {
-    const n = String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
-    const productId = `${prefix}-${n}`;
-    const secret = randomBytes(9).toString("base64url");
-    const qr = `smartgate://pair?id=${encodeURIComponent(productId)}&s=${encodeURIComponent(secret)}`;
+    let productId = randomNumericId(digits);
+    let secret = randomBytes(9).toString("base64url");
+    let result = await seedFactoryDevice(productId, secret);
 
-    const result = await seedFactoryDevice(productId, secret);
-    if (!result.created) {
-      // collision — retry once with new id
-      const n2 = String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
-      const productId2 = `${prefix}-${n2}`;
-      const secret2 = randomBytes(9).toString("base64url");
-      const qr2 = `smartgate://pair?id=${encodeURIComponent(productId2)}&s=${encodeURIComponent(secret2)}`;
-      await seedFactoryDevice(productId2, secret2);
-      console.log(`${productId2},${secret2},${qr2}`);
-      continue;
+    // Collision — retry a few times
+    for (let attempt = 0; !result.created && attempt < 5; attempt++) {
+      productId = randomNumericId(digits);
+      secret = randomBytes(9).toString("base64url");
+      result = await seedFactoryDevice(productId, secret);
     }
+
+    const qr = `smartgate://pair?id=${encodeURIComponent(productId)}&s=${encodeURIComponent(secret)}`;
     console.log(`${productId},${secret},${qr}`);
   }
 

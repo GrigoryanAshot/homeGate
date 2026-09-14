@@ -19,42 +19,38 @@ Do these in order. Firmware is universal (one `.bin` for every ESP32-C3).
 
 3. In Prisma schema change `provider = "postgresql"` when you switch off SQLite, then `prisma db push`.
 
-## Step 2 — Factory stickers (FREE IDs)
+## Step 2 — Factory stickers (FREE numeric IDs)
 
 ```bash
-npm run factory:seed -- 100
-# or: npx tsx scripts/factory-seed.ts 100 --prefix HG
+npx tsx scripts/factory-seed.ts 100
+# optional: npx tsx scripts/factory-seed.ts 100 --digits 8
 ```
 
+- Random **numeric** product IDs (not sequential).
 - Saves FREE rows in DB.
 - Prints CSV: `productId,secret,qr`
-- Send QR column to your waterproof sticker printer.
-- Stick **any free** sticker on the next box (no match to flash).
+- Send QR column to waterproof sticker printer (one QR per box).
+- Stick on the box — SoftAP does **not** need the QR; app “Add gate” does.
 
 ## Step 3 — Flash ESP (once per board)
 
 1. Arduino: open `firmware/HomeGate/HomeGate.ino`
-2. In `config.h` set `API_BASE_URL` to your Vercel HTTPS URL (already defaulted).
+2. In `config.h` set `API_BASE_URL` to your stable HTTPS URL.
 3. Same MQTT user/host for all boards (topics are per product ID).
 4. Upload **same** firmware to every SuperMini.
-5. No per-board `DEVICE_ID` in code.
 
-## Step 4 — Customer setup
+## Step 4 — Customer setup (least steps)
 
 1. Power ESP → SoftAP `TouchGate-XXXX`
-2. Phone joins → captive page:
-   - **Step A:** paste sticker QR / enter product ID + secret
-   - **Step B:** pick home Wi‑Fi + password
-3. ESP reboots on home Wi‑Fi, registers chip ↔ product in DB
-4. Customer opens app → **Settings → Sign in** (email + code) → set **name**
-5. **Add gate** → scan **same** sticker QR → claim ownership
-6. Control / share / reset from app
+2. Phone joins → page is **home Wi‑Fi only** (password) → Save
+3. Phone back on home Wi‑Fi → open app → **email + name**
+4. **Add gate** → scan sticker QR (or type ID|secret)
+5. Cloud links the online ESP chip to that sticker → Open / Close
 
-MQTT topics (automatic):
+MQTT topics (automatic after claim):
 
 - `home/gate/{productId}/command`
 - `home/gate/{productId}/status`
-- `home/gate/{productId}/acl`
 
 ## Step 5 — MQTT scale
 
