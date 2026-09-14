@@ -19,7 +19,8 @@ import { AuthWelcomeGate } from "./AuthWelcomeGate";
 
 function SmartGateDemoInner() {
   const { t } = useLocale();
-  const { selectedGateId, selectGate, removeGate } = useGates();
+  const { gates, selectedGateId, selectGate, removeGate } = useGates();
+  const hasGate = gates.length > 0 && !!selectedGateId;
   const [view, setView] = useState<DemoView>("control");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -47,7 +48,7 @@ function SmartGateDemoInner() {
   const { connection, gateState, setGateState, busy, sendCommand, sendWifiReset, mqttConfigured } =
     useSmartGateMqtt({
       mockMode: false,
-      gateId: selectedGateId,
+      gateId: hasGate ? selectedGateId : undefined,
       configEpoch: mqttEpoch,
     });
 
@@ -128,7 +129,9 @@ function SmartGateDemoInner() {
           mqttOnline={mqttConfigured && connection === "online"}
         />
 
-        {view === "control" && (!mqttConfigured || connection === "offline") && (
+        {view === "control" &&
+          hasGate &&
+          (!mqttConfigured || connection === "offline") && (
           <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
             {t.gateNotConnected}
           </div>
@@ -139,8 +142,8 @@ function SmartGateDemoInner() {
             <div className="flex h-full min-h-0 flex-col">
               <GateCardsRow
                 onAddGate={() => setScanOpen(true)}
-                connection={connection}
-                mqttOnline={mqttConfigured && connection === "online"}
+                connection={hasGate ? connection : "offline"}
+                mqttOnline={hasGate && mqttConfigured && connection === "online"}
                 onResetGate={(id) => {
                   selectGate(id);
                   return handleWifiReset(id);
@@ -148,11 +151,29 @@ function SmartGateDemoInner() {
                 onRemoveGate={handleRemoveGate}
                 onToast={showToast}
               />
-              <GateControlPanel
-                busy={busy}
-                gateState={gateState}
-                onCommand={handleCommand}
-              />
+              {hasGate ? (
+                <GateControlPanel
+                  busy={busy}
+                  gateState={gateState}
+                  onCommand={handleCommand}
+                />
+              ) : (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
+                  <p className="text-base font-bold text-gate-ink">
+                    {t.noGatesYetTitle}
+                  </p>
+                  <p className="max-w-sm text-sm leading-relaxed text-gate-muted">
+                    {t.noGatesYetHint}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setScanOpen(true)}
+                    className="mt-2 rounded-2xl bg-blue-500 px-6 py-3.5 text-sm font-bold text-white active:bg-blue-600"
+                  >
+                    + {t.addGate}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <ControllersPanel onToast={showToast} />

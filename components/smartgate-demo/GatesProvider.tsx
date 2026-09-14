@@ -24,7 +24,7 @@ import { useAuth } from "./AuthProvider";
 type GatesContextValue = {
   gates: UserGate[];
   selectedGateId: string;
-  selectedGate: UserGate;
+  selectedGate: UserGate | null;
   selectGate: (id: string) => void;
   addGateFromScan: (name: string, deviceId?: string) => UserGate;
   renameGate: (id: string, name: string) => Promise<boolean>;
@@ -35,16 +35,13 @@ type GatesContextValue = {
 
 const GatesContext = createContext<GatesContextValue | null>(null);
 
-function fallbackGate(): UserGate {
-  return { id: "gate-1", name: "Դարպաս 1", createdAt: Date.now() };
-}
-
 export function GatesProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [gates, setGates] = useState<UserGate[]>(() => loadUserGates());
-  const [selectedGateId, setSelectedGateId] = useState(() =>
-    loadSelectedGateId(loadUserGates()[0]?.id ?? "gate-1"),
-  );
+  const [selectedGateId, setSelectedGateId] = useState(() => {
+    const initial = loadUserGates();
+    return loadSelectedGateId(initial[0]?.id ?? "");
+  });
 
   const refreshFromServer = useCallback(async () => {
     if (!user) return;
@@ -59,30 +56,21 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
         name: d.name?.trim() || d.id,
         createdAt: d.claimedAt ? Date.parse(d.claimedAt) : Date.now(),
       }));
-      if (remote.length === 0) return;
 
-      setGates((prev) => {
-        const remoteIds = new Set(remote.map((g) => g.id));
-        const locals = prev.filter(
-          (g) => g.id.startsWith("gate-") && !remoteIds.has(g.id),
-        );
-        return [
-          ...remote.map((g) => {
-            const existing = prev.find((p) => p.id === g.id);
-            return {
-              id: g.id,
-              name: g.name,
-              createdAt: existing?.createdAt ?? g.createdAt,
-            };
-          }),
-          ...locals,
-        ];
-      });
+      // Server is source of truth — including empty list after remove.
+      setGates((prev) =>
+        remote.map((g) => {
+          const existing = prev.find((p) => p.id === g.id);
+          return {
+            id: g.id,
+            name: g.name,
+            createdAt: existing?.createdAt ?? g.createdAt,
+          };
+        }),
+      );
 
       setSelectedGateId((cur) =>
-        remote.some((g) => g.id === cur) || cur.startsWith("gate-")
-          ? cur
-          : remote[0].id,
+        remote.some((g) => g.id === cur) ? cur : (remote[0]?.id ?? ""),
       );
     } catch {
       /* keep local */
@@ -99,11 +87,11 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     saveSelectedGateId(selectedGateId);
-    setActiveGateId(selectedGateId);
+    setActiveGateId(selectedGateId || "");
   }, [selectedGateId]);
 
   const selectedGate = useMemo(
-    () => gates.find((g) => g.id === selectedGateId) ?? gates[0] ?? fallbackGate(),
+    () => gates.find((g) => g.id === selectedGateId) ?? gates[0] ?? null,
     [gates, selectedGateId],
   );
 
@@ -133,7 +121,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       const trimmed = name.trim();
       if (!trimmed) return false;
 
-      if (user && !id.startsWith("gate-")) {
+      if (user) {
         try {
           const res = await fetch(`/api/devices/${encodeURIComponent(id)}`, {
             method: "PATCH",
@@ -157,7 +145,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
 
   const removeGate = useCallback(
     async (id: string) => {
-      if (user && !id.startsWith("gate-")) {
+      if (user) {
         try {
           const res = await fetch(`/api/devices/${encodeURIComponent(id)}`, {
             method: "DELETE",
@@ -165,6 +153,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({}),
           });
+          // Already free / not owned — still drop from UI
           if (!res.ok && res.status !== 404) return false;
         } catch {
           return false;
@@ -173,13 +162,20 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
 
       setGates((prev) => {
         const next = prev.filter((g) => g.id !== id);
-        const final = next.length > 0 ? next : [fallbackGate()];
-        setSelectedGateId((cur) => (cur === id ? final[0].id : cur));
-        return final;
+        setSelectedGateId((cur) =>
+          cur === id ? (next[0]?.id ?? "") : cur,
+        );
+        return next;
       });
+
+      // Sync again so a stale merge cannot bring it back
+      window.setTimeout(() => {
+        void refreshFromServer();
+      }, 300);
+
       return true;
     },
-    [user],
+    [user, refreshFromServer],
   );
 
   const suggestNextGateName = useCallback(

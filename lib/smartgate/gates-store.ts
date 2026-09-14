@@ -9,29 +9,35 @@ export interface UserGate {
 export const GATES_STORAGE_KEY = "smartgate-user-gates";
 export const SELECTED_GATE_STORAGE_KEY = "smartgate-selected-gate";
 
-function defaultGate(): UserGate {
-  return {
-    id: "gate-1",
-    name: "Դարպաս 1",
-    createdAt: Date.now(),
-  };
+/** Drop legacy placeholder gate-1 that looked like a real “Դարպաս 1”. */
+function sanitizeGates(list: UserGate[]): UserGate[] {
+  return list.filter(
+    (g) =>
+      g &&
+      typeof g.id === "string" &&
+      g.id.length > 0 &&
+      !g.id.startsWith("gate-"),
+  );
 }
 
 export function loadUserGates(): UserGate[] {
-  if (typeof window === "undefined") return [defaultGate()];
+  if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(GATES_STORAGE_KEY);
-    if (!raw) return [defaultGate()];
+    if (!raw) return [];
     const parsed = JSON.parse(raw) as UserGate[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return [defaultGate()];
-    return parsed;
+    if (!Array.isArray(parsed)) return [];
+    return sanitizeGates(parsed);
   } catch {
-    return [defaultGate()];
+    return [];
   }
 }
 
 export function saveUserGates(gates: UserGate[]) {
-  window.localStorage.setItem(GATES_STORAGE_KEY, JSON.stringify(gates));
+  window.localStorage.setItem(
+    GATES_STORAGE_KEY,
+    JSON.stringify(sanitizeGates(gates)),
+  );
 }
 
 export function loadSelectedGateId(fallback: string): string {
@@ -56,7 +62,7 @@ export function createGateFromScan(
   deviceId?: string,
 ): UserGate {
   return {
-    id: deviceId?.trim() || `gate-${crypto.randomUUID().slice(0, 8)}`,
+    id: deviceId?.trim() || `device-${crypto.randomUUID().slice(0, 8)}`,
     name: name.trim() || nextGateDefaultName(existing.length, "hy"),
     createdAt: Date.now(),
   };

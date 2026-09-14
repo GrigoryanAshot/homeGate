@@ -10,6 +10,8 @@ export type SmartGateMessages = {
   selectGate: string;
   myGates: string;
   addGate: string;
+  noGatesYetTitle: string;
+  noGatesYetHint: string;
   scanGateTitle: string;
   scanGateHint: string;
   scanGateHintDb: string;
@@ -228,6 +230,9 @@ const en: SmartGateMessages = {
   selectGate: "Gate",
   myGates: "My gates",
   addGate: "Add gate",
+  noGatesYetTitle: "No gates yet",
+  noGatesYetHint:
+    "Set up the box Wi‑Fi first, then tap Add gate and scan the QR on the box.",
   scanGateTitle: "Add your gate",
   scanGateHint:
     "Point the camera at the big QR on the gate box.",
@@ -481,7 +486,10 @@ const hy: SmartGateMessages = {
   selectGate: "Դարպաս",
   myGates: "Իմ դարպասները",
   addGate: "Ավելացնել",
-  scanGateTitle: "Սկանավորել QR կոդը",
+  noGatesYetTitle: "Դեռ դարպաս չկա",
+  noGatesYetHint:
+    "Նախ կարգավորեք տուփի Wi‑Fi‑ը, ապա սեղմեք Ավելացնել և սկանավորեք QR‑ը։",
+  scanGateTitle: "Ավելացնել դարպաս",
   scanGateHint:
     "Ուղղեք հեռախոսը դարպասի հեռակառավարման կամ վահանակի QR կոդին՝ ավելացնելու համար։",
   scanGateHintDb:
@@ -736,7 +744,10 @@ const ru: SmartGateMessages = {
   selectGate: "Ворота",
   myGates: "Мои ворота",
   addGate: "Добавить",
-  scanGateTitle: "Сканировать QR-код",
+  noGatesYetTitle: "Ворот пока нет",
+  noGatesYetHint:
+    "Сначала настройте Wi‑Fi блока, затем нажмите Добавить и сканируйте QR.",
+  scanGateTitle: "Добавить ворота",
   scanGateHint:
     "Наведите телефон на QR-код пульта или блока управления воротами, чтобы добавить их.",
   scanGateHintDb:
