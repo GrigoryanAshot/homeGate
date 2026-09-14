@@ -2,6 +2,33 @@ import { prisma } from "./client";
 
 const PENDING_MAX_AGE_MS = 45 * 60 * 1000; // 45 min
 
+/**
+ * Claim often happens before the ESP has called hello (race). Attach this chip
+ * to the newest BUSY gate that still has no chipId so SoftAP→QR still works.
+ */
+async function attachChipToOrphanClaim(chipId: string) {
+  const alreadyOnDevice = await prisma.device.findFirst({
+    where: { chipId },
+    select: { id: true },
+  });
+  if (alreadyOnDevice) return;
+
+  const orphan = await prisma.device.findFirst({
+    where: {
+      status: "BUSY",
+      chipId: null,
+      ownerId: { not: null },
+    },
+    orderBy: { claimedAt: "desc" },
+  });
+  if (!orphan) return;
+
+  await prisma.device.update({
+    where: { id: orphan.id },
+    data: { chipId, lastSeenAt: new Date() },
+  });
+}
+
 export async function chipHello(chipId: string) {
   const id = chipId.trim();
   if (!id) return { ok: false as const, error: "missing_chip" as const };
@@ -11,6 +38,12 @@ export async function chipHello(chipId: string) {
     create: { chipId: id },
     update: { lastSeenAt: new Date() },
   });
+
+  try {
+    await attachChipToOrphanClaim(id);
+  } catch (e) {
+    console.error("[chipHello] orphan attach", e);
+  }
 
   return { ok: true as const, chipId: id };
 }

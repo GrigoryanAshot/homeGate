@@ -11,6 +11,7 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
+#include <WebServer.h>
 #include <PubSubClient.h>
 #include <ctype.h>
 #include <time.h>
@@ -20,6 +21,9 @@
 
 WiFiClientSecure mqttTls;
 PubSubClient mqtt(mqttTls);
+#if ENABLE_LAN_DEBUG_HTTP
+WebServer lanDebug(80);
+#endif
 
 String doorState = "closed";
 int lastAction = 0;
@@ -29,6 +33,7 @@ unsigned long lastStatusMs = 0;
 unsigned long lastRegisterAttempt = 0;
 unsigned long lastChipPollAttempt = 0;
 bool cloudRegistered = false;
+char mqttClientIdBuf[56];
 
 int activePulsePin = -1;
 unsigned long pulseEndMs = 0;
@@ -73,6 +78,7 @@ void pollPulse() {
 }
 
 void doOpen() {
+  Serial.println(">>> PULSE UP GPIO3 (OPEN)");
   lastAction = 0;
   startPulse(PIN_UP);
   doorState = "opening";
@@ -81,6 +87,7 @@ void doOpen() {
 }
 
 void doClose() {
+  Serial.println(">>> PULSE DOWN GPIO5 (CLOSE)");
   lastAction = 1;
   startPulse(PIN_DOWN);
   doorState = "closing";
@@ -89,6 +96,7 @@ void doClose() {
 }
 
 void doStop() {
+  Serial.println(">>> PULSE STOP GPIO10");
   startPulse(PIN_STOP);
   doorState = "stopped";
   statusDirty = true;
@@ -370,7 +378,21 @@ void handleCommand(const String &cmd) {
 }
 
 void onMqttMessage(char *topic, byte *payload, unsigned int length) {
-  if (strcmp(topic, TOPIC_COMMAND) != 0) return;
+  Serial.print("MQTT RX topic=");
+  Serial.print(topic);
+  Serial.print(" expect=");
+  Serial.print(TOPIC_COMMAND);
+  Serial.print(" len=");
+  Serial.println(length);
+
+  // Accept exact topic or any …/command (avoid silent drops from topic mismatch)
+  const bool topicOk =
+    strcmp(topic, TOPIC_COMMAND) == 0 ||
+    (strstr(topic, "/command") != nullptr);
+  if (!topicOk) {
+    Serial.println("MQTT RX ignored (topic)");
+    return;
+  }
   handleCommand(normalizeCommand((const char *)payload, length));
 }
 
@@ -450,6 +472,7 @@ bool connectMqtt() {
   Serial.print(" / ");
   Serial.println(TOPIC_STATUS);
 
+  mqtt.disconnect();
   mqttTls.stop();
   delay(200);
 
@@ -457,34 +480,42 @@ bool connectMqtt() {
   mqttTls.setHandshakeTimeout(30);
   mqttTls.setTimeout(30);
 
-  // Prefer hostname (TLS SNI). IP-only breaks many cloud brokers including HiveMQ.
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setCallback(onMqttMessage);
   mqtt.setBufferSize(512);
-  mqtt.setKeepAlive(45);
-  mqtt.setSocketTimeout(30);
+  mqtt.setKeepAlive(30);
+  mqtt.setSocketTimeout(20);
+
+  // Fresh client id each attempt — avoids HiveMQ kicking a ghost session
+  snprintf(
+    mqttClientIdBuf,
+    sizeof(mqttClientIdBuf),
+    "%s-%04lx",
+    DEVICE_CHIP_ID,
+    (unsigned long)(millis() & 0xFFFF)
+  );
 
   Serial.print("Product: ");
   Serial.println(DEVICE_PRODUCT_ID);
   Serial.print("Chip: ");
   Serial.println(DEVICE_CHIP_ID);
   Serial.print("ClientId: ");
-  Serial.println(MQTT_CLIENT_ID_RUNTIME);
+  Serial.println(mqttClientIdBuf);
   Serial.flush();
 
-  bool ok = mqtt.connect(MQTT_CLIENT_ID_RUNTIME, MQTT_USER, MQTT_PASS);
+  bool ok = mqtt.connect(mqttClientIdBuf, MQTT_USER, MQTT_PASS);
 
-  // Fallback: DNS broken on some routers — try known IP (may fail SNI)
   if (!ok) {
     IPAddress ip;
     if (resolveMqttHost(ip)) {
-      Serial.print("MQTT hostname failed — retry via IP ");
+      Serial.print("MQTT hostname failed — retry via IP+SNI ");
       Serial.println(ip);
       mqttTls.stop();
       delay(200);
       mqttTls.setInsecure();
+      mqttTls.setHandshakeTimeout(30);
       mqtt.setServer(ip, MQTT_PORT);
-      ok = mqtt.connect(MQTT_CLIENT_ID_RUNTIME, MQTT_USER, MQTT_PASS);
+      ok = mqtt.connect(mqttClientIdBuf, MQTT_USER, MQTT_PASS);
     }
   }
 
@@ -500,9 +531,11 @@ bool connectMqtt() {
     return false;
   }
 
-  mqtt.subscribe(TOPIC_COMMAND, 1);
+  const bool sub = mqtt.subscribe(TOPIC_COMMAND, 1);
   Serial.print("MQTT connected + subscribed ");
-  Serial.println(TOPIC_COMMAND);
+  Serial.print(TOPIC_COMMAND);
+  Serial.print(" ok=");
+  Serial.println(sub ? "1" : "0");
   setStatusLed(true);
   publishStatus();
   return true;
@@ -516,6 +549,52 @@ void ensureMqtt() {
   lastReconnectAttempt = now;
   connectMqtt();
 }
+
+#if ENABLE_LAN_DEBUG_HTTP
+void setupLanDebugHttp() {
+  lanDebug.on("/", []() {
+    String html;
+    html.reserve(320);
+    html += F("<!DOCTYPE html><meta name=viewport content=\"width=device-width\">");
+    html += F("<h1>HomeGate LAN</h1><p>");
+    html += DEVICE_PRODUCT_ID;
+    html += F("</p><p><a href=\"/open\">OPEN</a> · <a href=\"/close\">CLOSE</a> · <a href=\"/stop\">STOP</a></p>");
+    html += F("<p>IP ");
+    html += WiFi.localIP().toString();
+    html += F("</p>");
+    lanDebug.send(200, "text/html", html);
+  });
+  lanDebug.on("/open", []() {
+    doOpen();
+    lanDebug.send(200, "text/plain", "OPEN");
+  });
+  lanDebug.on("/close", []() {
+    doClose();
+    lanDebug.send(200, "text/plain", "CLOSE");
+  });
+  lanDebug.on("/stop", []() {
+    doStop();
+    lanDebug.send(200, "text/plain", "STOP");
+  });
+  lanDebug.on("/status", []() {
+    char buf[200];
+    snprintf(
+      buf,
+      sizeof(buf),
+      "{\"state\":\"%s\",\"mqtt\":%s,\"product\":\"%s\",\"ip\":\"%s\"}",
+      doorState.c_str(),
+      mqtt.connected() ? "true" : "false",
+      DEVICE_PRODUCT_ID,
+      WiFi.localIP().toString().c_str()
+    );
+    lanDebug.send(200, "application/json", buf);
+  });
+  lanDebug.begin();
+  Serial.print("LAN debug: http://");
+  Serial.print(WiFi.localIP());
+  Serial.println("/  (open|close|stop)");
+}
+#endif
 
 void setup() {
   pinMode(STATUS_LED_PIN, OUTPUT);
@@ -550,6 +629,11 @@ void setup() {
 #endif
 
   connectWifi();
+#if ENABLE_LAN_DEBUG_HTTP
+  if (WiFi.status() == WL_CONNECTED) {
+    setupLanDebugHttp();
+  }
+#endif
   if (deviceHasProduct()) {
     connectMqtt();
   } else {
@@ -560,6 +644,9 @@ void setup() {
 }
 
 void loop() {
+#if ENABLE_LAN_DEBUG_HTTP
+  lanDebug.handleClient();
+#endif
   ensureMqtt();
   mqtt.loop();
 

@@ -11,12 +11,14 @@
 #define FACTORY_WIFI_SSID ""
 #define FACTORY_WIFI_PASS ""
 
-// Leave empty for production — product comes from app QR claim after Wi‑Fi.
-#define FACTORY_PRODUCT_ID ""
-#define FACTORY_PRODUCT_SECRET ""
+// DEBUG: force this unit onto demo-gate-001 so MQTT/GPIO work even if claim↔chip raced.
+// For mass production SoftAP+QR, set both back to "".
+#define FACTORY_PRODUCT_ID "demo-gate-001"
+#define FACTORY_PRODUCT_SECRET "secret-demo-001"
 
 // Bump this number (+1) and reflash once to wipe Wi‑Fi + product (brand-new SoftAP).
 // Same token on later boots keeps customer Wi‑Fi; bump again only when you want another wipe.
+// Keep at 1 — do NOT bump now (would wipe Wi‑Fi again).
 #define FACTORY_NEW_TOKEN 1
 
 #define AP_SSID_PREFIX "TouchGate"
@@ -51,8 +53,11 @@
 #define STATUS_LED_ACTIVE_LOW 1
 #define WIFI_RESET_PIN 9
 
-#define PULSE_MS 180
+#define PULSE_MS 300
 #define MOVE_MS 12000
 #define REGISTER_RETRY_MS 20000
 #define WIFI_CONNECT_TIMEOUT_MS 25000
 #define WIFI_RESET_HOLD_MS 3500
+
+// LAN debug (same Wi‑Fi): http://<esp-ip>/open | /close | /stop — bypasses MQTT
+#define ENABLE_LAN_DEBUG_HTTP 1
