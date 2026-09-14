@@ -405,10 +405,34 @@ inline void wifiResetPinBegin() {
   pinMode(WIFI_RESET_PIN, INPUT_PULLUP);
 }
 
+inline void wifiMaybeFactoryNewWipe() {
+#if FACTORY_NEW_TOKEN > 0
+  Preferences &prefs = wifiPrefsStore();
+  prefs.begin("homegate", false);
+  const int done = prefs.getInt("newTok", 0);
+  if (done != FACTORY_NEW_TOKEN) {
+    Serial.print("FACTORY_NEW_TOKEN=");
+    Serial.print(FACTORY_NEW_TOKEN);
+    Serial.println(" → wiping Wi‑Fi + product (brand-new)");
+    prefs.putInt("newTok", FACTORY_NEW_TOKEN);
+    prefs.remove("ssid");
+    prefs.remove("pass");
+    prefs.end();
+    deviceClearProduct();
+    Serial.println("WiFi credentials cleared (NVS)");
+    blinkStatusLed(10, 40, 40);
+    return;
+  }
+  prefs.end();
+#endif
+}
+
 inline bool wifiEnsureConnected() {
   wifiResetPinBegin();
   deviceLoadIdentity();
   delay(50);
+
+  wifiMaybeFactoryNewWipe();
 
   if (digitalRead(WIFI_RESET_PIN) == LOW) {
     Serial.println("BOOT held at boot → force Wi-Fi setup");

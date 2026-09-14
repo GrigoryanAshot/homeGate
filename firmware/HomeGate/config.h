@@ -15,6 +15,10 @@
 #define FACTORY_PRODUCT_ID ""
 #define FACTORY_PRODUCT_SECRET ""
 
+// Bump this number (+1) and reflash once to wipe Wi‑Fi + product (brand-new SoftAP).
+// Same token on later boots keeps customer Wi‑Fi; bump again only when you want another wipe.
+#define FACTORY_NEW_TOKEN 1
+
 #define AP_SSID_PREFIX "TouchGate"
 #define AP_PASSWORD ""
 
