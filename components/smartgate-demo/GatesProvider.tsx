@@ -30,24 +30,35 @@ type GatesContextValue = {
   renameGate: (id: string, name: string) => Promise<boolean>;
   removeGate: (id: string) => Promise<boolean>;
   suggestNextGateName: (locale: Locale) => string;
-  refreshFromServer: () => Promise<void>;
+  refreshFromServer: () => Promise<UserGate[]>;
 };
 
 const GatesContext = createContext<GatesContextValue | null>(null);
 
 export function GatesProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [gates, setGates] = useState<UserGate[]>(() => loadUserGates());
-  const [selectedGateId, setSelectedGateId] = useState(() => {
-    const initial = loadUserGates();
-    return loadSelectedGateId(initial[0]?.id ?? "");
-  });
+  const userId = user?.id ?? null;
+  const [gates, setGates] = useState<UserGate[]>([]);
+  const [selectedGateId, setSelectedGateId] = useState("");
 
-  const refreshFromServer = useCallback(async () => {
-    if (!user) return;
+  // Load per-user cache whenever the signed-in profile changes.
+  useEffect(() => {
+    if (!userId) {
+      setGates([]);
+      setSelectedGateId("");
+      setActiveGateId("");
+      return;
+    }
+    const cached = loadUserGates(userId);
+    setGates(cached);
+    setSelectedGateId(loadSelectedGateId(cached[0]?.id ?? "", userId));
+  }, [userId]);
+
+  const refreshFromServer = useCallback(async (): Promise<UserGate[]> => {
+    if (!userId) return [];
     try {
       const res = await fetch("/api/devices/mine", { credentials: "include" });
-      if (!res.ok) return;
+      if (!res.ok) return [];
       const data = (await res.json()) as {
         devices?: { id: string; name: string | null; claimedAt: string | null }[];
       };
@@ -57,7 +68,9 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
         createdAt: d.claimedAt ? Date.parse(d.claimedAt) : Date.now(),
       }));
 
-      // Server is source of truth — including empty list after remove.
+      // Oldest claim first so Gate 1 stays visually first.
+      remote.sort((a, b) => a.createdAt - b.createdAt);
+
       setGates((prev) =>
         remote.map((g) => {
           const existing = prev.find((p) => p.id === g.id);
@@ -72,23 +85,27 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       setSelectedGateId((cur) =>
         remote.some((g) => g.id === cur) ? cur : (remote[0]?.id ?? ""),
       );
+      return remote;
     } catch {
-      /* keep local */
+      return [];
     }
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
+    if (!userId) return;
     void refreshFromServer();
-  }, [refreshFromServer]);
+  }, [userId, refreshFromServer]);
 
   useEffect(() => {
-    saveUserGates(gates);
-  }, [gates]);
+    if (!userId) return;
+    saveUserGates(gates, userId);
+  }, [gates, userId]);
 
   useEffect(() => {
-    saveSelectedGateId(selectedGateId);
+    if (!userId) return;
+    saveSelectedGateId(selectedGateId, userId);
     setActiveGateId(selectedGateId || "");
-  }, [selectedGateId]);
+  }, [selectedGateId, userId]);
 
   const selectedGate = useMemo(
     () => gates.find((g) => g.id === selectedGateId) ?? gates[0] ?? null,
@@ -104,9 +121,8 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       const gate = createGateFromScan(name, gates, deviceId);
       setGates((prev) => {
         if (prev.some((g) => g.id === gate.id)) {
-          return prev.map((g) =>
-            g.id === gate.id ? { ...g, name: gate.name } : g,
-          );
+          // Already listed — keep existing name (server owns renames via PATCH).
+          return prev;
         }
         return [...prev, gate];
       });
@@ -168,7 +184,6 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
         return next;
       });
 
-      // Sync again so a stale merge cannot bring it back
       window.setTimeout(() => {
         void refreshFromServer();
       }, 300);
@@ -179,8 +194,8 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
   );
 
   const suggestNextGateName = useCallback(
-    (locale: Locale) => nextGateDefaultName(gates.length, locale),
-    [gates.length],
+    (locale: Locale) => nextGateDefaultName(gates, locale),
+    [gates],
   );
 
   const value = useMemo(

@@ -186,7 +186,7 @@ function SmartGateDemoInner() {
       <AddGateScanModal
         open={scanOpen}
         onClose={() => setScanOpen(false)}
-        onAdded={(name) => showToast(t.toastGateAdded(name))}
+        onAdded={(message) => showToast(message)}
       />
 
       {toast && (

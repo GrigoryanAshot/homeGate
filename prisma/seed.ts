@@ -31,6 +31,13 @@ async function main() {
       name: null,
     },
     {
+      id: "demo-gate-003",
+      secret: "secret-demo-003",
+      status: "FREE",
+      ownerId: null,
+      name: null,
+    },
+    {
       id: "demo-gate-busy",
       secret: "secret-demo-busy",
       status: "BUSY",
@@ -52,12 +59,8 @@ async function main() {
         lastSeenAt: new Date(),
       },
       update: {
+        // Keep ownership / names if the product already exists.
         secretHash: hash(row.secret),
-        status: row.status,
-        ownerId: row.ownerId,
-        name: row.name,
-        claimedAt: row.status === "BUSY" ? new Date() : null,
-        lastSeenAt: new Date(),
       },
     });
     console.log(

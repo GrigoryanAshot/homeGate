@@ -34,6 +34,7 @@ export type SmartGateMessages = {
   deviceQrInvalid: string;
   deviceClaimFailed: string;
   toastGateAdded: (name: string) => string;
+  toastGateAlreadyOwned: (name: string) => string;
   gateMenuHint: string;
   gateRenameAction: string;
   gateRenameLabel: string;
@@ -260,6 +261,7 @@ const en: SmartGateMessages = {
   deviceQrInvalid: "Invalid QR / pair code.",
   deviceClaimFailed: "Could not claim device. Try again.",
   toastGateAdded: (name) => `${name} added`,
+  toastGateAlreadyOwned: (name) => `${name} is already in your account`,
   gateMenuHint: "This gate only",
   gateRenameAction: "Rename gate",
   gateRenameLabel: "Gate name",
@@ -516,6 +518,7 @@ const hy: SmartGateMessages = {
   deviceQrInvalid: "Անվավեր QR / զուգավորման կոդ։",
   deviceClaimFailed: "Չհաջողվեց կապել սարքը։ Փորձեք նորից։",
   toastGateAdded: (name) => `${name} ավելացվեց`,
+  toastGateAlreadyOwned: (name) => `${name} արդեն ձեր հաշվում է`,
   gateMenuHint: "Միայն այս դարպասը",
   gateRenameAction: "Վերանվանել",
   gateRenameLabel: "Դարպասի անուն",
@@ -774,6 +777,7 @@ const ru: SmartGateMessages = {
   deviceQrInvalid: "Неверный QR / код привязки.",
   deviceClaimFailed: "Не удалось привязать устройство. Попробуйте снова.",
   toastGateAdded: (name) => `${name} добавлены`,
+  toastGateAlreadyOwned: (name) => `${name} уже в вашем аккаунте`,
   gateMenuHint: "Только эти ворота",
   gateRenameAction: "Переименовать",
   gateRenameLabel: "Название ворот",

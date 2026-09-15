@@ -106,7 +106,7 @@ export async function seedFactoryDevice(deviceId: string, secret: string) {
 export async function listDevicesForOwner(ownerId: string) {
   const rows = await prisma.device.findMany({
     where: { ownerId },
-    orderBy: { claimedAt: "desc" },
+    orderBy: [{ claimedAt: "asc" }, { createdAt: "asc" }],
   });
   return rows.map(toPublicDevice);
 }
@@ -141,12 +141,11 @@ export async function claimDevice(input: {
           console.error("[claim] chip bind re-own", e);
         }
       }
+      // Keep the existing display name — re-scanning must not rename
+      // "Gate 1" to "Gate 3" and make the first gate look deleted.
       const updated = await prisma.device.update({
         where: { id },
-        data: {
-          name: input.name?.trim() || device.name,
-          lastSeenAt: new Date(),
-        },
+        data: { lastSeenAt: new Date() },
       });
       return {
         ok: true as const,

@@ -24,11 +24,12 @@ export function AddGateScanModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onAdded?: (gateName: string) => void;
+  onAdded?: (message: string) => void;
 }) {
   const { locale, t } = useLocale();
   const { user } = useAuth();
-  const { addGateFromScan, suggestNextGateName } = useGates();
+  const { addGateFromScan, suggestNextGateName, refreshFromServer, selectGate } =
+    useGates();
   const [mounted, setMounted] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -118,6 +119,7 @@ export function AddGateScanModal({
       const data = (await res.json()) as {
         ok: boolean;
         error?: string;
+        alreadyOwned?: boolean;
         chipBound?: string | null;
         device?: { id: string; name: string | null };
       };
@@ -131,15 +133,22 @@ export function AddGateScanModal({
         return;
       }
 
-      const gate = addGateFromScan(
-        data.device?.name || name.trim(),
-        data.device?.id || pair.deviceId,
-      );
-      if (data.chipBound) {
-        onAdded?.(gate.name);
-      } else {
-        onAdded?.(gate.name);
+      const deviceId = data.device?.id || pair.deviceId;
+      const displayName = data.device?.name?.trim() || name.trim();
+
+      if (data.alreadyOwned) {
+        // Re-scan of your own sticker — keep the existing gate, do not rename.
+        await refreshFromServer();
+        selectGate(deviceId);
+        onAdded?.(t.toastGateAlreadyOwned(displayName));
+        onClose();
+        return;
       }
+
+      addGateFromScan(displayName, deviceId);
+      await refreshFromServer();
+      selectGate(deviceId);
+      onAdded?.(t.toastGateAdded(displayName));
       onClose();
     } catch {
       setError(t.deviceClaimFailed);

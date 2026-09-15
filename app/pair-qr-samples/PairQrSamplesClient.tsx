@@ -15,6 +15,11 @@ const SAMPLES = [
     secret: "secret-demo-002",
   },
   {
+    label: "FREE — demo-gate-003",
+    id: "demo-gate-003",
+    secret: "secret-demo-003",
+  },
+  {
     label: "BUSY — should reject",
     id: "demo-gate-busy",
     secret: "secret-demo-busy",
