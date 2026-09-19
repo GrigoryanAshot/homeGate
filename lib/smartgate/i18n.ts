@@ -293,9 +293,9 @@ const en: SmartGateMessages = {
   gateTypeTitle: "What kind of gate is this?",
   gateTypeHint: (name) =>
     `Choose the look for “${name}”. You can change this later in the gate menu.`,
-  gateTypeRollup: "Rollup door",
+  gateTypeRollup: "Rollup gate",
   gateTypeRollupHint: "Curtain rises up into the box",
-  gateTypeSlide: "Sliding door",
+  gateTypeSlide: "Sliding gate",
   gateTypeSlideHint: "Leaf slides sideways",
   gateMenuHint: "This gate only",
   gateRenameAction: "Rename gate",
@@ -582,9 +582,9 @@ const hy: SmartGateMessages = {
   gateTypeTitle: "Ի՞նչ տեսակի դարպաս է սա",
   gateTypeHint: (name) =>
     `Ընտրեք տեսքը «${name}»-ի համար։ Կարող եք փոխել ավելի ուշ դարպասի մենյուից։`,
-  gateTypeRollup: "Գլորվող դուռ",
+  gateTypeRollup: "Ռոլետային դարպաս",
   gateTypeRollupHint: "Վարագույրը բարձրանում է վերև",
-  gateTypeSlide: "Սահող դուռ",
+  gateTypeSlide: "Սահող դարպաս",
   gateTypeSlideHint: "Տերևը սահում է կողք",
   gateMenuHint: "Միայն այս դարպասը",
   gateRenameAction: "Վերանվանել",
@@ -872,7 +872,7 @@ const ru: SmartGateMessages = {
   gateTypeTitle: "Какой тип ворот?",
   gateTypeHint: (name) =>
     `Выберите вид для «${name}». Можно изменить позже в меню ворот.`,
-  gateTypeRollup: "Рулонные ворота",
+  gateTypeRollup: "Роллетные ворота",
   gateTypeRollupHint: "Полотно поднимается вверх",
   gateTypeSlide: "Откатные ворота",
   gateTypeSlideHint: "Створка едет в сторону",
