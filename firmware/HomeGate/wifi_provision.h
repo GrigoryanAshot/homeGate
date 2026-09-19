@@ -23,6 +23,9 @@
 extern void setStatusLed(bool on);
 extern void blinkStatusLed(int times, int onMs, int offMs);
 
+inline WebServer &wifiPortalServer();
+inline DNSServer &wifiPortalDns();
+
 inline Preferences &wifiPrefsStore() {
   static Preferences prefs;
   return prefs;
