@@ -304,38 +304,47 @@ export function useSmartGateMqtt({
       const client = clientRef.current;
       const config = configRef.current;
 
-      if (client?.connected) {
+      const publishBrowser = () => {
+        if (!client?.connected) return false;
         client.publish(config.topicCommand, mqttWireCommand(command), {
           qos: 1,
         });
+        return true;
+      };
+
+      // One path only — browser + cloud relay was double-pulsing the ESP.
+      if (id) {
+        void (async () => {
+          try {
+            const res = await fetch(
+              `/api/devices/${encodeURIComponent(id)}/command`,
+              {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: command }),
+              },
+            );
+            if (res.ok) {
+              const data = (await res.json()) as {
+                topic?: string;
+                wire?: string;
+              };
+              console.log("[command relay ok]", data.topic, data.wire);
+              return;
+            }
+            // Shared invite / not owner → fall back to browser MQTT once
+            console.warn("[command relay]", res.status);
+            publishBrowser();
+          } catch (e) {
+            console.error("[command relay]", e);
+            publishBrowser();
+          }
+        })();
+        return true;
       }
 
-      if (!id) return Boolean(client?.connected);
-
-      // Fire cloud relay; caller may ignore Promise — we still return true to keep UI snappy
-      void (async () => {
-        try {
-          const res = await fetch(
-            `/api/devices/${encodeURIComponent(id)}/command`,
-            {
-              method: "POST",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: command }),
-            },
-          );
-          if (!res.ok) {
-            console.error("[command relay]", res.status, await res.text());
-          } else {
-            const data = (await res.json()) as { topic?: string; wire?: string };
-            console.log("[command relay ok]", data.topic, data.wire);
-          }
-        } catch (e) {
-          console.error("[command relay]", e);
-        }
-      })();
-
-      return true;
+      return publishBrowser();
     },
     [clearSettleTimer, mockMode],
   );
