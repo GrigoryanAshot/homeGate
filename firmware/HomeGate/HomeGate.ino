@@ -21,7 +21,9 @@
 #include "device_identity.h"
 #include "wifi_provision.h"
 #include "wifi_remote.h"
+#if ENABLE_BLE_RESCUE
 #include "ble_rescue.h"
+#endif
 
 /**
  * Arduino-ESP32 3.x: no setHostname(). Always connect by IP with SNI=MQTT_HOST.
@@ -279,6 +281,12 @@ bool registerWithCloud() {
   const String resp = http.getString();
   http.end();
 
+  // ESP32: a second TLS client (HTTPS) often breaks the live MQTT socket.
+  // PubSubClient can still report connected while commands never arrive.
+  mqtt.disconnect();
+  mqttTls.stop();
+  lastReconnectAttempt = 0;
+
   Serial.print("Register HTTP ");
   Serial.print(code);
   Serial.print(" ");
@@ -287,6 +295,7 @@ bool registerWithCloud() {
   if (code == 200 && resp.indexOf("\"ok\":true") >= 0) {
     cloudRegistered = true;
     Serial.println("Registered / refreshed in DB");
+    Serial.println("MQTT will reconnect after HTTPS…");
     return true;
   }
 
@@ -335,6 +344,9 @@ bool pollProductFromCloud() {
       snprintf(body, sizeof(body), "{\"chipId\":\"%s\"}", DEVICE_CHIP_ID);
       http.POST(body);
       http.end();
+      mqtt.disconnect();
+      mqttTls.stop();
+      lastReconnectAttempt = 0;
     }
   }
 
@@ -362,6 +374,9 @@ bool pollProductFromCloud() {
   const int code = http.GET();
   const String resp = http.getString();
   http.end();
+  mqtt.disconnect();
+  mqttTls.stop();
+  lastReconnectAttempt = 0;
 
   Serial.print("Chip poll HTTP ");
   Serial.print(code);
@@ -448,6 +463,11 @@ void handleCommand(const String &cmd) {
     doStop();
   } else if (cmd == "WIFI_SCAN" || cmd.startsWith("WIFI_SCAN")) {
     wifiRemotePublishScan();
+    // WiFi.scanNetworks often breaks the MQTT TLS socket on ESP32 — same as HTTPS
+    Serial.println("MQTT will reconnect after WIFI_SCAN…");
+    mqtt.disconnect();
+    mqttTls.stop();
+    lastReconnectAttempt = 0;
   } else if (
     cmd == "WIFI_RESET" || cmd == "WIFI_SETUP" || cmd.startsWith("WIFI_RESET")
   ) {
@@ -802,7 +822,12 @@ void setup() {
   Serial.println("Setup: SoftAP TGATE / 12345678 → http://192.168.4.1");
   Serial.println("   Re-setup: hold BOOT ~2s (clears Wi‑Fi, keeps gate claim)");
   Serial.println("   or Serial: WIFI:ssid|password");
-  Serial.println("   App: WIFI_SCAN / WIFI_SET (keep claim); BLE rescue after 60s down");
+  Serial.println("   App: WIFI_SCAN / WIFI_SET (keep claim)");
+#if ENABLE_BLE_RESCUE
+  Serial.println("   BLE rescue HG-xxxx after 60s Wi‑Fi down");
+#else
+  Serial.println("   SoftAP rescue TGATE after 60s Wi‑Fi down (BLE off — flash size)");
+#endif
 
   wifiRemoteSetPublisher(publishWifiEvent);
 
@@ -846,7 +871,11 @@ void loop() {
   pollStopButton();
 
   const bool wifiUp = WiFi.status() == WL_CONNECTED;
+#if ENABLE_BLE_RESCUE
   bleRescuePoll(wifiUp);
+#else
+  wifiClaimedSoftApRescuePoll(wifiUp);
+#endif
 
   if (!wifiUp) {
     connectWifi();

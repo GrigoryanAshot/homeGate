@@ -449,8 +449,13 @@ inline void wifiHandlePortalSave() {
 inline bool wifiStartSoftApRadio(const String &apSsid, const char *apPass, uint8_t channel) {
   WiFi.persistent(false);
   WiFi.setAutoReconnect(false);
-  WiFi.enableSTA(false);
-  delay(50);
+
+  // Clean leave STA — leftover STA mode makes TGATE invisible on C3
+  WiFi.disconnect(true, true);
+  WiFi.softAPdisconnect(true);
+  delay(100);
+  WiFi.mode(WIFI_OFF);
+  delay(300);
 
   WiFi.mode(WIFI_AP);
   delay(400);
@@ -709,4 +714,38 @@ inline void wifiPollResetButton() {
   } else {
     pressedAt = 0;
   }
+}
+
+/**
+ * Claimed device, home Wi‑Fi down for BLE_RESCUE_AFTER_MS → SoftAP
+ * (Wi‑Fi only, keep product). Used when BLE is disabled to save flash.
+ */
+inline uint32_t &wifiClaimedDownSince() {
+  static uint32_t v = 0;
+  return v;
+}
+
+inline void wifiClaimedSoftApRescuePoll(bool wifiUp) {
+  if (!deviceHasProduct()) {
+    wifiClaimedDownSince() = 0;
+    return;
+  }
+  if (wifiUp) {
+    wifiClaimedDownSince() = 0;
+    return;
+  }
+  if (wifiClaimedDownSince() == 0) wifiClaimedDownSince() = millis();
+  if (millis() - wifiClaimedDownSince() < BLE_RESCUE_AFTER_MS) return;
+
+  Serial.println(
+    "Wi‑Fi down ≥60s (claimed) → SoftAP TGATE (keep product claim)"
+  );
+  blinkStatusLed(10, 40, 40);
+  wifiClearCreds();
+  Preferences &p = wifiPrefsStore();
+  p.begin("homegate", false);
+  p.remove("provOk");
+  p.end();
+  wifiClaimedDownSince() = 0;
+  wifiRunSoftApPortal();
 }

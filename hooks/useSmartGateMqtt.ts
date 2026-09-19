@@ -110,6 +110,7 @@ export function useSmartGateMqtt({
     const c = getMqttConfig();
     return Boolean(c.host && c.username);
   });
+  const [brokerConnected, setBrokerConnected] = useState(false);
 
   const clearSettleTimer = useCallback(() => {
     if (settleTimerRef.current != null) {
@@ -137,10 +138,12 @@ export function useSmartGateMqtt({
 
     if (!configured) {
       setConnection("offline");
+      setBrokerConnected(false);
       return;
     }
 
     setConnection("connecting");
+    setBrokerConnected(false);
     const url = `wss://${config.host}:${config.port}${config.path}`;
     const client = mqtt.connect(url, {
       username: config.username,
@@ -195,15 +198,28 @@ export function useSmartGateMqtt({
 
     client.on("connect", () => {
       setConnection("online");
+      setBrokerConnected(true);
       client.subscribe(config.topicStatus, { qos: 0 });
     });
 
     // Auto-reconnect is on — treat drops as "connecting", not a hard offline
     // flash that scares users for the first few seconds.
-    client.on("reconnect", () => setConnection("connecting"));
-    client.on("offline", () => setConnection("connecting"));
-    client.on("close", () => setConnection("connecting"));
-    client.on("error", () => setConnection("connecting"));
+    client.on("reconnect", () => {
+      setConnection("connecting");
+      setBrokerConnected(false);
+    });
+    client.on("offline", () => {
+      setConnection("connecting");
+      setBrokerConnected(false);
+    });
+    client.on("close", () => {
+      setConnection("connecting");
+      setBrokerConnected(false);
+    });
+    client.on("error", () => {
+      setConnection("connecting");
+      setBrokerConnected(false);
+    });
 
     client.on("message", (topic, payload) => {
       if (topic !== config.topicStatus) return;
@@ -287,7 +303,7 @@ export function useSmartGateMqtt({
       }
 
       // Fire-and-forget — UI meaning stays; MQTT + status mirrored for reversed wiring
-      client.publish(config.topicCommand, mqttWireCommand(command), { qos: 0 });
+      client.publish(config.topicCommand, mqttWireCommand(command), { qos: 1 });
       return true;
     },
     [clearSettleTimer, mockMode],
@@ -338,5 +354,7 @@ export function useSmartGateMqtt({
     sendWifiScan,
     sendWifiSet,
     mqttConfigured,
+    /** True only while the browser MQTT socket is actually up (can publish). */
+    brokerConnected,
   };
 }

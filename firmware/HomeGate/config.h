@@ -5,7 +5,7 @@
 // Arduino: Board "ESP32C3 Dev Module" · USB CDC On Boot: Enabled
 // FW_BUILD must appear in Serial after Upload — if missing, wrong sketch was flashed
 // -----------------------------------------------------------------------------
-#define FW_BUILD "2026-09-19-wifi-remote"
+#define FW_BUILD "2026-09-19-mqtt-rescan"
 
 #define FACTORY_WIFI_SSID ""
 #define FACTORY_WIFI_PASS ""
@@ -19,11 +19,16 @@
 #define FACTORY_NEW_TOKEN 18
 #define FORCE_SOFTAP_ON_BOOT 0
 
-// Outage (AP missing) → retry. AUTH reject (claimed) → retry + BLE after 60s.
+// Outage (AP missing) → retry. AUTH reject (claimed) → retry + rescue after 60s.
 #define WIFI_RETRY_GAP_MS 30000
 #define WIFI_RESET_HOLD_MS 2000
 #define BLE_RESCUE_AFTER_MS 60000
 #define WIFI_REMOTE_JOIN_TIMEOUT_MS 20000
+
+// BLE stack is large (~200KB+). Default OFF so the sketch fits the stock
+// 1.3MB app partition. To enable BLE: set 1 AND Arduino
+// Tools → Partition Scheme → "Huge APP (3MB No OTA/1MB SPIFFS)".
+#define ENABLE_BLE_RESCUE 0
 
 #define ENABLE_SERIAL_WIFI_SETUP 1
 #define SERIAL_WIFI_WAIT_MS 0
@@ -61,5 +66,5 @@
 #define REGISTER_RETRY_MS 20000
 #define WIFI_CONNECT_TIMEOUT_MS 40000
 
-// LAN GPIO test: http://<esp-ip>/open — useful while debugging; leave on.
-#define ENABLE_LAN_DEBUG_HTTP 1
+// LAN GPIO test: http://<esp-ip>/open — off by default (saves flash).
+#define ENABLE_LAN_DEBUG_HTTP 0

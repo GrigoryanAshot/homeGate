@@ -75,7 +75,7 @@ function SmartGateDemoInner() {
     setLastWifiEvent(event);
   }, []);
 
-  const { connection, gateState, setGateState, busy, sendCommand, sendWifiReset, sendWifiScan, sendWifiSet, mqttConfigured } =
+  const { connection, gateState, setGateState, busy, sendCommand, sendWifiReset, sendWifiScan, sendWifiSet, mqttConfigured, brokerConnected } =
     useSmartGateMqtt({
       mockMode: false,
       gateId: hasGate ? selectedGateId : undefined,
@@ -163,8 +163,8 @@ function SmartGateDemoInner() {
           onSettingsOpenChange={setSettingsOpen}
           onToast={showToast}
           onMqttSaved={() => setMqttEpoch((n) => n + 1)}
+          mqttOnline={brokerConnected}
           onWifiReset={() => handleWifiReset()}
-          mqttOnline={mqttConfigured && connection === "online"}
         />
 
         {view === "control" && hasGate && showOfflineBanner && (
@@ -179,7 +179,7 @@ function SmartGateDemoInner() {
               <GateCardsRow
                 onAddGate={() => setScanOpen(true)}
                 connection={hasGate ? connection : "offline"}
-                mqttOnline={hasGate && mqttConfigured && connection === "online"}
+                mqttOnline={hasGate && brokerConnected}
                 onResetGate={(id) => {
                   selectGate(id);
                   return handleWifiReset(id);
@@ -198,7 +198,7 @@ function SmartGateDemoInner() {
                   busy={busy}
                   gateState={gateState}
                   onCommand={handleCommand}
-                  controlsEnabled={mqttConfigured && connection === "online"}
+                  controlsEnabled={brokerConnected}
                 />
               ) : (
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
@@ -239,7 +239,7 @@ function SmartGateDemoInner() {
           gates.find((g) => g.id === changeWifiGateId)?.name ||
           changeWifiGateId
         }
-        mqttOnline={mqttConfigured && connection === "online"}
+        mqttOnline={brokerConnected}
         onScan={() => sendWifiScan(changeWifiGateId || selectedGateId)}
         onConnect={(ssid, password) =>
           sendWifiSet(ssid, password, changeWifiGateId || selectedGateId)
