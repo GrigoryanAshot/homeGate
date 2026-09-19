@@ -8,6 +8,8 @@
 */
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <HTTPClient.h>
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <Preferences.h>
@@ -303,10 +305,8 @@ inline bool wifiJoinHomeClean(const String &ssid, const String &pass) {
 }
 
 inline String wifiBuildPortalHtml() {
-  // API for SoftAP browser (phone needs mobile data while on TGATE).
-  const String api = String(API_BASE_URL);
   String html;
-  html.reserve(5200);
+  html.reserve(5600);
   html += F(
     "<!DOCTYPE html><html><head>"
     "<meta charset=\"utf-8\"/>"
@@ -323,84 +323,189 @@ inline String wifiBuildPortalHtml() {
     "border:2px solid #94a3b8;font-size:1.1rem}"
     "button{width:100%;margin-top:16px;padding:18px;border:0;border-radius:20px;"
     "background:#2563eb;color:#fff;font-weight:800;font-size:1.1rem}"
+    "button:disabled{opacity:.5}"
     "button.sec{background:#e2e8f0;color:#0f172a;margin-top:10px}"
     ".err{color:#b91c1c;font-size:.9rem;margin-top:10px}"
     ".ok{color:#15803d;font-size:.9rem}"
     "small{display:block;margin-top:14px;color:#94a3b8;font-size:.75rem}"
     ".step{display:none}.step.on{display:block}"
     "</style></head><body><div class=\"box\">"
-  );
-  html += F(
     "<div id=\"s1\" class=\"step on\">"
-    "<h1>Sign in</h1>"
-    "<p class=\"hint\">Keep <b>mobile data</b> on while connected to TGATE so email code can send.</p>"
+    "<h1>1 · Home Wi‑Fi</h1>"
+    "<p class=\"hint\">First connect the box to your home network. Stay on <b>TGATE</b> — do not leave this page.</p>"
+    "<label>Network name (SSID)</label>"
+    "<input id=\"ssid\" maxlength=\"32\" placeholder=\"Your Wi‑Fi name\" "
+    "autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"/>"
+    "<label>Password</label>"
+    "<input id=\"pass\" type=\"text\" maxlength=\"63\" placeholder=\"Wi‑Fi password\" "
+    "autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"/>"
+    "<button type=\"button\" id=\"btnWifi\">Connect box to Wi‑Fi</button>"
+    "<p id=\"e1\" class=\"err\"></p>"
+    "</div>"
+    "<div id=\"s2\" class=\"step\">"
+    "<h1>2 · Sign in</h1>"
+    "<p class=\"hint\">Email code is sent by the box (through your home Wi‑Fi).</p>"
     "<label>Email</label>"
     "<input id=\"email\" type=\"email\" inputmode=\"email\" autocomplete=\"email\" "
     "placeholder=\"you@email.com\"/>"
     "<button type=\"button\" id=\"btnCode\">Send code</button>"
-    "<p id=\"e1\" class=\"err\"></p>"
-    "</div>"
-    "<div id=\"s2\" class=\"step\">"
-    "<h1>Verify</h1>"
-    "<p class=\"hint\">Enter the 6‑digit code from your email.</p>"
-    "<label>Code</label>"
-    "<input id=\"code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"123456\"/>"
-    "<button type=\"button\" id=\"btnVerify\">Verify</button>"
     "<button type=\"button\" class=\"sec\" id=\"btnBack1\">Back</button>"
     "<p id=\"e2\" class=\"err\"></p>"
     "</div>"
     "<div id=\"s3\" class=\"step\">"
-    "<h1>Home Wi‑Fi</h1>"
-    "<p class=\"hint\">This gate will be added to your account after connect.</p>"
-    "<form method=\"POST\" action=\"/save\" id=\"wf\">"
-    "<input type=\"hidden\" name=\"provisionToken\" id=\"tok\"/>"
-    "<label>Network name (SSID)</label>"
-    "<input name=\"ssid_manual\" maxlength=\"32\" placeholder=\"Your Wi‑Fi name\" "
-    "required autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"/>"
-    "<label>Password</label>"
-    "<input name=\"pass\" type=\"text\" maxlength=\"63\" placeholder=\"Wi‑Fi password\" "
-    "autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"/>"
-    "<button type=\"submit\">Save &amp; Connect</button>"
-    "</form>"
-    "<p id=\"who\" class=\"ok\"></p>"
+    "<h1>3 · Verify</h1>"
+    "<p class=\"hint\">Enter the 6‑digit code from your email.</p>"
+    "<label>Code</label>"
+    "<input id=\"code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"123456\"/>"
+    "<button type=\"button\" id=\"btnVerify\">Verify &amp; finish</button>"
+    "<button type=\"button\" class=\"sec\" id=\"btnBack2\">Back</button>"
+    "<p id=\"e3\" class=\"err\"></p>"
     "</div>"
-  );
-  html += F("<small>AP: <b>TGATE</b> / <b>12345678</b></small></div>");
-  html += "<script>const API=\"";
-  html += api;
-  html += F(
-    "\";"
-    "let tok='';"
+    "<small>AP: <b>TGATE</b> / <b>12345678</b></small></div>"
+    "<script>"
+    "let ssid='',pass='';"
     "const $=id=>document.getElementById(id);"
     "function show(n){[1,2,3].forEach(i=>$('s'+i).classList.toggle('on',i===n));}"
-    "async function jpost(path,body){"
-    "const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},"
-    "body:JSON.stringify(body)});"
-    "const d=await r.json().catch(()=>({}));"
-    "if(!r.ok||d.ok===false)throw new Error(d.error||('HTTP '+r.status));"
+    "function niceErr(e){"
+    "const m=String(e&&e.message||e||'');"
+    "if(/load failed|failed to fetch|networkerror/i.test(m))"
+    "return 'Network error — stay on TGATE and retry';"
+    "if(m==='wifi_join_failed')return 'Wrong Wi‑Fi name/password — try again';"
+    "if(m==='box_offline')return 'Box not online yet — reconnect Wi‑Fi step';"
+    "if(m==='send_failed')return 'Email send failed — check address / try again';"
+    "return m;}"
+    "async function post(path,body,asJson){"
+    "const r=await fetch(path,{method:'POST',"
+    "headers:{'Content-Type':asJson?'application/json':'application/x-www-form-urlencoded'},"
+    "body:asJson?JSON.stringify(body):body});"
+    "const t=await r.text();"
+    "let d={};try{d=JSON.parse(t);}catch(_){d={raw:t};}"
+    "if(!r.ok||d.ok===false)throw new Error(d.error||d.raw||('HTTP '+r.status));"
     "return d;}"
+    "$('btnWifi').onclick=async()=>{"
+    "$('e1').textContent='';$('btnWifi').disabled=true;"
+    "ssid=$('ssid').value.trim();pass=$('pass').value;"
+    "if(!ssid){$('e1').textContent='Enter Wi‑Fi name';$('btnWifi').disabled=false;return;}"
+    "try{"
+    "await post('/sta-join','ssid_manual='+encodeURIComponent(ssid)+'&pass='+encodeURIComponent(pass),false);"
+    "$('e1').className='ok';$('e1').textContent='Box online — continue';"
+    "show(2);"
+    "}catch(e){$('e1').className='err';$('e1').textContent=niceErr(e);}"
+    "$('btnWifi').disabled=false;};"
     "$('btnCode').onclick=async()=>{"
-    "$('e1').textContent='';"
+    "$('e2').textContent='';$('btnCode').disabled=true;"
     "const email=$('email').value.trim();"
-    "if(!email){$('e1').textContent='Enter email';return;}"
-    "try{const d=await jpost('/api/auth/request-code',{email});"
-    "if(d.devCode)$('e1').textContent='Dev code: '+d.devCode;"
-    "show(2);}catch(e){$('e1').textContent=e.message==='send_failed'"
-    "?'Could not send email — turn on mobile data':String(e.message||e);}};"
+    "if(!email){$('e2').textContent='Enter email';$('btnCode').disabled=false;return;}"
+    "try{const d=await post('/cloud/request-code',{email},true);"
+    "if(d.devCode)$('e2').textContent='Dev code: '+d.devCode;"
+    "show(3);}catch(e){$('e2').textContent=niceErr(e);}"
+    "$('btnCode').disabled=false;};"
     "$('btnVerify').onclick=async()=>{"
-    "$('e2').textContent='';"
-    "try{const d=await jpost('/api/auth/verify-code',{"
-    "email:$('email').value.trim(),code:$('code').value.trim(),softAp:true});"
-    "tok=d.provisionToken||'';"
+    "$('e3').textContent='';$('btnVerify').disabled=true;"
+    "try{"
+    "const d=await post('/cloud/verify-code',{"
+    "email:$('email').value.trim(),code:$('code').value.trim(),softAp:true},true);"
+    "const tok=d.provisionToken||'';"
     "if(!tok)throw new Error('no_token');"
-    "$('tok').value=tok;"
-    "$('who').textContent='Signed in as '+((d.user&&d.user.email)||'');"
-    "show(3);}catch(e){$('e2').textContent=e.message==='invalid_code'"
-    "?'Wrong code':String(e.message||e);}};"
+    "const f=document.createElement('form');f.method='POST';f.action='/save';"
+    "[['ssid_manual',ssid],['pass',pass],['provisionToken',tok]].forEach(([n,v])=>{"
+    "const i=document.createElement('input');i.type='hidden';i.name=n;i.value=v;f.appendChild(i);});"
+    "document.body.appendChild(f);f.submit();"
+    "}catch(e){$('e3').textContent=e.message==='invalid_code'?'Wrong code':niceErr(e);"
+    "$('btnVerify').disabled=false;}};"
     "$('btnBack1').onclick=()=>show(1);"
+    "$('btnBack2').onclick=()=>show(2);"
     "</script></body></html>"
   );
   return html;
+}
+
+/** Forward JSON to cloud while SoftAP phone talks only to 192.168.4.1 */
+inline String wifiCloudPostJson(const char *path, const String &jsonBody) {
+  if (WiFi.status() != WL_CONNECTED) {
+    return "{\"ok\":false,\"error\":\"box_offline\"}";
+  }
+  String url = String(API_BASE_URL) + path;
+  HTTPClient http;
+  WiFiClientSecure client;
+  client.setInsecure();
+  client.setHandshakeTimeout(15);
+  if (!http.begin(client, url)) {
+    return "{\"ok\":false,\"error\":\"http_begin\"}";
+  }
+  http.setConnectTimeout(8000);
+  http.setTimeout(12000);
+  http.addHeader("Content-Type", "application/json");
+  const int code = http.POST(jsonBody);
+  String resp = http.getString();
+  http.end();
+  if (resp.length() == 0) {
+    resp = String("{\"ok\":false,\"error\":\"HTTP ") + code + "\"}";
+  }
+  Serial.print("Cloud proxy ");
+  Serial.print(path);
+  Serial.print(" → ");
+  Serial.println(code);
+  return resp;
+}
+
+inline void wifiHandleStaJoin() {
+  WebServer &server = wifiPortalServer();
+  String ssid = server.hasArg("ssid_manual") ? server.arg("ssid_manual") : "";
+  ssid.trim();
+  if (ssid.length() == 0) {
+    server.send(400, "application/json", "{\"ok\":false,\"error\":\"ssid_required\"}");
+    return;
+  }
+  const String pass = server.hasArg("pass") ? server.arg("pass") : "";
+
+  Serial.print("SoftAP STA join SSID=");
+  Serial.println(ssid);
+
+  wifiSaveCreds(ssid, pass);
+
+  // Keep SoftAP, add STA so the box can reach the cloud for email OTP
+  WiFi.mode(WIFI_AP_STA);
+  delay(100);
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);
+  WiFi.begin(ssid.c_str(), pass.c_str());
+
+  const unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 25000) {
+    delay(200);
+    wifiPortalServer().handleClient();
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("STA join failed while SoftAP up");
+    server.send(
+      502,
+      "application/json",
+      "{\"ok\":false,\"error\":\"wifi_join_failed\"}"
+    );
+    return;
+  }
+
+  wifiApplyPublicDns();
+  Serial.print("STA OK IP=");
+  Serial.println(WiFi.localIP());
+  server.send(200, "application/json", "{\"ok\":true,\"ip\":\"" + WiFi.localIP().toString() + "\"}");
+}
+
+inline void wifiHandleCloudRequestCode() {
+  WebServer &server = wifiPortalServer();
+  const String body =
+    server.hasArg("plain") ? server.arg("plain") : "{}";
+  const String resp = wifiCloudPostJson("/api/auth/request-code", body);
+  server.send(200, "application/json", resp);
+}
+
+inline void wifiHandleCloudVerifyCode() {
+  WebServer &server = wifiPortalServer();
+  const String body =
+    server.hasArg("plain") ? server.arg("plain") : "{}";
+  const String resp = wifiCloudPostJson("/api/auth/verify-code", body);
+  server.send(200, "application/json", resp);
 }
 
 inline WebServer &wifiPortalServer() {
@@ -636,6 +741,9 @@ inline void wifiRunSoftApPortal() {
   delay(50);
   server.on("/", HTTP_GET, wifiHandlePortalRoot);
   server.on("/wifi", HTTP_GET, wifiHandleWifiPage);
+  server.on("/sta-join", HTTP_POST, wifiHandleStaJoin);
+  server.on("/cloud/request-code", HTTP_POST, wifiHandleCloudRequestCode);
+  server.on("/cloud/verify-code", HTTP_POST, wifiHandleCloudVerifyCode);
   server.on("/save", HTTP_POST, wifiHandlePortalSave);
   server.on("/generate_204", HTTP_GET, wifiHandlePortalRoot);
   server.on("/gen_204", HTTP_GET, wifiHandlePortalRoot);

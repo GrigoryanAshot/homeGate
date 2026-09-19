@@ -452,10 +452,10 @@ const en: SmartGateMessages = {
     "On the box portal: sign in with email, then enter your home Wi‑Fi. The gate is added to that account automatically. Your existing gates are not changed.",
   wifiSetupStep1: "Power the new box. LED blinks fast.",
   wifiSetupStep2: "On the phone, join Wi‑Fi TGATE (password 12345678).",
-  wifiSetupStep3: "Open http://192.168.4.1 — keep mobile data on for the email code.",
-  wifiSetupStep4: "Enter email → verify code → type home Wi‑Fi name and password → Save.",
+  wifiSetupStep3: "Open http://192.168.4.1 — stay on TGATE.",
+  wifiSetupStep4: "1) Home Wi‑Fi → 2) email code → 3) verify. The box sends the email (not your phone).",
   wifiSetupStep5:
-    "Switch back to home Wi‑Fi and open this app — the new gate appears. (QR scan is optional / legacy.)",
+    "After “Saved”, switch back to home Wi‑Fi and open this app — the new gate appears.",
   wifiSetupReset:
     "Wrong Wi‑Fi? Gear on that gate → Reset. SoftAP comes back. Existing gates stay.",
   wifiResetAction: "Reset selected gate setup",
@@ -732,10 +732,10 @@ const hy: SmartGateMessages = {
     "Պորտալում՝ մուտք էլ․ փոստով, ապա տան Wi‑Fi։ Դարպասը ավելանում է այդ հաշվին։ Արդեն գոյություն ունեցող դարպասները չեն փոխվում։",
   wifiSetupStep1: "Միացրեք նոր տուփը։ Արագ թարթող LED։",
   wifiSetupStep2: "Հեռախոսով միացեք TGATE Wi‑Fi‑ին (գաղտնաբառ 12345678)։",
-  wifiSetupStep3: "Բացեք http://192.168.4.1 — միացրեք նաև բջջային ինտերնետը կոդի համար։",
-  wifiSetupStep4: "Էլ․ փոստ → կոդ → տան Wi‑Fi անուն և գաղտնաբառ → Save։",
+  wifiSetupStep3: "Բացեք http://192.168.4.1 — մնացեք TGATE‑ին։",
+  wifiSetupStep4: "1) տան Wi‑Fi → 2) էլ․ փոստ → 3) կոդ։ Էլ․ նամակը ուղարկում է տուփը։",
   wifiSetupStep5:
-    "Վերադարձեք տան Wi‑Fi և բացեք հավելվածը — նոր դարպասը կերևա։ (QR‑ը կամընտրական է։)",
+    "Saved‑ից հետո վերադարձեք տան Wi‑Fi և բացեք հավելվածը — նոր դարպասը կերևա։",
   wifiSetupReset:
     "Սխալ Wi‑Fi՞։ Դարպասի ⚙ → Վերակայել։ SoftAP կվերադառնա։ Մյուս դարպասները մնում են։",
   wifiResetAction: "Վերակայել ընտրված դարպասը",
@@ -1014,10 +1014,10 @@ const ru: SmartGateMessages = {
     "На портале: вход по email, затем домашний Wi‑Fi. Ворота добавляются на этот аккаунт. Существующие ворота не меняются.",
   wifiSetupStep1: "Включите новый блок. Быстрое мигание LED.",
   wifiSetupStep2: "На телефоне подключитесь к Wi‑Fi TGATE (пароль 12345678).",
-  wifiSetupStep3: "Откройте http://192.168.4.1 — включите мобильный интернет для кода.",
-  wifiSetupStep4: "Email → код → имя и пароль домашнего Wi‑Fi → Save.",
+  wifiSetupStep3: "Откройте http://192.168.4.1 — оставайтесь на TGATE.",
+  wifiSetupStep4: "1) домашний Wi‑Fi → 2) email → 3) код. Письмо отправляет блок.",
   wifiSetupStep5:
-    "Вернитесь в домашний Wi‑Fi и откройте приложение — новые ворота появятся. (QR опционален.)",
+    "После Saved вернитесь в домашний Wi‑Fi и откройте приложение — новые ворота появятся.",
   wifiSetupReset:
     "Неверный Wi‑Fi? Шестерёнка → Сброс. SoftAP вернётся. Другие ворота остаются.",
   wifiResetAction: "Сбросить выбранные ворота",

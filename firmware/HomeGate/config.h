@@ -5,7 +5,7 @@
 // Arduino: Board "ESP32C3 Dev Module" · USB CDC On Boot: Enabled
 // FW_BUILD must appear in Serial after Upload — if missing, wrong sketch was flashed
 // -----------------------------------------------------------------------------
-#define FW_BUILD "2026-09-19-softap-email"
+#define FW_BUILD "2026-09-19-softap-proxy"
 
 #define FACTORY_WIFI_SSID ""
 #define FACTORY_WIFI_PASS ""
