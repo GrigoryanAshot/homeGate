@@ -33,14 +33,14 @@ const openProgress: Record<GateState, number> = {
   closed: 0,
   closing: 0,
   stopped: 0.5,
-  // Animate toward open while moving; don't look fully open until "open"
-  opening: 0.85,
+  // Same target as "open" — one smooth CSS transition (no 0.85→1 hitch)
+  opening: 1,
   open: 1,
   unknown: 0,
 };
 
-const GATE_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
-const GATE_DURATION = "2.4s";
+const GATE_EASE = "cubic-bezier(0.45, 0.05, 0.55, 0.95)";
+const GATE_DURATION = "2.6s";
 
 function pct(value: number, base: number) {
   return `${(value / base) * 100}%`;
