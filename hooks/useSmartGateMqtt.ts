@@ -97,6 +97,8 @@ export function useSmartGateMqtt({
 }: UseSmartGateMqttOptions) {
   const clientRef = useRef<MqttClient | null>(null);
   const configRef = useRef<MqttConfig>(getMqttConfig());
+  const gateIdRef = useRef(gateId);
+  gateIdRef.current = gateId;
   const lastCommandAtRef = useRef(0);
   const settleTimerRef = useRef<number | null>(null);
   const onCommandSentRef = useRef(onCommandSent);
@@ -274,10 +276,6 @@ export function useSmartGateMqtt({
         return true;
       }
 
-      const client = clientRef.current;
-      const config = configRef.current;
-      if (!client?.connected) return false;
-
       lastCommandAtRef.current = Date.now();
       if (command === "OPEN") {
         setGateState("opening");
@@ -302,9 +300,27 @@ export function useSmartGateMqtt({
         setGateState("stopped");
       }
 
-      // Fire-and-forget — UI meaning stays; MQTT + status mirrored for reversed wiring
-      client.publish(config.topicCommand, mqttWireCommand(command), { qos: 1 });
-      return true;
+      const id = gateIdRef.current?.trim();
+      // Cloud relay — does not depend on the phone's MQTT publish path
+      if (id) {
+        void fetch(`/api/devices/${encodeURIComponent(id)}/command`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: command }),
+        }).catch(() => {
+          /* ignore */
+        });
+      }
+
+      const client = clientRef.current;
+      const config = configRef.current;
+      if (client?.connected) {
+        client.publish(config.topicCommand, mqttWireCommand(command), {
+          qos: 1,
+        });
+      }
+      return Boolean(id || client?.connected);
     },
     [clearSettleTimer, mockMode],
   );

@@ -5,7 +5,7 @@
 // Arduino: Board "ESP32C3 Dev Module" · USB CDC On Boot: Enabled
 // FW_BUILD must appear in Serial after Upload — if missing, wrong sketch was flashed
 // -----------------------------------------------------------------------------
-#define FW_BUILD "2026-09-19-mqtt-rescan"
+#define FW_BUILD "2026-09-19-cmd-relay"
 
 #define FACTORY_WIFI_SSID ""
 #define FACTORY_WIFI_PASS ""
@@ -66,5 +66,5 @@
 #define REGISTER_RETRY_MS 20000
 #define WIFI_CONNECT_TIMEOUT_MS 40000
 
-// LAN GPIO test: http://<esp-ip>/open — off by default (saves flash).
-#define ENABLE_LAN_DEBUG_HTTP 0
+// LAN GPIO test: http://<esp-ip>/open — on for debugging commands without MQTT.
+#define ENABLE_LAN_DEBUG_HTTP 1

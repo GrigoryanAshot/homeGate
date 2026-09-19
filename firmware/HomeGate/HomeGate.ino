@@ -863,7 +863,8 @@ void loop() {
   lanDebug.handleClient();
 #endif
   ensureMqtt();
-  mqtt.loop();
+  // Pump MQTT often — missed loops drop command packets
+  for (int i = 0; i < 8; i++) mqtt.loop();
   flushPendingWifiEvent();
 
   pollPulse();
@@ -886,7 +887,7 @@ void loop() {
   if (deviceHasProduct() && !mqtt.connected()) {
     ensureMqtt();
   }
-  mqtt.loop();
+  for (int i = 0; i < 8; i++) mqtt.loop();
   flushPendingWifiEvent();
 
   if (updateMoveState()) {

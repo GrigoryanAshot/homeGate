@@ -134,8 +134,9 @@ export function getMqttConfig(): MqttConfig {
     const username =
       window.localStorage.getItem("homegate.mqtt.user")?.trim() ||
       fromEnv.username;
+    const passwordRaw = window.localStorage.getItem("homegate.mqtt.pass");
     const password =
-      window.localStorage.getItem("homegate.mqtt.pass") ?? fromEnv.password;
+      passwordRaw && passwordRaw.length > 0 ? passwordRaw : fromEnv.password;
     return {
       ...fromEnv,
       host,
@@ -162,7 +163,7 @@ export function saveMqttLocalConfig(partial: {
 export function getMqttConfigForGate(gateId?: string): MqttConfig {
   const base = getMqttConfig();
   const id = gateId?.trim();
-  if (!id || id === "gate-1" || id.startsWith("gate-")) {
+  if (!id || id === "gate-1") {
     // Legacy local placeholder — keep shared topics for old demos
     return base;
   }

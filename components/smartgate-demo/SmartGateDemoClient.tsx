@@ -179,7 +179,7 @@ function SmartGateDemoInner() {
               <GateCardsRow
                 onAddGate={() => setScanOpen(true)}
                 connection={hasGate ? connection : "offline"}
-                mqttOnline={hasGate && brokerConnected}
+                mqttOnline={hasGate && (brokerConnected || mqttConfigured)}
                 onResetGate={(id) => {
                   selectGate(id);
                   return handleWifiReset(id);
@@ -198,7 +198,7 @@ function SmartGateDemoInner() {
                   busy={busy}
                   gateState={gateState}
                   onCommand={handleCommand}
-                  controlsEnabled={brokerConnected}
+                  controlsEnabled={Boolean(selectedGateId)}
                 />
               ) : (
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
