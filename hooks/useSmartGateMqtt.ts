@@ -13,8 +13,8 @@ import { getMqttConfig, getMqttConfigForGate } from "@/lib/smartgate/types";
 /** Opto wiring on this unit is reversed vs labels — swap MQTT OPEN/CLOSE only. */
 const SWAP_OPEN_CLOSE_MQTT = true;
 
-/** Match firmware MOVE_MS — UI settle only, never blocks buttons */
-const MOVE_SETTLE_MS = 12_000;
+/** UI opening/closing badge + animation duration (then settles to open/closed) */
+const MOVE_SETTLE_MS = 10_000;
 
 function mqttWireCommand(command: GateCommand): GateCommand {
   if (!SWAP_OPEN_CLOSE_MQTT) return command;
@@ -263,13 +263,13 @@ export function useSmartGateMqtt({
           settleTimerRef.current = window.setTimeout(() => {
             setGateState("open");
             settleTimerRef.current = null;
-          }, 2400);
+          }, MOVE_SETTLE_MS);
         } else if (command === "CLOSE") {
           setGateState("closing");
           settleTimerRef.current = window.setTimeout(() => {
             setGateState("closed");
             settleTimerRef.current = null;
-          }, 2400);
+          }, MOVE_SETTLE_MS);
         } else {
           setGateState("stopped");
         }

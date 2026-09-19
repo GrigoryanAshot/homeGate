@@ -40,7 +40,7 @@ const openProgress: Record<GateState, number> = {
 };
 
 const GATE_EASE = "cubic-bezier(0.45, 0.05, 0.55, 0.95)";
-const GATE_DURATION = "2.6s";
+const GATE_DURATION = "10s";
 
 function pct(value: number, base: number) {
   return `${(value / base) * 100}%`;
@@ -99,6 +99,9 @@ export function RollupDoorVisualizer({
               height: "100%",
               transform: `translate3d(0, -${liftPct}%, 0)`,
               transition: `transform ${GATE_DURATION} ${GATE_EASE}`,
+              willChange: "transform",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
             }}
           >
             {Array.from({ length: LAMIL_COUNT }).map((_, i) => (
