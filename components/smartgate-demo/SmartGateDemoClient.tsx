@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDelayedOfflineBanner } from "@/hooks/useDelayedOfflineBanner";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
 import { clearControllersForGate } from "@/lib/smartgate/controllers-store";
 import { logGateAccess } from "@/lib/smartgate/log-gate-access";
@@ -68,6 +69,12 @@ function SmartGateDemoInner() {
       configEpoch: mqttEpoch,
       onCommandSent,
     });
+
+  const showOfflineBanner = useDelayedOfflineBanner(
+    connection,
+    mqttConfigured,
+    4500,
+  );
 
   useEffect(() => {
     if (prevGateIdRef.current !== selectedGateId) {
@@ -146,9 +153,7 @@ function SmartGateDemoInner() {
           mqttOnline={mqttConfigured && connection === "online"}
         />
 
-        {view === "control" &&
-          hasGate &&
-          (!mqttConfigured || connection === "offline") && (
+        {view === "control" && hasGate && showOfflineBanner && (
           <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
             {t.gateNotConnected}
           </div>

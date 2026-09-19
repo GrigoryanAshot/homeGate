@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDelayedOfflineBanner } from "@/hooks/useDelayedOfflineBanner";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
 import { getOrCreateInviteDeviceId } from "@/lib/smartgate/invite-device-client";
 import { logGateAccess } from "@/lib/smartgate/log-gate-access";
@@ -96,12 +97,18 @@ function InvitedGateInner({ token }: { token: string }) {
     [invite, token],
   );
 
-  const { gateState, busy, sendCommand, mqttConfigured } =
+  const { connection, gateState, busy, sendCommand, mqttConfigured } =
     useSmartGateMqtt({
       mockMode: false,
       gateId: invite?.gateId,
       onCommandSent,
     });
+
+  const showOfflineBanner = useDelayedOfflineBanner(
+    connection,
+    mqttConfigured,
+    4500,
+  );
 
   const handleCommand = useCallback(
     (command: GateCommand) => {
@@ -149,7 +156,7 @@ function InvitedGateInner({ token }: { token: string }) {
         </div>
       </header>
 
-      {!mqttConfigured && (
+      {showOfflineBanner && (
         <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
           {t.gateNotConnected}
         </div>

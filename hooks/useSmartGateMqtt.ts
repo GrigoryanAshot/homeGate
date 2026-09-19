@@ -89,7 +89,10 @@ export function useSmartGateMqtt({
 
   const [connection, setConnection] = useState<ConnectionStatus>("connecting");
   const [gateState, setGateState] = useState<GateState>("closed");
-  const [mqttConfigured, setMqttConfigured] = useState(false);
+  const [mqttConfigured, setMqttConfigured] = useState(() => {
+    const c = getMqttConfig();
+    return Boolean(c.host && c.username);
+  });
 
   const clearSettleTimer = useCallback(() => {
     if (settleTimerRef.current != null) {
@@ -178,9 +181,12 @@ export function useSmartGateMqtt({
       client.subscribe(config.topicStatus, { qos: 0 });
     });
 
+    // Auto-reconnect is on — treat drops as "connecting", not a hard offline
+    // flash that scares users for the first few seconds.
     client.on("reconnect", () => setConnection("connecting"));
-    client.on("close", () => setConnection("offline"));
-    client.on("error", () => setConnection("offline"));
+    client.on("offline", () => setConnection("connecting"));
+    client.on("close", () => setConnection("connecting"));
+    client.on("error", () => setConnection("connecting"));
 
     client.on("message", (topic, payload) => {
       if (topic !== config.topicStatus) return;
