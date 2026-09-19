@@ -20,8 +20,16 @@ export function AuthWelcomeGate({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="app-shell flex flex-1 items-center justify-center bg-gate-bg text-gate-ink">
-        <p className="text-sm text-gate-muted">{t.authLoading}</p>
+      <div className="app-shell flex flex-1 flex-col items-center justify-center gap-3 bg-gate-bg text-gate-ink">
+        <div className="pointer-events-none fixed inset-0 bg-gate-mesh" />
+        <div className="relative z-[1] flex flex-col items-center gap-3">
+          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gate-line bg-gate-surface p-2 shadow-sm">
+            <AppLogo size={56} />
+          </div>
+          <p className="text-lg font-bold tracking-tight text-gate-ink">
+            {t.appTitle}
+          </p>
+        </div>
       </div>
     );
   }

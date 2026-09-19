@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AppLogo } from "@/components/ui/AppLogo";
 import { useAuth, type AuthUser } from "./AuthProvider";
 import { useLocale } from "./LocaleProvider";
 
@@ -139,8 +140,9 @@ export function ProfileAuthSection({
 
   if (loading) {
     return (
-      <div className="overflow-hidden rounded-[26px] bg-gate-surface shadow-sm ring-1 ring-gate-line">
-        <p className="px-4 py-4 text-sm text-gate-muted">{t.authLoading}</p>
+      <div className="flex flex-col items-center gap-2 overflow-hidden rounded-[26px] bg-gate-surface px-4 py-8 shadow-sm ring-1 ring-gate-line">
+        <AppLogo size={48} />
+        <p className="text-base font-bold text-gate-ink">{t.appTitle}</p>
       </div>
     );
   }
