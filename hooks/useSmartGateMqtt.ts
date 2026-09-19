@@ -301,26 +301,41 @@ export function useSmartGateMqtt({
       }
 
       const id = gateIdRef.current?.trim();
-      // Cloud relay — does not depend on the phone's MQTT publish path
-      if (id) {
-        void fetch(`/api/devices/${encodeURIComponent(id)}/command`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: command }),
-        }).catch(() => {
-          /* ignore */
-        });
-      }
-
       const client = clientRef.current;
       const config = configRef.current;
+
       if (client?.connected) {
         client.publish(config.topicCommand, mqttWireCommand(command), {
           qos: 1,
         });
       }
-      return Boolean(id || client?.connected);
+
+      if (!id) return Boolean(client?.connected);
+
+      // Fire cloud relay; caller may ignore Promise — we still return true to keep UI snappy
+      void (async () => {
+        try {
+          const res = await fetch(
+            `/api/devices/${encodeURIComponent(id)}/command`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: command }),
+            },
+          );
+          if (!res.ok) {
+            console.error("[command relay]", res.status, await res.text());
+          } else {
+            const data = (await res.json()) as { topic?: string; wire?: string };
+            console.log("[command relay ok]", data.topic, data.wire);
+          }
+        } catch (e) {
+          console.error("[command relay]", e);
+        }
+      })();
+
+      return true;
     },
     [clearSettleTimer, mockMode],
   );
