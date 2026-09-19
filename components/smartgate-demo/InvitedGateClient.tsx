@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
 import { getOrCreateInviteDeviceId } from "@/lib/smartgate/invite-device-client";
+import { logGateAccess } from "@/lib/smartgate/log-gate-access";
 import type { ControllerAccessRule, GateCommand } from "@/lib/smartgate/types";
 import { GateControlPanel } from "./GateControlPanel";
 import { InviteLocaleBar } from "./InviteLocaleBar";
@@ -73,6 +74,14 @@ function InvitedGateInner({ token }: { token: string }) {
 
   const onCommandSent = useCallback(
     async (command: GateCommand) => {
+      if (invite) {
+        logGateAccess({
+          gateId: invite.gateId,
+          command,
+          token,
+          inviteDeviceId: getOrCreateInviteDeviceId(),
+        });
+      }
       if (invite?.rule.type === "once") {
         await fetch("/api/invites/consume", {
           method: "POST",
@@ -84,7 +93,7 @@ function InvitedGateInner({ token }: { token: string }) {
         });
       }
     },
-    [invite?.rule.type, token],
+    [invite, token],
   );
 
   const { gateState, busy, sendCommand, mqttConfigured } =

@@ -48,9 +48,30 @@ model Device {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   shares     GateShare[]
+  accessEvents GateAccessEvent[]
 
   @@index([status])
   @@index([ownerId])
+}
+
+/// Who opened/closed a gate — isolated per device (owner + shared controllers).
+model GateAccessEvent {
+  id        String   @id @default(cuid())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  /// OPEN | CLOSE
+  action    String
+  /// Display name at the time of the action
+  actorName String
+  /// owner | share
+  actorKind String
+  /// Owner User.id when actorKind=owner
+  actorUserId String?
+  /// GateShare.id when actorKind=share
+  shareId   String?
+  createdAt DateTime @default(now())
+
+  @@index([deviceId, createdAt])
 }
 
 /// ESP online after SoftAP Wi‑Fi, waiting for app claim to assign a sticker product.

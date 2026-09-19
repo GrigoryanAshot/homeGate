@@ -192,7 +192,8 @@ export function ControllersPanel({
   const { user } = useAuth();
   const [panelView, setPanelView] = useState<PanelView>("list");
   const [controllers, setControllers] = useState<GateController[]>([]);
-  const [history] = useState<GateAccessHistoryEntry[]>([]);
+  const [history, setHistory] = useState<GateAccessHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const readyToPersist = useRef(false);
   const gateIdRef = useRef(selectedGateId);
@@ -201,6 +202,7 @@ export function ControllersPanel({
     gateIdRef.current = selectedGateId;
     readyToPersist.current = false;
     setControllers(loadControllersForGate(selectedGateId));
+    setHistory([]);
     setPanelView("list");
     setEditingId(null);
 
@@ -246,6 +248,40 @@ export function ControllersPanel({
       window.clearTimeout(tmr);
     };
   }, [selectedGateId, user]);
+
+  useEffect(() => {
+    if (panelView !== "history") return;
+    if (!user || !selectedGateId || selectedGateId.startsWith("gate-")) {
+      setHistory([]);
+      setHistoryLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    async function loadHistory() {
+      setHistoryLoading(true);
+      try {
+        const res = await fetch(
+          `/api/devices/${encodeURIComponent(selectedGateId)}/history`,
+          { credentials: "include" },
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          events?: GateAccessHistoryEntry[];
+        };
+        if (cancelled || gateIdRef.current !== selectedGateId) return;
+        setHistory(Array.isArray(data.events) ? data.events : []);
+      } catch {
+        if (!cancelled) setHistory([]);
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    }
+    void loadHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, [panelView, selectedGateId, user]);
 
   useEffect(() => {
     const onExternalClear = (ev: Event) => {
@@ -687,11 +723,22 @@ export function ControllersPanel({
       <div className="flex h-full min-h-0 flex-col">
         <div className="flex shrink-0 items-center gap-2 pb-3">
           <BackButton onClick={() => setPanelView("list")} />
-          <h2 className="text-lg font-bold text-gate-ink">{t.historyTitle}</h2>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-gate-ink">{t.historyTitle}</h2>
+            {selectedGate?.name && (
+              <p className="truncate text-xs text-gate-muted">
+                {selectedGate.name}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-2">
-          {history.length === 0 ? (
+          {historyLoading ? (
+            <p className="py-8 text-center text-sm text-gate-muted">
+              {t.pleaseWait}
+            </p>
+          ) : history.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gate-line bg-white/80 py-12 text-center">
               <IconActivity className="mb-3 h-8 w-8 text-gate-muted/40" />
               <p className="text-sm text-gate-muted">{t.historyEmpty}</p>

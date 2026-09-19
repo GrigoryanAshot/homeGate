@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
 import { clearControllersForGate } from "@/lib/smartgate/controllers-store";
+import { logGateAccess } from "@/lib/smartgate/log-gate-access";
 import type { GateCommand, GateState } from "@/lib/smartgate/types";
 import { getMqttConfig } from "@/lib/smartgate/types";
 import { AddGateScanModal } from "./AddGateScanModal";
@@ -14,11 +15,12 @@ import { GateControlPanel } from "./GateControlPanel";
 import { GatesProvider, useGates } from "./GatesProvider";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
 import { ThemeProvider } from "./ThemeProvider";
-import { AuthProvider } from "./AuthProvider";
+import { AuthProvider, useAuth } from "./AuthProvider";
 import { AuthWelcomeGate } from "./AuthWelcomeGate";
 
 function SmartGateDemoInner() {
   const { t } = useLocale();
+  const { user } = useAuth();
   const { gates, selectedGateId, selectGate, removeGate } = useGates();
   const hasGate = gates.length > 0 && !!selectedGateId;
   const [view, setView] = useState<DemoView>("control");
@@ -28,6 +30,11 @@ function SmartGateDemoInner() {
   const [mqttEpoch, setMqttEpoch] = useState(0);
   const gateStateByIdRef = useRef<Record<string, GateState>>({});
   const prevGateIdRef = useRef(selectedGateId);
+  const selectedGateIdRef = useRef(selectedGateId);
+
+  useEffect(() => {
+    selectedGateIdRef.current = selectedGateId;
+  }, [selectedGateId]);
 
   useEffect(() => {
     try {
@@ -45,11 +52,21 @@ function SmartGateDemoInner() {
     window.setTimeout(() => setToast(null), 2400);
   }, []);
 
+  const onCommandSent = useCallback(
+    (command: GateCommand) => {
+      const gateId = selectedGateIdRef.current;
+      if (!gateId || !user) return;
+      logGateAccess({ gateId, command });
+    },
+    [user],
+  );
+
   const { connection, gateState, setGateState, busy, sendCommand, sendWifiReset, mqttConfigured } =
     useSmartGateMqtt({
       mockMode: false,
       gateId: hasGate ? selectedGateId : undefined,
       configEpoch: mqttEpoch,
+      onCommandSent,
     });
 
   useEffect(() => {
