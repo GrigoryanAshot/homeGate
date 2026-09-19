@@ -2,28 +2,24 @@ import type { GateState } from "@/lib/smartgate/types";
 import { cn } from "@/lib/utils";
 
 /**
- * Sliding gate — drop your assets here:
- *   public/img/Slide/frame.png  — fixed framing / posts
- *   public/img/Slide/door.png   — moving leaf
- *
- * Door slides horizontally (open = move left). Adjust NATIVE if your
- * PNGs have different pixel sizes.
+ * Sliding gate — assets:
+ *   public/img/Slide/frame.png  (1337×648) — posts
+ *   public/img/Slide/door.png   (1235×645) — moving leaf
+ * PNGs use a black matte; stage is black so mats disappear.
  */
 const ASSETS = {
   frame: "/img/Slide/frame.png",
   door: "/img/Slide/door.png",
 } as const;
 
-/** Placeholder aspect until real art is measured — tweak to match PNGs */
 const NATIVE = {
-  width: 800,
-  height: 520,
-  /** Door leaf size relative to frame */
-  doorW: 520,
-  doorH: 460,
-  /** Where the closed door sits inside the frame */
-  doorLeft: 140,
-  doorTop: 30,
+  width: 1337,
+  height: 648,
+  doorW: 1235,
+  doorH: 645,
+  /** Center door between posts */
+  doorLeft: Math.round((1337 - 1235) / 2),
+  doorTop: Math.round((648 - 645) / 2),
 } as const;
 
 const openProgress: Record<GateState, number> = {
@@ -50,8 +46,8 @@ export function SlideDoorVisualizer({
   className?: string;
 }) {
   const progress = openProgress[state];
-  // Slide left to open (door moves aside)
-  const slidePct = progress * 88;
+  // Slide left to open (handle is on the right of the leaf)
+  const slidePct = progress * 92;
 
   return (
     <div
@@ -61,13 +57,17 @@ export function SlideDoorVisualizer({
       )}
       style={{ aspectRatio: `${NATIVE.width} / ${NATIVE.height}` }}
     >
-      <div className="absolute inset-0 overflow-hidden bg-[#c8cfd8] shadow-gate-sm">
-        {/* Daylight behind opening */}
+      <div className="absolute inset-0 overflow-hidden bg-black shadow-gate-sm">
+        {/* Daylight in the opening — revealed as the door slides away */}
         <div
-          className="absolute inset-[8%] rounded-sm"
+          className="absolute"
           style={{
+            left: pct(NATIVE.doorLeft, NATIVE.width),
+            top: pct(NATIVE.doorTop + 20, NATIVE.height),
+            width: pct(NATIVE.doorW, NATIVE.width),
+            height: pct(NATIVE.doorH - 40, NATIVE.height),
             background:
-              "linear-gradient(180deg, #9ec5eb 0%, #dce8f4 40%, #e8ecf0 100%)",
+              "linear-gradient(180deg, #7eb0e0 0%, #c5daf0 45%, #e2e8f0 100%)",
           }}
         />
 
@@ -76,7 +76,7 @@ export function SlideDoorVisualizer({
           src={ASSETS.door}
           alt=""
           draggable={false}
-          className="absolute z-[1] select-none object-contain"
+          className="absolute z-[1] select-none object-fill"
           style={{
             left: pct(NATIVE.doorLeft, NATIVE.width),
             top: pct(NATIVE.doorTop, NATIVE.height),
@@ -85,22 +85,14 @@ export function SlideDoorVisualizer({
             transform: `translate3d(-${slidePct}%, 0, 0)`,
             transition: `transform ${GATE_DURATION} ${GATE_EASE}`,
           }}
-          onError={(e) => {
-            const el = e.currentTarget;
-            el.style.background = "#64748b";
-            el.style.objectFit = "none";
-          }}
         />
 
-        {/* Fixed frame on top */}
+        {/* Fixed posts / frame on top */}
         <img
           src={ASSETS.frame}
           alt=""
           draggable={false}
-          className="absolute inset-0 z-[2] h-full w-full select-none object-contain"
-          onError={(e) => {
-            e.currentTarget.style.opacity = "0.35";
-          }}
+          className="absolute inset-0 z-[2] h-full w-full select-none object-fill"
         />
       </div>
     </div>
