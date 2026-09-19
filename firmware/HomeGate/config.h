@@ -5,7 +5,7 @@
 // Arduino: Board "ESP32C3 Dev Module" · USB CDC On Boot: Enabled
 // FW_BUILD must appear in Serial after Upload — if missing, wrong sketch was flashed
 // -----------------------------------------------------------------------------
-#define FW_BUILD "2026-09-19-cmd-relay"
+#define FW_BUILD "2026-09-19-softap-email"
 
 #define FACTORY_WIFI_SSID ""
 #define FACTORY_WIFI_PASS ""
@@ -28,7 +28,7 @@
 // BLE stack is large (~200KB+). Default OFF so the sketch fits the stock
 // 1.3MB app partition. To enable BLE: set 1 AND Arduino
 // Tools → Partition Scheme → "Huge APP (3MB No OTA/1MB SPIFFS)".
-#define ENABLE_BLE_RESCUE 0
+#define ENABLE_BLE_RESCUE 1
 
 #define ENABLE_SERIAL_WIFI_SETUP 1
 #define SERIAL_WIFI_WAIT_MS 0

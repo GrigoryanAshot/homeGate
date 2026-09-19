@@ -46,7 +46,7 @@ export function AddGateScanModal({
   useEffect(() => {
     if (open) {
       setStep("scan");
-      setCameraOn(true);
+      setCameraOn(false);
       setSaving(false);
       setPair(null);
       setPaste("");
@@ -190,73 +190,76 @@ export function AddGateScanModal({
                 {t.authRequiredToClaim}
               </p>
             )}
-            <p className="mb-4 text-base leading-relaxed text-gate-ink">
-              {t.scanGateHintCamera}
-            </p>
+            <div className="mb-4 rounded-2xl border border-blue-200 bg-blue-50/80 px-3 py-3">
+              <p className="mb-2 text-base font-bold text-gate-ink">
+                {t.wifiSetupTitle}
+              </p>
+              <p className="mb-2 text-sm text-gate-muted">{t.wifiSetupMenuHint}</p>
+              <WifiSetupGuide compact />
+            </div>
+
             <details className="mb-4 rounded-2xl border border-gate-line bg-gate-bg/80 px-3 py-2">
               <summary className="cursor-pointer text-base font-bold text-gate-ink">
-                {t.wifiSetupTitle} — {t.wifiSetupMenuHint}
+                {t.scanGateHintCamera}
               </summary>
-              <div className="mt-2 pb-1">
-                <WifiSetupGuide compact />
+              <div className="mt-3 pb-1">
+                {cameraOn ? (
+                  <DeviceQrScanner
+                    active={cameraOn && step === "scan"}
+                    onDecoded={handleDecoded}
+                    onError={(message) => setError(message)}
+                  />
+                ) : (
+                  <div className="mx-auto mb-4 flex aspect-square w-full max-w-[280px] items-center justify-center rounded-2xl border-4 border-slate-800 bg-slate-900 text-base text-white/80">
+                    {t.scanCameraStopped}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  {!cameraOn ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError(null);
+                        setCameraOn(true);
+                      }}
+                      className="flex-1 rounded-2xl bg-blue-500 py-4 text-base font-bold text-white active:bg-blue-600"
+                    >
+                      {t.scanGateAction}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setCameraOn(false)}
+                      className="flex-1 rounded-2xl border border-gate-line bg-gate-bg py-4 text-base font-bold text-gate-ink active:bg-gate-card"
+                    >
+                      {t.scanCameraStop}
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-4 space-y-2 border-t border-gate-line pt-4">
+                  <label className="mb-1 block text-sm font-semibold text-gate-muted">
+                    {t.scanGatePasteLabel}
+                  </label>
+                  <input
+                    type="text"
+                    value={paste}
+                    onChange={(e) => setPaste(e.target.value)}
+                    placeholder="84729103|secret  or  smartgate://pair?…"
+                    className="mb-2 w-full rounded-2xl border border-gate-line bg-gate-bg px-4 py-3.5 text-base outline-none ring-blue-400 focus:ring-2"
+                  />
+                  <button
+                    type="button"
+                    disabled={!paste.trim()}
+                    onClick={handlePasteClaim}
+                    className="w-full rounded-2xl border border-gate-line bg-gate-bg py-3.5 text-base font-bold text-gate-ink active:bg-gate-card disabled:opacity-45"
+                  >
+                    {t.scanGatePasteAction}
+                  </button>
+                </div>
               </div>
             </details>
-
-            {cameraOn ? (
-              <DeviceQrScanner
-                active={cameraOn && step === "scan"}
-                onDecoded={handleDecoded}
-                onError={(message) => setError(message)}
-              />
-            ) : (
-              <div className="mx-auto mb-4 flex aspect-square w-full max-w-[280px] items-center justify-center rounded-2xl border-4 border-slate-800 bg-slate-900 text-base text-white/80">
-                {t.scanCameraStopped}
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              {!cameraOn ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError(null);
-                    setCameraOn(true);
-                  }}
-                  className="flex-1 rounded-2xl bg-blue-500 py-4 text-base font-bold text-white active:bg-blue-600"
-                >
-                  {t.scanGateAction}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setCameraOn(false)}
-                  className="flex-1 rounded-2xl border border-gate-line bg-gate-bg py-4 text-base font-bold text-gate-ink active:bg-gate-card"
-                >
-                  {t.scanCameraStop}
-                </button>
-              )}
-            </div>
-
-            <div className="mt-4 space-y-2 border-t border-gate-line pt-4">
-              <label className="mb-1 block text-sm font-semibold text-gate-muted">
-                {t.scanGatePasteLabel}
-              </label>
-              <input
-                type="text"
-                value={paste}
-                onChange={(e) => setPaste(e.target.value)}
-                placeholder="84729103|secret  or  smartgate://pair?…"
-                className="mb-2 w-full rounded-2xl border border-gate-line bg-gate-bg px-4 py-3.5 text-base outline-none ring-blue-400 focus:ring-2"
-              />
-              <button
-                type="button"
-                disabled={!paste.trim()}
-                onClick={handlePasteClaim}
-                className="w-full rounded-2xl border border-gate-line bg-gate-bg py-3.5 text-base font-bold text-gate-ink active:bg-gate-card disabled:opacity-45"
-              >
-                {t.scanGatePasteAction}
-              </button>
-            </div>
 
             {error && (
               <p className="mt-3 text-center text-sm font-semibold text-red-600">

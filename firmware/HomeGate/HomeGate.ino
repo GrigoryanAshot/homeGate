@@ -303,8 +303,118 @@ bool registerWithCloud() {
     Serial.println("Product not in factory DB — seed sticker ID first");
   }
 
+  // Chip moved / this sticker already belongs to another ESP.
+  // Drop local product so bind-offer poll can assign the right sticker.
+  if (
+    code == 409 &&
+    (resp.indexOf("chip_in_use") >= 0 || resp.indexOf("wrong_chip") >= 0)
+  ) {
+    Serial.println("chip conflict → clear local product, will re-poll cloud");
+    deviceClearProduct();
+    cloudRegistered = false;
+    lastChipPollAttempt = 0;
+    return false;
+  }
+
   Serial.println("Register failed — will retry");
   return false;
+#endif
+}
+
+/** SoftAP email verify → provisionToken in NVS → create NEW gate for that user. */
+bool trySoftApProvision() {
+#if !ENABLE_CLOUD_REGISTER
+  return false;
+#else
+  if (deviceHasProduct()) return true;
+  const String tok = wifiLoadProvisionToken();
+  if (tok.length() < 8) return false;
+  if (WiFi.status() != WL_CONNECTED) return false;
+
+  const unsigned long now = millis();
+  if (now - lastChipPollAttempt < 8000 && lastChipPollAttempt != 0) {
+    return false;
+  }
+  lastChipPollAttempt = now;
+
+  String url = String(API_BASE_URL) + "/api/devices/provision";
+  Serial.print("SoftAP provision → ");
+  Serial.println(url);
+
+  HTTPClient http;
+  http.setConnectTimeout(8000);
+  http.setTimeout(12000);
+  WiFiClientSecure httpsClient;
+  WiFiClient httpClient;
+  bool began = false;
+  if (url.startsWith("https://")) {
+    httpsClient.setInsecure();
+    httpsClient.setHandshakeTimeout(15);
+    began = http.begin(httpsClient, url);
+  } else {
+    began = http.begin(httpClient, url);
+  }
+  if (!began) return false;
+
+  http.addHeader("Content-Type", "application/json");
+  // Escape token for JSON (base64url is safe)
+  char body[280];
+  snprintf(
+    body,
+    sizeof(body),
+    "{\"chipId\":\"%s\",\"provisionToken\":\"%s\"}",
+    DEVICE_CHIP_ID,
+    tok.c_str()
+  );
+  const int code = http.POST(body);
+  const String resp = http.getString();
+  http.end();
+  mqtt.disconnect();
+  mqttTls.stop();
+  lastReconnectAttempt = 0;
+
+  Serial.print("Provision HTTP ");
+  Serial.print(code);
+  Serial.print(" ");
+  Serial.println(resp);
+
+  if (code != 200 || resp.indexOf("\"ok\":true") < 0) {
+    if (code == 401 || resp.indexOf("invalid_token") >= 0) {
+      Serial.println("Provision token invalid — clear and use QR / wait path");
+      wifiClearProvisionToken();
+    }
+    return false;
+  }
+
+  int pKey = resp.indexOf("\"productId\":\"");
+  int sKey = resp.indexOf("\"secret\":\"");
+  if (pKey < 0) return false;
+  pKey += 13;
+  int pEnd = resp.indexOf('"', pKey);
+  if (pEnd < 0) return false;
+  String productId = resp.substring(pKey, pEnd);
+  String secret = "";
+  if (sKey >= 0) {
+    sKey += 10;
+    int sEnd = resp.indexOf('"', sKey);
+    if (sEnd > sKey) secret = resp.substring(sKey, sEnd);
+  }
+  if (productId.length() == 0) return false;
+
+  // Never accept reserved home sticker via SoftAP auto path
+  if (productId == "demo-gate-001") {
+    Serial.println("Refusing demo-gate-001 from SoftAP provision");
+    wifiClearProvisionToken();
+    return false;
+  }
+
+  deviceSaveProduct(productId, secret.length() > 0 ? secret : String("bound"));
+  wifiClearProvisionToken();
+  cloudRegistered = false;
+  Serial.print("SoftAP provisioned product ");
+  Serial.println(productId);
+  blinkStatusLed(4, 80, 60);
+  return true;
 #endif
 }
 
@@ -314,6 +424,7 @@ bool pollProductFromCloud() {
   return deviceHasProduct();
 #else
   if (deviceHasProduct()) return true;
+  if (trySoftApProvision()) return true;
   if (WiFi.status() != WL_CONNECTED) return false;
 
   const unsigned long now = millis();

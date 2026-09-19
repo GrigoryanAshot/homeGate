@@ -2,8 +2,9 @@
 
 /*
   SoftAP setup (universal):
-  Phone joins TGATE (open) → enters HOME Wi‑Fi → Save → reboot → STA join.
-  Sticker QR is claimed later in the phone app.
+  Phone joins TGATE → email OTP (cloud) → home Wi‑Fi → Save.
+  ESP stores provisionToken; after STA join, cloud creates a NEW gate for that user.
+  Reserved stickers (demo-gate-001 etc.) are never auto-assigned.
 */
 
 #include <WiFi.h>
@@ -50,6 +51,29 @@ inline void wifiSaveCreds(const String &ssid, const String &pass) {
   prefs.end();
 }
 
+inline void wifiSaveProvisionToken(const String &token) {
+  Preferences &prefs = wifiPrefsStore();
+  prefs.begin("homegate", false);
+  if (token.length() > 0) prefs.putString("provTok", token);
+  else prefs.remove("provTok");
+  prefs.end();
+}
+
+inline String wifiLoadProvisionToken() {
+  Preferences &prefs = wifiPrefsStore();
+  prefs.begin("homegate", true);
+  const String t = prefs.getString("provTok", "");
+  prefs.end();
+  return t;
+}
+
+inline void wifiClearProvisionToken() {
+  Preferences &prefs = wifiPrefsStore();
+  prefs.begin("homegate", false);
+  prefs.remove("provTok");
+  prefs.end();
+}
+
 /** Clear Wi‑Fi only — keep chip + product sticker binding. */
 inline void wifiClearCreds() {
   Preferences &prefs = wifiPrefsStore();
@@ -57,6 +81,7 @@ inline void wifiClearCreds() {
   prefs.remove("ssid");
   prefs.remove("pass");
   prefs.remove("provOk");
+  prefs.remove("provTok");
   prefs.end();
   Serial.println("WiFi credentials cleared (NVS)");
 }
@@ -278,27 +303,57 @@ inline bool wifiJoinHomeClean(const String &ssid, const String &pass) {
 }
 
 inline String wifiBuildPortalHtml() {
-  return String(
+  // API for SoftAP browser (phone needs mobile data while on TGATE).
+  const String api = String(API_BASE_URL);
+  String html;
+  html.reserve(5200);
+  html += F(
     "<!DOCTYPE html><html><head>"
     "<meta charset=\"utf-8\"/>"
     "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>"
-    "<title>Touch SmartGate Wi-Fi</title>"
+    "<title>Touch SmartGate</title>"
     "<style>"
     "body{font-family:system-ui,sans-serif;background:#e8f2ff;margin:0;padding:20px;color:#0f172a}"
     ".box{max-width:440px;margin:0 auto;background:#fff;border-radius:28px;padding:28px;"
     "box-shadow:0 12px 40px rgba(15,23,42,.12)}"
-    "h1{font-size:1.75rem;margin:0 0 12px}"
-    "p{color:#475569;font-size:1.05rem;line-height:1.5}"
-    "label{display:block;font-size:1rem;font-weight:800;margin:18px 0 8px}"
-    "input{width:100%;box-sizing:border-box;padding:18px 16px;border-radius:18px;"
-    "border:2px solid #94a3b8;font-size:1.15rem}"
-    "button{width:100%;margin-top:22px;padding:20px;border:0;border-radius:22px;"
-    "background:#2563eb;color:#fff;font-weight:800;font-size:1.25rem}"
-    "small{display:block;margin-top:16px;color:#94a3b8}"
+    "h1{font-size:1.5rem;margin:0 0 8px}"
+    "p,.hint{color:#475569;font-size:.95rem;line-height:1.45;margin:0 0 12px}"
+    "label{display:block;font-size:.9rem;font-weight:800;margin:14px 0 6px}"
+    "input{width:100%;box-sizing:border-box;padding:16px;border-radius:16px;"
+    "border:2px solid #94a3b8;font-size:1.1rem}"
+    "button{width:100%;margin-top:16px;padding:18px;border:0;border-radius:20px;"
+    "background:#2563eb;color:#fff;font-weight:800;font-size:1.1rem}"
+    "button.sec{background:#e2e8f0;color:#0f172a;margin-top:10px}"
+    ".err{color:#b91c1c;font-size:.9rem;margin-top:10px}"
+    ".ok{color:#15803d;font-size:.9rem}"
+    "small{display:block;margin-top:14px;color:#94a3b8;font-size:.75rem}"
+    ".step{display:none}.step.on{display:block}"
     "</style></head><body><div class=\"box\">"
+  );
+  html += F(
+    "<div id=\"s1\" class=\"step on\">"
+    "<h1>Sign in</h1>"
+    "<p class=\"hint\">Keep <b>mobile data</b> on while connected to TGATE so email code can send.</p>"
+    "<label>Email</label>"
+    "<input id=\"email\" type=\"email\" inputmode=\"email\" autocomplete=\"email\" "
+    "placeholder=\"you@email.com\"/>"
+    "<button type=\"button\" id=\"btnCode\">Send code</button>"
+    "<p id=\"e1\" class=\"err\"></p>"
+    "</div>"
+    "<div id=\"s2\" class=\"step\">"
+    "<h1>Verify</h1>"
+    "<p class=\"hint\">Enter the 6‑digit code from your email.</p>"
+    "<label>Code</label>"
+    "<input id=\"code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"123456\"/>"
+    "<button type=\"button\" id=\"btnVerify\">Verify</button>"
+    "<button type=\"button\" class=\"sec\" id=\"btnBack1\">Back</button>"
+    "<p id=\"e2\" class=\"err\"></p>"
+    "</div>"
+    "<div id=\"s3\" class=\"step\">"
     "<h1>Home Wi‑Fi</h1>"
-    "<p>Type your home network name and password, then Save.</p>"
-    "<form method=\"POST\" action=\"/save\">"
+    "<p class=\"hint\">This gate will be added to your account after connect.</p>"
+    "<form method=\"POST\" action=\"/save\" id=\"wf\">"
+    "<input type=\"hidden\" name=\"provisionToken\" id=\"tok\"/>"
     "<label>Network name (SSID)</label>"
     "<input name=\"ssid_manual\" maxlength=\"32\" placeholder=\"Your Wi‑Fi name\" "
     "required autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"/>"
@@ -307,9 +362,45 @@ inline String wifiBuildPortalHtml() {
     "autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"/>"
     "<button type=\"submit\">Save &amp; Connect</button>"
     "</form>"
-    "<small>Setup: <b>TGATE</b> / password <b>12345678</b>. Then enter HOME Wi‑Fi.</small>"
-    "</div></body></html>"
+    "<p id=\"who\" class=\"ok\"></p>"
+    "</div>"
   );
+  html += F("<small>AP: <b>TGATE</b> / <b>12345678</b></small></div>");
+  html += "<script>const API=\"";
+  html += api;
+  html += F(
+    "\";"
+    "let tok='';"
+    "const $=id=>document.getElementById(id);"
+    "function show(n){[1,2,3].forEach(i=>$('s'+i).classList.toggle('on',i===n));}"
+    "async function jpost(path,body){"
+    "const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},"
+    "body:JSON.stringify(body)});"
+    "const d=await r.json().catch(()=>({}));"
+    "if(!r.ok||d.ok===false)throw new Error(d.error||('HTTP '+r.status));"
+    "return d;}"
+    "$('btnCode').onclick=async()=>{"
+    "$('e1').textContent='';"
+    "const email=$('email').value.trim();"
+    "if(!email){$('e1').textContent='Enter email';return;}"
+    "try{const d=await jpost('/api/auth/request-code',{email});"
+    "if(d.devCode)$('e1').textContent='Dev code: '+d.devCode;"
+    "show(2);}catch(e){$('e1').textContent=e.message==='send_failed'"
+    "?'Could not send email — turn on mobile data':String(e.message||e);}};"
+    "$('btnVerify').onclick=async()=>{"
+    "$('e2').textContent='';"
+    "try{const d=await jpost('/api/auth/verify-code',{"
+    "email:$('email').value.trim(),code:$('code').value.trim(),softAp:true});"
+    "tok=d.provisionToken||'';"
+    "if(!tok)throw new Error('no_token');"
+    "$('tok').value=tok;"
+    "$('who').textContent='Signed in as '+((d.user&&d.user.email)||'');"
+    "show(3);}catch(e){$('e2').textContent=e.message==='invalid_code'"
+    "?'Wrong code':String(e.message||e);}};"
+    "$('btnBack1').onclick=()=>show(1);"
+    "</script></body></html>"
+  );
+  return html;
 }
 
 inline WebServer &wifiPortalServer() {
@@ -408,13 +499,18 @@ inline void wifiHandlePortalSave() {
     return;
   }
   const String pass = server.hasArg("pass") ? server.arg("pass") : "";
+  const String provTok =
+    server.hasArg("provisionToken") ? server.arg("provisionToken") : "";
 
   Serial.print("SoftAP save SSID=");
   Serial.print(ssid);
   Serial.print(" passLen=");
-  Serial.println(pass.length());
+  Serial.print(pass.length());
+  Serial.print(" provTokLen=");
+  Serial.println(provTok.length());
 
   wifiSaveCreds(ssid, pass);
+  wifiSaveProvisionToken(provTok);
   Preferences &prefs = wifiPrefsStore();
   prefs.begin("homegate", false);
   prefs.putBool("provOk", true);
@@ -427,7 +523,8 @@ inline void wifiHandlePortalSave() {
     "<body style=\"font-family:system-ui;padding:24px\">"
     "<h1>Saved</h1>"
     "<p>Box is rebooting and joining your home Wi‑Fi…</p>"
-    "<p>Switch this phone back to your <b>home</b> Wi‑Fi, then open the app.</p>"
+    "<p>Switch this phone back to your <b>home</b> Wi‑Fi, then open the app — "
+    "the new gate appears on your account.</p>"
     "</body>"
   );
   delay(1200);

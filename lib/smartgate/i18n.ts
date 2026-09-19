@@ -294,7 +294,7 @@ const en: SmartGateMessages = {
   wifiChangeHintOnline:
     "Scan networks from the gate, pick one, enter the password. The box stays on the old Wi‑Fi until the new one works.",
   wifiChangeHintOffline:
-    "Gate is offline. After ~1 minute it opens Bluetooth (HG-…). Connect below, or hold BOOT for SoftAP.",
+    "Gate is offline. After ~1 minute it opens SoftAP TGATE / 12345678 — join and set Wi‑Fi at 192.168.4.1. Or hold BOOT.",
   wifiChangeScan: "Scan nearby Wi‑Fi",
   wifiChangeScanning: "Scanning…",
   wifiChangePickNetwork: "Select or type a network name",
@@ -446,18 +446,18 @@ const en: SmartGateMessages = {
   biometricDisabledToast: "Face ID / fingerprint turned off",
   biometricCancelled: "Cancelled — action not allowed",
   biometricFailed: "Could not verify Face ID / fingerprint",
-  wifiSetupTitle: "Set up gate Wi‑Fi",
-  wifiSetupMenuHint: "First time — phone joins TouchGate",
+  wifiSetupTitle: "Set up a new gate",
+  wifiSetupMenuHint: "Join TGATE → email → home Wi‑Fi",
   wifiSetupIntro:
-    "The box makes a temporary Wi‑Fi. You only enter your home network password here.",
-  wifiSetupStep1: "Power the gate box. LED blinks fast.",
-  wifiSetupStep2: "On the phone, join Wi‑Fi named TouchGate-XXXX (no password).",
-  wifiSetupStep3: "A page opens (or go to http://192.168.4.1).",
-  wifiSetupStep4: "Pick your home Wi‑Fi, type the password → Save.",
+    "On the box portal: sign in with email, then enter your home Wi‑Fi. The gate is added to that account automatically. Your existing gates are not changed.",
+  wifiSetupStep1: "Power the new box. LED blinks fast.",
+  wifiSetupStep2: "On the phone, join Wi‑Fi TGATE (password 12345678).",
+  wifiSetupStep3: "Open http://192.168.4.1 — keep mobile data on for the email code.",
+  wifiSetupStep4: "Enter email → verify code → type home Wi‑Fi name and password → Save.",
   wifiSetupStep5:
-    "Join home Wi‑Fi again → open this app → Add gate → scan the QR on the box.",
+    "Switch back to home Wi‑Fi and open this app — the new gate appears. (QR scan is optional / legacy.)",
   wifiSetupReset:
-    "Wrong Wi‑Fi? Use the gear on that gate (Reset). SoftAP comes back. Then Add gate again if needed.",
+    "Wrong Wi‑Fi? Gear on that gate → Reset. SoftAP comes back. Existing gates stay.",
   wifiResetAction: "Reset selected gate setup",
   wifiResetConfirm:
     "Reset the selected gate only? Clears its Wi‑Fi and its shared members. Other gates are not touched.",
@@ -575,7 +575,7 @@ const hy: SmartGateMessages = {
   wifiChangeHintOnline:
     "Սկանավորեք ցանցերը դարպասից, ընտրեք մեկը, մուտքագրեք գաղտնաբառը։ Հին Wi‑Fi‑ը մնում է մինչև նորը հաջող միանա։",
   wifiChangeHintOffline:
-    "Դարպասը անջատված է։ ~1 րոպե հետո բացվում է Bluetooth (HG-…)։ Կամ պահեք BOOT SoftAP-ի համար։",
+    "Դարպասը անջատված է։ ~1 րոպե հետո SoftAP TGATE / 12345678 — միացեք և սահմանեք Wi‑Fi՝ 192.168.4.1։ Կամ պահեք BOOT։",
   wifiChangeScan: "Սկանավորել Wi‑Fi",
   wifiChangeScanning: "Սկանավորում…",
   wifiChangePickNetwork: "Ընտրեք կամ գրեք ցանցի անունը",
@@ -726,18 +726,18 @@ const hy: SmartGateMessages = {
   biometricDisabledToast: "Face ID / մատնահետքը անջատված է",
   biometricCancelled: "Չեղարկվեց — գործողությունը չի թույլատրվում",
   biometricFailed: "Չհաջողվեց հաստատել Face ID / մատնահետքը",
-  wifiSetupTitle: "Կարգավորել դարպասի Wi‑Fi",
-  wifiSetupMenuHint: "Նոր սարք · SoftAP հեռախոսով",
+  wifiSetupTitle: "Կարգավորել նոր դարպաս",
+  wifiSetupMenuHint: "TGATE → էլ․ փոստ → տան Wi‑Fi",
   wifiSetupIntro:
-    "Վահանակը ստեղծում է ժամանակավոր Wi‑Fi, որ տաք ձեր տան ցանցը — մալուխ պետք չէ։",
-  wifiSetupStep1: "Միացրեք սնուցումը։ Արագ թարթող LED = սպասում է կարգավորման։",
-  wifiSetupStep2: "Հեռախոսով միացեք TouchGate-XXXX Wi‑Fi-ին (բաց ցանց)։",
-  wifiSetupStep3: "Բրաուզերում բացեք http://192.168.4.1 (կամ սպասեք էջին)։",
-  wifiSetupStep4: "Ցանկից ընտրեք տան Wi‑Fi‑ը, մուտքագրեք գաղտնաբառը → Save & Connect։",
+    "Պորտալում՝ մուտք էլ․ փոստով, ապա տան Wi‑Fi։ Դարպասը ավելանում է այդ հաշվին։ Արդեն գոյություն ունեցող դարպասները չեն փոխվում։",
+  wifiSetupStep1: "Միացրեք նոր տուփը։ Արագ թարթող LED։",
+  wifiSetupStep2: "Հեռախոսով միացեք TGATE Wi‑Fi‑ին (գաղտնաբառ 12345678)։",
+  wifiSetupStep3: "Բացեք http://192.168.4.1 — միացրեք նաև բջջային ինտերնետը կոդի համար։",
+  wifiSetupStep4: "Էլ․ փոստ → կոդ → տան Wi‑Fi անուն և գաղտնաբառ → Save։",
   wifiSetupStep5:
-    "Վերադարձեք տան Wi‑Fi → բացեք հավելվածը → Ավելացնել դարպաս → սկանավորեք տուփի QR‑ը։",
+    "Վերադարձեք տան Wi‑Fi և բացեք հավելվածը — նոր դարպասը կերևա։ (QR‑ը կամընտրական է։)",
   wifiSetupReset:
-    "Սխալ Wi‑Fi՞։ Դարպասի քարտի ⚙ կամ Կարգավորումներ → Վերակայել։ Մաքրում է միայն այդ դարպասի բաժանումները և SoftAP։ Մյուս դարպասները մնում են։",
+    "Սխալ Wi‑Fi՞։ Դարպասի ⚙ → Վերակայել։ SoftAP կվերադառնա։ Մյուս դարպասները մնում են։",
   wifiResetAction: "Վերակայել ընտրված դարպասը",
   wifiResetConfirm:
     "Վերակայե՞լ միայն ընտրված դարպասը։ Կջնջվի նրա Wi‑Fi‑ը և իր բաժանված անդամները։ Մյուս դարպասները չեն փոխվի։",
@@ -857,7 +857,7 @@ const ru: SmartGateMessages = {
   wifiChangeHintOnline:
     "Сканируйте сети с блока, выберите сеть и пароль. Старый Wi‑Fi остаётся, пока новый не подключится.",
   wifiChangeHintOffline:
-    "Ворота офлайн. Через ~1 мин включится Bluetooth (HG-…). Или BOOT для SoftAP.",
+    "Ворота офлайн. Через ~1 мин SoftAP TGATE / 12345678 — подключитесь и задайте Wi‑Fi на 192.168.4.1. Или BOOT.",
   wifiChangeScan: "Сканировать Wi‑Fi",
   wifiChangeScanning: "Сканирование…",
   wifiChangePickNetwork: "Выберите или введите имя сети",
@@ -1008,18 +1008,18 @@ const ru: SmartGateMessages = {
   biometricDisabledToast: "Face ID / отпечаток выключен",
   biometricCancelled: "Отменено — действие не разрешено",
   biometricFailed: "Не удалось подтвердить Face ID / отпечаток",
-  wifiSetupTitle: "Настроить Wi‑Fi ворот",
-  wifiSetupMenuHint: "Новый блок · SoftAP с телефона",
+  wifiSetupTitle: "Настроить новые ворота",
+  wifiSetupMenuHint: "TGATE → email → домашний Wi‑Fi",
   wifiSetupIntro:
-    "Контроллер создаёт временный Wi‑Fi, чтобы вы передали домашнюю сеть — без кабеля.",
-  wifiSetupStep1: "Включите питание. Быстрое мигание LED = ждёт настройку.",
-  wifiSetupStep2: "На телефоне подключитесь к Wi‑Fi TouchGate-XXXX (открытая сеть).",
-  wifiSetupStep3: "Откройте http://192.168.4.1 в браузере (или дождитесь страницы).",
-  wifiSetupStep4: "Выберите домашний Wi‑Fi из списка, введите пароль → Save & Connect.",
+    "На портале: вход по email, затем домашний Wi‑Fi. Ворота добавляются на этот аккаунт. Существующие ворота не меняются.",
+  wifiSetupStep1: "Включите новый блок. Быстрое мигание LED.",
+  wifiSetupStep2: "На телефоне подключитесь к Wi‑Fi TGATE (пароль 12345678).",
+  wifiSetupStep3: "Откройте http://192.168.4.1 — включите мобильный интернет для кода.",
+  wifiSetupStep4: "Email → код → имя и пароль домашнего Wi‑Fi → Save.",
   wifiSetupStep5:
-    "Вернитесь в домашний Wi‑Fi → откройте приложение → Добавить ворота → сканируйте QR на корпусе.",
+    "Вернитесь в домашний Wi‑Fi и откройте приложение — новые ворота появятся. (QR опционален.)",
   wifiSetupReset:
-    "Неверный Wi‑Fi? Шестерёнка на карточке ворот (или Настройки → Сброс). Очищает только доступы этих ворот и SoftAP. Другие ворота остаются.",
+    "Неверный Wi‑Fi? Шестерёнка → Сброс. SoftAP вернётся. Другие ворота остаются.",
   wifiResetAction: "Сбросить выбранные ворота",
   wifiResetConfirm:
     "Сбросить только выбранные ворота? Очистится их Wi‑Fi и их общие пользователи. Другие ворота не затронуты.",

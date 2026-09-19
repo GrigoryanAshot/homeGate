@@ -88,7 +88,7 @@ export async function registerDevice(
     },
   });
   return { ok: true as const, device: toPublicDevice(updated), created: false };
-
+}
 
 /** Pre-create FREE sticker products for factory print run. */
 export async function seedFactoryDevice(deviceId: string, secret: string) {
