@@ -5,7 +5,7 @@
 // Arduino: Board "ESP32C3 Dev Module" · USB CDC On Boot: Enabled
 // FW_BUILD must appear in Serial after Upload — if missing, wrong sketch was flashed
 // -----------------------------------------------------------------------------
-#define FW_BUILD "2026-09-19-wifi-remote"
+#define FW_BUILD "2026-03-24-mqtt-to"
 
 #define FACTORY_WIFI_SSID ""
 #define FACTORY_WIFI_PASS ""
@@ -19,11 +19,9 @@
 #define FACTORY_NEW_TOKEN 18
 #define FORCE_SOFTAP_ON_BOOT 0
 
-// Outage (AP missing) → retry. AUTH reject (claimed) → retry + BLE after 60s.
+// Outage (AP missing) → retry. AUTH reject → SoftAP.
 #define WIFI_RETRY_GAP_MS 30000
 #define WIFI_RESET_HOLD_MS 2000
-#define BLE_RESCUE_AFTER_MS 60000
-#define WIFI_REMOTE_JOIN_TIMEOUT_MS 20000
 
 #define ENABLE_SERIAL_WIFI_SETUP 1
 #define SERIAL_WIFI_WAIT_MS 0

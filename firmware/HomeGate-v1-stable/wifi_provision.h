@@ -46,7 +46,6 @@ inline void wifiSaveCreds(const String &ssid, const String &pass) {
   prefs.begin("homegate", false);
   prefs.putString("ssid", ssid);
   prefs.putString("pass", pass);
-  prefs.putBool("provOk", true);
   prefs.end();
 }
 
@@ -651,22 +650,8 @@ inline bool wifiEnsureConnected() {
     return true;
   }
 
-  // AP was visible but join failed (auth/assoc).
-  // Unclaimed → SoftAP first-time style. Claimed → keep creds, retry + BLE rescue.
+  // AP was visible but join failed (auth/assoc) → SoftAP. AP missing → outage retry.
   if (wifiJoinSawTargetAp() || wifiDiscIsAuthReject(wifiLastDiscReason())) {
-    if (deviceHasProduct()) {
-      Serial.println(
-        "Wi‑Fi auth/assoc fail (claimed) — keep creds, retry; BLE after 60s"
-      );
-      const uint32_t gap = WIFI_RETRY_GAP_MS;
-      const uint32_t start = millis();
-      while (millis() - start < gap) {
-        wifiPollResetButton();
-        setStatusLed((millis() / 400) % 2 == 0);
-        delay(50);
-      }
-      return false;
-    }
     Serial.println("Wi‑Fi reject / AP visible but fail → SoftAP TGATE / 12345678");
     wifiClearCreds();
     Preferences &p = wifiPrefsStore();

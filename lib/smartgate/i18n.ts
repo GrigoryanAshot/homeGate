@@ -41,6 +41,26 @@ export type SmartGateMessages = {
   gateResetAction: string;
   gateResetConfirm: (name: string) => string;
   gateRemoveAction: string;
+  wifiChangeAction: string;
+  wifiChangeTitle: string;
+  wifiChangeHintOnline: string;
+  wifiChangeHintOffline: string;
+  wifiChangeScan: string;
+  wifiChangeScanning: string;
+  wifiChangePickNetwork: string;
+  wifiChangeNoNetworks: string;
+  wifiChangeSsidLabel: string;
+  wifiChangePassLabel: string;
+  wifiChangeConnect: string;
+  wifiChangeTrying: string;
+  wifiChangeSuccess: string;
+  wifiChangeBadPassword: string;
+  wifiChangeFailed: string;
+  wifiChangeRevertFailed: string;
+  wifiChangeNeedOnline: string;
+  wifiChangeBleConnect: string;
+  wifiChangeBleHint: string;
+  wifiChangeBleUnsupported: string;
   gateRemoveConfirm: (name: string) => string;
   toastGateRenamed: string;
   toastGateRemoved: string;
@@ -269,6 +289,30 @@ const en: SmartGateMessages = {
   gateResetConfirm: (name) =>
     `Reset “${name}” only? Clears this gate’s Wi‑Fi and its shared users. Other gates are not touched.`,
   gateRemoveAction: "Remove gate from my account",
+  wifiChangeAction: "Change Wi‑Fi",
+  wifiChangeTitle: "Change Wi‑Fi",
+  wifiChangeHintOnline:
+    "Scan networks from the gate, pick one, enter the password. The box stays on the old Wi‑Fi until the new one works.",
+  wifiChangeHintOffline:
+    "Gate is offline. After ~1 minute it opens Bluetooth (HG-…). Connect below, or hold BOOT for SoftAP.",
+  wifiChangeScan: "Scan nearby Wi‑Fi",
+  wifiChangeScanning: "Scanning…",
+  wifiChangePickNetwork: "Select or type a network name",
+  wifiChangeNoNetworks: "No networks found — type the name below",
+  wifiChangeSsidLabel: "Network name (SSID)",
+  wifiChangePassLabel: "Password",
+  wifiChangeConnect: "Connect",
+  wifiChangeTrying: "Trying new Wi‑Fi…",
+  wifiChangeSuccess: "Wi‑Fi updated",
+  wifiChangeBadPassword: "Could not join — check password (still on old Wi‑Fi)",
+  wifiChangeFailed: "Wi‑Fi change failed",
+  wifiChangeRevertFailed:
+    "New Wi‑Fi failed and old Wi‑Fi also failed — use BLE or BOOT",
+  wifiChangeNeedOnline: "Gate must be online (green) for MQTT Wi‑Fi change",
+  wifiChangeBleConnect: "Send via Bluetooth",
+  wifiChangeBleHint: "Pick the HG-… device in the system dialog",
+  wifiChangeBleUnsupported:
+    "Bluetooth setup needs Chrome on Android (or a native app later)",
   gateRemoveConfirm: (name) =>
     `Remove “${name}” from your account only? Shared users for this gate are cleared. The box keeps its Wi‑Fi — use Reset if you want SoftAP. Other gates stay.`,
   toastGateRenamed: "Gate renamed",
@@ -526,6 +570,29 @@ const hy: SmartGateMessages = {
   gateResetConfirm: (name) =>
     `Վերակայե՞լ միայն «${name}»-ը։ Կջնջվի այս դարպասի Wi‑Fi‑ը և իր բաժանված օգտատերերը։ Մյուս դարպասները չեն փոխվի։`,
   gateRemoveAction: "Հեռացնել իմ հաշվից",
+  wifiChangeAction: "Փոխել Wi‑Fi",
+  wifiChangeTitle: "Փոխել Wi‑Fi",
+  wifiChangeHintOnline:
+    "Սկանավորեք ցանցերը դարպասից, ընտրեք մեկը, մուտքագրեք գաղտնաբառը։ Հին Wi‑Fi‑ը մնում է մինչև նորը հաջող միանա։",
+  wifiChangeHintOffline:
+    "Դարպասը անջատված է։ ~1 րոպե հետո բացվում է Bluetooth (HG-…)։ Կամ պահեք BOOT SoftAP-ի համար։",
+  wifiChangeScan: "Սկանավորել Wi‑Fi",
+  wifiChangeScanning: "Սկանավորում…",
+  wifiChangePickNetwork: "Ընտրեք կամ գրեք ցանցի անունը",
+  wifiChangeNoNetworks: "Ցանց չգտնվեց — գրեք անունը ներքևում",
+  wifiChangeSsidLabel: "Ցանցի անուն (SSID)",
+  wifiChangePassLabel: "Գաղտնաբառ",
+  wifiChangeConnect: "Միանալ",
+  wifiChangeTrying: "Փորձում է նոր Wi‑Fi…",
+  wifiChangeSuccess: "Wi‑Fi-ը թարմացվեց",
+  wifiChangeBadPassword: "Չհաջողվեց — ստուգեք գաղտնաբառը (հին Wi‑Fi-ը դեռ կա)",
+  wifiChangeFailed: "Wi‑Fi-ի փոփոխությունը ձախողվեց",
+  wifiChangeRevertFailed: "Նոր և հին Wi‑Fi-ն էլ չաշխատեց — օգտագործեք BLE կամ BOOT",
+  wifiChangeNeedOnline: "MQTT-ով փոխելու համար դարպասը պետք է լինի կանաչ",
+  wifiChangeBleConnect: "Ուղարկել Bluetooth-ով",
+  wifiChangeBleHint: "Ընտրեք HG-… սարքը համակարգի պատուհանում",
+  wifiChangeBleUnsupported:
+    "Bluetooth-ը աշխատում է Chrome Android-ում (կամ հետո native հավելվածում)",
   gateRemoveConfirm: (name) =>
     `Հեռացնե՞լ «${name}»-ը միայն հաշվից։ Կմաքրվեն այս դարպասի բաժանումները։ Wi‑Fi չի ջնջվի — SoftAP-ի համար օգտագործեք Վերակայել։ Մյուս դարպասները կմնան։`,
   toastGateRenamed: "Անունը փոխվեց",
@@ -785,6 +852,29 @@ const ru: SmartGateMessages = {
   gateResetConfirm: (name) =>
     `Сбросить только «${name}»? Очистится Wi‑Fi этих ворот и их общие пользователи. Другие ворота не затронуты.`,
   gateRemoveAction: "Удалить из моего аккаунта",
+  wifiChangeAction: "Сменить Wi‑Fi",
+  wifiChangeTitle: "Сменить Wi‑Fi",
+  wifiChangeHintOnline:
+    "Сканируйте сети с блока, выберите сеть и пароль. Старый Wi‑Fi остаётся, пока новый не подключится.",
+  wifiChangeHintOffline:
+    "Ворота офлайн. Через ~1 мин включится Bluetooth (HG-…). Или BOOT для SoftAP.",
+  wifiChangeScan: "Сканировать Wi‑Fi",
+  wifiChangeScanning: "Сканирование…",
+  wifiChangePickNetwork: "Выберите или введите имя сети",
+  wifiChangeNoNetworks: "Сети не найдены — введите имя ниже",
+  wifiChangeSsidLabel: "Имя сети (SSID)",
+  wifiChangePassLabel: "Пароль",
+  wifiChangeConnect: "Подключить",
+  wifiChangeTrying: "Пробуем новый Wi‑Fi…",
+  wifiChangeSuccess: "Wi‑Fi обновлён",
+  wifiChangeBadPassword: "Не удалось — проверьте пароль (старый Wi‑Fi ещё активен)",
+  wifiChangeFailed: "Смена Wi‑Fi не удалась",
+  wifiChangeRevertFailed: "Новый и старый Wi‑Fi не сработали — BLE или BOOT",
+  wifiChangeNeedOnline: "Для смены по MQTT ворота должны быть зелёными",
+  wifiChangeBleConnect: "Отправить по Bluetooth",
+  wifiChangeBleHint: "Выберите устройство HG-… в системном окне",
+  wifiChangeBleUnsupported:
+    "Bluetooth работает в Chrome на Android (позже — в приложении)",
   gateRemoveConfirm: (name) =>
     `Удалить «${name}» только из аккаунта? Очистятся доступы этих ворот. Wi‑Fi не сбрасывается — для SoftAP используйте Сброс. Другие ворота останутся.`,
   toastGateRenamed: "Название изменено",

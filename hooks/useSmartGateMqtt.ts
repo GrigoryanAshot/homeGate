@@ -45,7 +45,21 @@ interface UseSmartGateMqttOptions {
   gateId?: string;
   configEpoch?: number;
   onCommandSent?: (command: GateCommand) => void;
+  onWifiEvent?: (event: WifiMqttEvent) => void;
 }
+
+export type WifiMqttEvent =
+  | { wifiEvent: "scan_start" }
+  | {
+      wifiEvent: "scan";
+      networks: { ssid: string; rssi: number }[];
+    }
+  | {
+      wifiEvent: "join";
+      ok?: boolean;
+      error?: string;
+      phase?: string;
+    };
 
 function settleMotion(state: GateState): GateState {
   if (state === "opening") return "open";
@@ -79,6 +93,7 @@ export function useSmartGateMqtt({
   gateId,
   configEpoch = 0,
   onCommandSent,
+  onWifiEvent,
 }: UseSmartGateMqttOptions) {
   const clientRef = useRef<MqttClient | null>(null);
   const configRef = useRef<MqttConfig>(getMqttConfig());
@@ -86,6 +101,8 @@ export function useSmartGateMqtt({
   const settleTimerRef = useRef<number | null>(null);
   const onCommandSentRef = useRef(onCommandSent);
   onCommandSentRef.current = onCommandSent;
+  const onWifiEventRef = useRef(onWifiEvent);
+  onWifiEventRef.current = onWifiEvent;
 
   const [connection, setConnection] = useState<ConnectionStatus>("connecting");
   const [gateState, setGateState] = useState<GateState>("closed");
@@ -191,7 +208,18 @@ export function useSmartGateMqtt({
     client.on("message", (topic, payload) => {
       if (topic !== config.topicStatus) return;
       try {
-        const data = JSON.parse(payload.toString()) as { state?: GateState };
+        const data = JSON.parse(payload.toString()) as {
+          state?: GateState;
+          wifiEvent?: string;
+          networks?: { ssid: string; rssi: number }[];
+          ok?: boolean;
+          error?: string;
+          phase?: string;
+        };
+        if (data.wifiEvent) {
+          onWifiEventRef.current?.(data as WifiMqttEvent);
+          return;
+        }
         if (data.state) onBrokerState(data.state);
       } catch {
         /* ignore */
@@ -275,6 +303,31 @@ export function useSmartGateMqtt({
     return true;
   }, []);
 
+  const sendWifiScan = useCallback((targetGateId?: string) => {
+    const client = clientRef.current;
+    if (!client?.connected) return false;
+    const config = targetGateId
+      ? getMqttConfigForGate(targetGateId)
+      : configRef.current;
+    client.publish(config.topicCommand, "WIFI_SCAN", { qos: 0 });
+    return true;
+  }, []);
+
+  const sendWifiSet = useCallback(
+    (ssid: string, password: string, targetGateId?: string) => {
+      const client = clientRef.current;
+      if (!client?.connected) return false;
+      const config = targetGateId
+        ? getMqttConfigForGate(targetGateId)
+        : configRef.current;
+      // Keep password case — ESP parses before normalize
+      const payload = `WIFI_SET\n${ssid.trim()}\n${password}`;
+      client.publish(config.topicCommand, payload, { qos: 0 });
+      return true;
+    },
+    [],
+  );
+
   return {
     connection,
     gateState,
@@ -282,6 +335,8 @@ export function useSmartGateMqtt({
     busy: false,
     sendCommand,
     sendWifiReset,
+    sendWifiScan,
+    sendWifiSet,
     mqttConfigured,
   };
 }

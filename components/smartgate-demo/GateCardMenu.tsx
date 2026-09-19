@@ -13,6 +13,7 @@ export function GateCardMenu({
   onRename,
   onReset,
   onRemove,
+  onChangeWifi,
   onToast,
 }: {
   gate: UserGate;
@@ -20,6 +21,7 @@ export function GateCardMenu({
   onRename: (id: string, name: string) => Promise<boolean>;
   onReset: (id: string) => boolean;
   onRemove: (id: string) => Promise<void>;
+  onChangeWifi?: (id: string) => void;
   onToast?: (message: string) => void;
 }) {
   const { t } = useLocale();
@@ -172,6 +174,16 @@ export function GateCardMenu({
                   </div>
                 ) : (
                   <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onChangeWifi?.(gate.id);
+                        setOpen(false);
+                      }}
+                      className="flex w-full items-center rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-left text-sm font-bold text-blue-900 active:bg-blue-100"
+                    >
+                      {t.wifiChangeAction}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setRenaming(true)}

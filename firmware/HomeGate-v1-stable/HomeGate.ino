@@ -20,8 +20,6 @@
 #include "config.h"
 #include "device_identity.h"
 #include "wifi_provision.h"
-#include "wifi_remote.h"
-#include "ble_rescue.h"
 
 /**
  * Arduino-ESP32 3.x: no setHostname(). Always connect by IP with SNI=MQTT_HOST.
@@ -207,28 +205,6 @@ void publishStatus() {
     WiFi.localIP().toString().c_str()
   );
   mqtt.publish(TOPIC_STATUS, payload, true);
-}
-
-String gPendingWifiEvent;
-
-void publishWifiEvent(const char *json, bool retained) {
-  if (mqtt.connected()) {
-    mqtt.publish(TOPIC_STATUS, json, retained);
-    Serial.print("MQTT wifiEvent TX ");
-    Serial.println(json);
-  } else {
-    gPendingWifiEvent = json;
-    Serial.println("MQTT down — wifiEvent queued");
-  }
-}
-
-void flushPendingWifiEvent() {
-  if (gPendingWifiEvent.length() == 0) return;
-  if (!mqtt.connected()) return;
-  mqtt.publish(TOPIC_STATUS, gPendingWifiEvent.c_str(), false);
-  Serial.print("MQTT wifiEvent flush ");
-  Serial.println(gPendingWifiEvent);
-  gPendingWifiEvent = "";
 }
 
 bool registerWithCloud() {
@@ -446,8 +422,6 @@ void handleCommand(const String &cmd) {
     doClose();
   } else if (cmd == "STOP" || cmd.startsWith("STOP")) {
     doStop();
-  } else if (cmd == "WIFI_SCAN" || cmd.startsWith("WIFI_SCAN")) {
-    wifiRemotePublishScan();
   } else if (
     cmd == "WIFI_RESET" || cmd == "WIFI_SETUP" || cmd.startsWith("WIFI_RESET")
   ) {
@@ -465,6 +439,7 @@ void onMqttMessage(char *topic, byte *payload, unsigned int length) {
   Serial.print(" len=");
   Serial.println(length);
 
+  // Accept exact topic or any …/command (avoid silent drops from topic mismatch)
   const bool topicOk =
     strcmp(topic, TOPIC_COMMAND) == 0 ||
     (strstr(topic, "/command") != nullptr);
@@ -472,30 +447,6 @@ void onMqttMessage(char *topic, byte *payload, unsigned int length) {
     Serial.println("MQTT RX ignored (topic)");
     return;
   }
-
-  // WIFI_SET keeps password case / special chars — handle before normalize
-  if (length >= 8) {
-    String head;
-    for (unsigned int i = 0; i < length && i < 12; i++) {
-      head += (char)payload[i];
-    }
-    if (head.startsWith("WIFI_SET")) {
-      String ssid;
-      String pass;
-      if (wifiRemoteParseSetPayload((const char *)payload, length, ssid, pass)) {
-        wifiRemoteApplySet(ssid, pass);
-        // MQTT socket likely died during Wi‑Fi switch — reconnect next loop
-        statusDirty = true;
-      } else {
-        publishWifiEvent(
-          "{\"wifiEvent\":\"join\",\"ok\":false,\"error\":\"bad_payload\"}",
-          false
-        );
-      }
-      return;
-    }
-  }
-
   handleCommand(normalizeCommand((const char *)payload, length));
 }
 
@@ -631,7 +582,7 @@ bool connectMqtt() {
   delay(100);
 
   mqtt.setCallback(onMqttMessage);
-  mqtt.setBufferSize(2048);
+  mqtt.setBufferSize(512);
   mqtt.setKeepAlive(30);
   mqtt.setSocketTimeout(10);
 
@@ -802,9 +753,6 @@ void setup() {
   Serial.println("Setup: SoftAP TGATE / 12345678 → http://192.168.4.1");
   Serial.println("   Re-setup: hold BOOT ~2s (clears Wi‑Fi, keeps gate claim)");
   Serial.println("   or Serial: WIFI:ssid|password");
-  Serial.println("   App: WIFI_SCAN / WIFI_SET (keep claim); BLE rescue after 60s down");
-
-  wifiRemoteSetPublisher(publishWifiEvent);
 
   deviceLoadIdentity();
   Serial.print("Chip: ");
@@ -839,16 +787,12 @@ void loop() {
 #endif
   ensureMqtt();
   mqtt.loop();
-  flushPendingWifiEvent();
 
   pollPulse();
   wifiPollResetButton();
   pollStopButton();
 
-  const bool wifiUp = WiFi.status() == WL_CONNECTED;
-  bleRescuePoll(wifiUp);
-
-  if (!wifiUp) {
+  if (WiFi.status() != WL_CONNECTED) {
     connectWifi();
     return;
   }
@@ -858,7 +802,6 @@ void loop() {
     ensureMqtt();
   }
   mqtt.loop();
-  flushPendingWifiEvent();
 
   if (updateMoveState()) {
     statusDirty = true;

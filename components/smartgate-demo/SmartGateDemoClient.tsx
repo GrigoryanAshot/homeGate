@@ -2,13 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDelayedOfflineBanner } from "@/hooks/useDelayedOfflineBanner";
-import { useSmartGateMqtt } from "@/hooks/useSmartGateMqtt";
+import {
+  useSmartGateMqtt,
+  type WifiMqttEvent,
+} from "@/hooks/useSmartGateMqtt";
 import { clearControllersForGate } from "@/lib/smartgate/controllers-store";
 import { logGateAccess } from "@/lib/smartgate/log-gate-access";
 import type { GateCommand, GateState } from "@/lib/smartgate/types";
 import { getMqttConfig } from "@/lib/smartgate/types";
 import { AddGateScanModal } from "./AddGateScanModal";
 import { BottomNav, type DemoView } from "./BottomNav";
+import { ChangeWifiModal } from "./ChangeWifiModal";
 import { ControllersPanel } from "./ControllersPanel";
 import { DemoHeader } from "./DemoHeader";
 import { GateCardsRow } from "./GateCardsRow";
@@ -28,6 +32,11 @@ function SmartGateDemoInner() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
+  const [changeWifiOpen, setChangeWifiOpen] = useState(false);
+  const [changeWifiGateId, setChangeWifiGateId] = useState("");
+  const [lastWifiEvent, setLastWifiEvent] = useState<WifiMqttEvent | null>(
+    null,
+  );
   const [mqttEpoch, setMqttEpoch] = useState(0);
   const gateStateByIdRef = useRef<Record<string, GateState>>({});
   const prevGateIdRef = useRef(selectedGateId);
@@ -62,12 +71,17 @@ function SmartGateDemoInner() {
     [user],
   );
 
-  const { connection, gateState, setGateState, busy, sendCommand, sendWifiReset, mqttConfigured } =
+  const onWifiEvent = useCallback((event: WifiMqttEvent) => {
+    setLastWifiEvent(event);
+  }, []);
+
+  const { connection, gateState, setGateState, busy, sendCommand, sendWifiReset, sendWifiScan, sendWifiSet, mqttConfigured } =
     useSmartGateMqtt({
       mockMode: false,
       gateId: hasGate ? selectedGateId : undefined,
       configEpoch: mqttEpoch,
       onCommandSent,
+      onWifiEvent,
     });
 
   const showOfflineBanner = useDelayedOfflineBanner(
@@ -171,6 +185,12 @@ function SmartGateDemoInner() {
                   return handleWifiReset(id);
                 }}
                 onRemoveGate={handleRemoveGate}
+                onChangeWifi={(id) => {
+                  selectGate(id);
+                  setChangeWifiGateId(id);
+                  setLastWifiEvent(null);
+                  setChangeWifiOpen(true);
+                }}
                 onToast={showToast}
               />
               {hasGate ? (
@@ -210,6 +230,22 @@ function SmartGateDemoInner() {
         open={scanOpen}
         onClose={() => setScanOpen(false)}
         onAdded={(message) => showToast(message)}
+      />
+
+      <ChangeWifiModal
+        open={changeWifiOpen}
+        onClose={() => setChangeWifiOpen(false)}
+        gateName={
+          gates.find((g) => g.id === changeWifiGateId)?.name ||
+          changeWifiGateId
+        }
+        mqttOnline={mqttConfigured && connection === "online"}
+        onScan={() => sendWifiScan(changeWifiGateId || selectedGateId)}
+        onConnect={(ssid, password) =>
+          sendWifiSet(ssid, password, changeWifiGateId || selectedGateId)
+        }
+        lastWifiEvent={lastWifiEvent}
+        onToast={showToast}
       />
 
       {toast && (

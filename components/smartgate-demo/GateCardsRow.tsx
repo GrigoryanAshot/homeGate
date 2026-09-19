@@ -14,6 +14,7 @@ export function GateCardsRow({
   mqttOnline,
   onResetGate,
   onRemoveGate,
+  onChangeWifi,
   onToast,
 }: {
   onAddGate: () => void;
@@ -21,6 +22,7 @@ export function GateCardsRow({
   mqttOnline: boolean;
   onResetGate: (gateId: string) => boolean;
   onRemoveGate: (gateId: string) => Promise<void>;
+  onChangeWifi?: (gateId: string) => void;
   onToast?: (message: string) => void;
 }) {
   const { gates, selectedGateId, selectGate, renameGate } = useGates();
@@ -51,6 +53,7 @@ export function GateCardsRow({
                 onRename={renameGate}
                 onReset={onResetGate}
                 onRemove={onRemoveGate}
+                onChangeWifi={onChangeWifi}
                 onToast={onToast}
               />
               <ConnectionLed
