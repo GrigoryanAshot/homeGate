@@ -55,6 +55,7 @@ export function GateCardsRow({
               />
               <ConnectionLed
                 status={selected ? connection : "offline"}
+                showLabel={selected}
                 className="pointer-events-none absolute right-2.5 top-2.5"
               />
               <button

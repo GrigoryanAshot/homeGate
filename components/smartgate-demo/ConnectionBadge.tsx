@@ -8,12 +8,21 @@ const ledStyles: Record<ConnectionStatus, string> = {
   offline: "bg-red-500 shadow-[0_0_7px_2px_rgba(239,68,68,0.7)]",
 };
 
+const labelStyles: Record<ConnectionStatus, string> = {
+  online: "text-green-700",
+  connecting: "text-amber-700",
+  offline: "text-red-700",
+};
+
 export function ConnectionLed({
   status,
   className,
+  showLabel = false,
 }: {
   status: ConnectionStatus;
   className?: string;
+  /** Show status text next to the LED (e.g. «Միանում է»). */
+  showLabel?: boolean;
 }) {
   const { t } = useLocale();
   const label =
@@ -23,16 +32,44 @@ export function ConnectionLed({
         ? t.connecting
         : t.offline;
 
+  if (!showLabel) {
+    return (
+      <span
+        role="status"
+        title={label}
+        aria-label={label}
+        className={cn(
+          "inline-block h-2.5 w-2.5 shrink-0 rounded-full animate-led-blink",
+          ledStyles[status],
+          className,
+        )}
+      />
+    );
+  }
+
   return (
     <span
       role="status"
-      title={label}
       aria-label={label}
       className={cn(
-        "inline-block h-2.5 w-2.5 shrink-0 rounded-full animate-led-blink",
-        ledStyles[status],
+        "pointer-events-none inline-flex max-w-[9.5rem] items-center gap-1.5",
         className,
       )}
-    />
+    >
+      <span
+        className={cn(
+          "inline-block h-2.5 w-2.5 shrink-0 rounded-full animate-led-blink",
+          ledStyles[status],
+        )}
+      />
+      <span
+        className={cn(
+          "truncate text-[0.65rem] font-semibold leading-tight",
+          labelStyles[status],
+        )}
+      >
+        {label}
+      </span>
+    </span>
   );
 }

@@ -178,6 +178,7 @@ function SmartGateDemoInner() {
                   busy={busy}
                   gateState={gateState}
                   onCommand={handleCommand}
+                  controlsEnabled={mqttConfigured && connection === "online"}
                 />
               ) : (
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">

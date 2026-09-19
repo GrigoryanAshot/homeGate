@@ -167,6 +167,7 @@ function InvitedGateInner({ token }: { token: string }) {
           busy={busy}
           gateState={gateState}
           onCommand={handleCommand}
+          controlsEnabled={mqttConfigured && connection === "online"}
         />
       </main>
 

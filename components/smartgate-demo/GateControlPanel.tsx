@@ -20,12 +20,16 @@ const stateBadgeStyle: Record<GateState, string> = {
 export function GateControlPanel({
   gateState,
   onCommand,
+  controlsEnabled = true,
 }: {
   busy?: boolean;
   gateState: GateState;
   onCommand: (command: GateCommand) => void;
+  /** False while MQTT is connecting / offline — buttons do nothing. */
+  controlsEnabled?: boolean;
 }) {
   const { t } = useLocale();
+  const disabled = !controlsEnabled;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -44,12 +48,18 @@ export function GateControlPanel({
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col gap-2.5 pb-1">
+      <div
+        className={cn(
+          "flex shrink-0 flex-col gap-2.5 pb-1 transition-opacity",
+          disabled && "opacity-45",
+        )}
+      >
         <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
+            disabled={disabled}
             onClick={() => onCommand("OPEN")}
-            className="control-btn-primary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 active:scale-[0.98]"
+            className="control-btn-primary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 active:scale-[0.98] disabled:pointer-events-none disabled:active:scale-100"
           >
             <IconChevronUp className="h-8 w-8" />
             <span className="text-base font-bold">{t.open}</span>
@@ -57,8 +67,9 @@ export function GateControlPanel({
 
           <button
             type="button"
+            disabled={disabled}
             onClick={() => onCommand("CLOSE")}
-            className="control-btn-secondary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 active:scale-[0.98]"
+            className="control-btn-secondary flex min-h-[72px] flex-col items-center justify-center gap-1 px-3 active:scale-[0.98] disabled:pointer-events-none disabled:active:scale-100"
           >
             <IconChevronDown className="h-8 w-8" />
             <span className="text-base font-bold">{t.close}</span>
@@ -67,8 +78,9 @@ export function GateControlPanel({
 
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onCommand("STOP")}
-          className="control-btn-danger flex min-h-[52px] w-full items-center justify-center gap-2 px-4 active:scale-[0.98]"
+          className="control-btn-danger flex min-h-[52px] w-full items-center justify-center gap-2 px-4 active:scale-[0.98] disabled:pointer-events-none disabled:active:scale-100"
         >
           <IconStop className="h-5 w-5" />
           <span className="text-base font-bold">{t.stop}</span>
