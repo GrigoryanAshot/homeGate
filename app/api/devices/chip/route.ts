@@ -111,7 +111,7 @@ export async function POST(req: Request) {
         const status =
           result.error === "not_found"
             ? 404
-            : result.error === "chip_in_use"
+            : result.error === "chip_in_use" || result.error === "wrong_chip"
               ? 409
               : 401;
         return NextResponse.json(

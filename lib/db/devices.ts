@@ -73,17 +73,22 @@ export async function registerDevice(
     if (taken) {
       return { ok: false as const, error: "chip_in_use" as const };
     }
+    // Once a product has a chip, another ESP must not steal this sticker.
+    if (existing.chipId && existing.chipId !== chip) {
+      return { ok: false as const, error: "wrong_chip" as const };
+    }
   }
 
   const updated = await prisma.device.update({
     where: { id },
     data: {
       lastSeenAt: new Date(),
-      ...(chip ? { chipId: chip } : {}),
+      // Only bind chip when unset; never replace an existing chip via register
+      ...(chip && !existing.chipId ? { chipId: chip } : {}),
     },
   });
   return { ok: true as const, device: toPublicDevice(updated), created: false };
-}
+
 
 /** Pre-create FREE sticker products for factory print run. */
 export async function seedFactoryDevice(deviceId: string, secret: string) {
