@@ -45,7 +45,21 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
     const { deviceId } = await ctx.params;
     const id = decodeURIComponent(deviceId);
-    const body = (await req.json()) as { name?: string };
+    const body = (await req.json()) as { name?: string; gateType?: string };
+
+    if (body.gateType === "rollup" || body.gateType === "slide") {
+      const { setGateTypeForOwner } = await import("@/lib/db/shares");
+      const typed = await setGateTypeForOwner(session.id, id, body.gateType);
+      if (!typed.ok) {
+        const status = typed.error === "not_found" ? 404 : 400;
+        return NextResponse.json(
+          { ok: false, error: typed.error },
+          { status },
+        );
+      }
+      return NextResponse.json({ ok: true, gateType: typed.gateType });
+    }
+
     const result = await renameDeviceForOwner(
       session.id,
       id,

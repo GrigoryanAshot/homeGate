@@ -43,6 +43,8 @@ model Device {
   owner      User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   /// Display name chosen by owner on claim
   name       String?
+  /// UI animation only: "rollup" | "slide" — null until owner picks
+  gateType   String?
   claimedAt  DateTime?
   lastSeenAt DateTime?
   createdAt  DateTime @default(now())

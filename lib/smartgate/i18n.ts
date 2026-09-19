@@ -35,6 +35,13 @@ export type SmartGateMessages = {
   deviceClaimFailed: string;
   toastGateAdded: (name: string) => string;
   toastGateAlreadyOwned: (name: string) => string;
+  gateRenameSave: string;
+  gateTypeTitle: string;
+  gateTypeHint: (name: string) => string;
+  gateTypeRollup: string;
+  gateTypeRollupHint: string;
+  gateTypeSlide: string;
+  gateTypeSlideHint: string;
   gateMenuHint: string;
   gateRenameAction: string;
   gateRenameLabel: string;
@@ -282,6 +289,14 @@ const en: SmartGateMessages = {
   deviceClaimFailed: "Could not claim device. Try again.",
   toastGateAdded: (name) => `${name} added`,
   toastGateAlreadyOwned: (name) => `${name} is already in your account`,
+  gateRenameSave: "Save name",
+  gateTypeTitle: "What kind of gate is this?",
+  gateTypeHint: (name) =>
+    `Choose the look for “${name}”. You can change this later in the gate menu.`,
+  gateTypeRollup: "Rollup door",
+  gateTypeRollupHint: "Curtain rises up into the box",
+  gateTypeSlide: "Sliding door",
+  gateTypeSlideHint: "Leaf slides sideways",
   gateMenuHint: "This gate only",
   gateRenameAction: "Rename gate",
   gateRenameLabel: "Gate name",
@@ -563,6 +578,14 @@ const hy: SmartGateMessages = {
   deviceClaimFailed: "Չհաջողվեց կապել սարքը։ Փորձեք նորից։",
   toastGateAdded: (name) => `${name} ավելացվեց`,
   toastGateAlreadyOwned: (name) => `${name} արդեն ձեր հաշվում է`,
+  gateRenameSave: "Պահել անունը",
+  gateTypeTitle: "Ի՞նչ տեսակի դարպաս է սա",
+  gateTypeHint: (name) =>
+    `Ընտրեք տեսքը «${name}»-ի համար։ Կարող եք փոխել ավելի ուշ դարպասի մենյուից։`,
+  gateTypeRollup: "Գլորվող դուռ",
+  gateTypeRollupHint: "Վարագույրը բարձրանում է վերև",
+  gateTypeSlide: "Սահող դուռ",
+  gateTypeSlideHint: "Տերևը սահում է կողք",
   gateMenuHint: "Միայն այս դարպասը",
   gateRenameAction: "Վերանվանել",
   gateRenameLabel: "Դարպասի անուն",
@@ -845,6 +868,14 @@ const ru: SmartGateMessages = {
   deviceClaimFailed: "Не удалось привязать устройство. Попробуйте снова.",
   toastGateAdded: (name) => `${name} добавлены`,
   toastGateAlreadyOwned: (name) => `${name} уже в вашем аккаунте`,
+  gateRenameSave: "Сохранить имя",
+  gateTypeTitle: "Какой тип ворот?",
+  gateTypeHint: (name) =>
+    `Выберите вид для «${name}». Можно изменить позже в меню ворот.`,
+  gateTypeRollup: "Рулонные ворота",
+  gateTypeRollupHint: "Полотно поднимается вверх",
+  gateTypeSlide: "Откатные ворота",
+  gateTypeSlideHint: "Створка едет в сторону",
   gateMenuHint: "Только эти ворота",
   gateRenameAction: "Переименовать",
   gateRenameLabel: "Название ворот",

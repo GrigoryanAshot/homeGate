@@ -1,9 +1,12 @@
 import type { Locale } from "@/lib/smartgate/i18n";
+import type { GateKind } from "@/lib/smartgate/gate-kind";
 
 export interface UserGate {
   id: string;
   name: string;
   createdAt: number;
+  /** null = owner has not chosen UI style yet */
+  gateType?: GateKind | null;
 }
 
 export const GATES_STORAGE_KEY = "smartgate-user-gates";

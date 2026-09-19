@@ -18,6 +18,7 @@ import {
   type UserGate,
 } from "@/lib/smartgate/gates-store";
 import { setActiveGateId } from "@/lib/smartgate/gate-id";
+import type { GateKind } from "@/lib/smartgate/gate-kind";
 import type { Locale } from "@/lib/smartgate/i18n";
 import { useAuth } from "./AuthProvider";
 
@@ -28,6 +29,7 @@ type GatesContextValue = {
   selectGate: (id: string) => void;
   addGateFromScan: (name: string, deviceId?: string) => UserGate;
   renameGate: (id: string, name: string) => Promise<boolean>;
+  setGateType: (id: string, gateType: GateKind) => Promise<boolean>;
   removeGate: (id: string) => Promise<boolean>;
   suggestNextGateName: (locale: Locale) => string;
   refreshFromServer: () => Promise<UserGate[]>;
@@ -60,12 +62,19 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/devices/mine", { credentials: "include" });
       if (!res.ok) return [];
       const data = (await res.json()) as {
-        devices?: { id: string; name: string | null; claimedAt: string | null }[];
+        devices?: {
+          id: string;
+          name: string | null;
+          claimedAt: string | null;
+          gateType?: GateKind | null;
+        }[];
       };
       const remote = (data.devices ?? []).map((d) => ({
         id: d.id,
         name: d.name?.trim() || d.id,
         createdAt: d.claimedAt ? Date.parse(d.claimedAt) : Date.now(),
+        gateType:
+          d.gateType === "rollup" || d.gateType === "slide" ? d.gateType : null,
       }));
 
       // Oldest claim first so Gate 1 stays visually first.
@@ -78,6 +87,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
             id: g.id,
             name: g.name,
             createdAt: existing?.createdAt ?? g.createdAt,
+            gateType: g.gateType,
           };
         }),
       );
@@ -159,6 +169,30 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
     [user],
   );
 
+  const setGateType = useCallback(
+    async (id: string, gateType: GateKind) => {
+      if (user) {
+        try {
+          const res = await fetch(`/api/devices/${encodeURIComponent(id)}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ gateType }),
+          });
+          if (!res.ok) return false;
+        } catch {
+          return false;
+        }
+      }
+
+      setGates((prev) =>
+        prev.map((g) => (g.id === id ? { ...g, gateType } : g)),
+      );
+      return true;
+    },
+    [user],
+  );
+
   const removeGate = useCallback(
     async (id: string) => {
       if (user) {
@@ -206,6 +240,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       selectGate,
       addGateFromScan,
       renameGate,
+      setGateType,
       removeGate,
       suggestNextGateName,
       refreshFromServer,
@@ -217,6 +252,7 @@ export function GatesProvider({ children }: { children: React.ReactNode }) {
       selectGate,
       addGateFromScan,
       renameGate,
+      setGateType,
       removeGate,
       suggestNextGateName,
       refreshFromServer,

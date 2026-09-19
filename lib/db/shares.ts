@@ -140,6 +140,24 @@ export async function renameDeviceForOwner(
   return { ok: true as const, name: trimmed };
 }
 
+export async function setGateTypeForOwner(
+  ownerId: string,
+  deviceId: string,
+  gateType: "rollup" | "slide",
+) {
+  if (gateType !== "rollup" && gateType !== "slide") {
+    return { ok: false as const, error: "invalid_type" as const };
+  }
+  const result = await prisma.device.updateMany({
+    where: { id: deviceId.trim(), ownerId },
+    data: { gateType },
+  });
+  if (result.count === 0) {
+    return { ok: false as const, error: "not_found" as const };
+  }
+  return { ok: true as const, gateType };
+}
+
 /** Owner removes gate from account — FREE again; shares revoked. */
 export async function unclaimDeviceForOwner(ownerId: string, deviceId: string) {
   const id = deviceId.trim();
@@ -161,6 +179,7 @@ export async function unclaimDeviceForOwner(ownerId: string, deviceId: string) {
         status: "FREE",
         ownerId: null,
         name: null,
+        gateType: null,
         chipId: null,
         claimedAt: null,
         lastSeenAt: new Date(),

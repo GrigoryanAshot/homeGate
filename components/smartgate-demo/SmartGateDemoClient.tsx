@@ -17,6 +17,7 @@ import { ControllersPanel } from "./ControllersPanel";
 import { DemoHeader } from "./DemoHeader";
 import { GateCardsRow } from "./GateCardsRow";
 import { GateControlPanel } from "./GateControlPanel";
+import { GateTypePickerModal } from "./GateTypePickerModal";
 import { GatesProvider, useGates } from "./GatesProvider";
 import { LocaleProvider, useLocale } from "./LocaleProvider";
 import { ThemeProvider } from "./ThemeProvider";
@@ -26,7 +27,8 @@ import { AuthWelcomeGate } from "./AuthWelcomeGate";
 function SmartGateDemoInner() {
   const { t } = useLocale();
   const { user } = useAuth();
-  const { gates, selectedGateId, selectGate, removeGate } = useGates();
+  const { gates, selectedGateId, selectedGate, selectGate, removeGate, setGateType } =
+    useGates();
   const hasGate = gates.length > 0 && !!selectedGateId;
   const [view, setView] = useState<DemoView>("control");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -197,6 +199,7 @@ function SmartGateDemoInner() {
                 <GateControlPanel
                   busy={busy}
                   gateState={gateState}
+                  gateType={selectedGate?.gateType}
                   onCommand={handleCommand}
                   controlsEnabled={Boolean(selectedGateId)}
                 />
@@ -230,6 +233,21 @@ function SmartGateDemoInner() {
         open={scanOpen}
         onClose={() => setScanOpen(false)}
         onAdded={(message) => showToast(message)}
+      />
+
+      <GateTypePickerModal
+        open={Boolean(
+          hasGate &&
+            selectedGate &&
+            selectedGate.gateType !== "rollup" &&
+            selectedGate.gateType !== "slide",
+        )}
+        gateName={selectedGate?.name || ""}
+        onPick={async (type) => {
+          if (!selectedGateId) return;
+          const ok = await setGateType(selectedGateId, type);
+          if (!ok) showToast(t.deviceClaimFailed);
+        }}
       />
 
       <ChangeWifiModal

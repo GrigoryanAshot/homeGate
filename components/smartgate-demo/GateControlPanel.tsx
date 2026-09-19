@@ -1,4 +1,5 @@
 import type { GateCommand, GateState } from "@/lib/smartgate/types";
+import type { GateKind } from "@/lib/smartgate/gate-kind";
 import {
   IconChevronDown,
   IconChevronUp,
@@ -7,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useLocale } from "./LocaleProvider";
 import { RollupDoorVisualizer } from "./RollupDoorVisualizer";
+import { SlideDoorVisualizer } from "./SlideDoorVisualizer";
 
 const stateBadgeStyle: Record<GateState, string> = {
   closed: "border-slate-300 bg-slate-100 text-slate-800",
@@ -21,15 +23,18 @@ export function GateControlPanel({
   gateState,
   onCommand,
   controlsEnabled = true,
+  gateType = "rollup",
 }: {
   busy?: boolean;
   gateState: GateState;
   onCommand: (command: GateCommand) => void;
   /** False while MQTT is connecting / offline — buttons do nothing. */
   controlsEnabled?: boolean;
+  gateType?: GateKind | null;
 }) {
   const { t } = useLocale();
   const disabled = !controlsEnabled;
+  const kind: GateKind = gateType === "slide" ? "slide" : "rollup";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -44,7 +49,11 @@ export function GateControlPanel({
           >
             {t.gateStates[gateState]}
           </div>
-          <RollupDoorVisualizer state={gateState} />
+          {kind === "slide" ? (
+            <SlideDoorVisualizer state={gateState} />
+          ) : (
+            <RollupDoorVisualizer state={gateState} />
+          )}
         </div>
       </div>
 

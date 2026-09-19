@@ -1,14 +1,15 @@
 import { createHash, timingSafeEqual } from "crypto";
 import type { Device } from "@prisma/client";
+import type { GateKind } from "@/lib/smartgate/gate-kind";
 import { prisma } from "./client";
 
+export type { Device, GateKind };
 export type DeviceStatus = "FREE" | "BUSY";
 export const DeviceStatus = {
   FREE: "FREE",
   BUSY: "BUSY",
 } as const;
 
-export type { Device };
 export { prisma };
 
 export function hashDeviceSecret(secret: string): string {
@@ -28,18 +29,23 @@ export type DevicePublic = {
   chipId: string | null;
   ownerId: string | null;
   name: string | null;
+  gateType: GateKind | null;
   claimedAt: string | null;
   lastSeenAt: string | null;
   createdAt: string;
 };
 
 export function toPublicDevice(device: Device): DevicePublic {
+  const gt = device.gateType;
+  const gateType: GateKind | null =
+    gt === "rollup" || gt === "slide" ? gt : null;
   return {
     id: device.id,
     status: device.status as DeviceStatus,
     chipId: device.chipId,
     ownerId: device.ownerId,
     name: device.name,
+    gateType,
     claimedAt: device.claimedAt?.toISOString() ?? null,
     lastSeenAt: device.lastSeenAt?.toISOString() ?? null,
     createdAt: device.createdAt.toISOString(),
