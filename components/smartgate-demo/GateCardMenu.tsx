@@ -90,7 +90,7 @@ export function GateCardMenu({
     // Second check with product id so we never wipe the wrong mental card
     if (
       !window.confirm(
-        `${gate.name}\nID: ${gate.id}\n\nOK = remove THIS gate only.`,
+        `${gate.name}\n\nOK = remove THIS gate only.`,
       )
     ) {
       return;

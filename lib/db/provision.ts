@@ -26,14 +26,54 @@ function newDeviceSecret(): string {
 
 export async function issueSoftApProvisionToken(userId: string) {
   const token = newProvisionToken();
+  const handoffToken = newProvisionToken();
   await prisma.softApProvisionToken.create({
     data: {
       token,
+      handoffToken,
       userId,
       expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
     },
   });
-  return { token, expiresInSec: Math.floor(TOKEN_TTL_MS / 1000) };
+  return {
+    token,
+    handoffToken,
+    expiresInSec: Math.floor(TOKEN_TTL_MS / 1000),
+  };
+}
+
+/** SoftAP success page → open app already signed in as that user. */
+export async function consumeSoftApHandoff(handoffToken: string) {
+  const token = handoffToken.trim();
+  if (!token) return { ok: false as const, error: "missing" as const };
+
+  const row = await prisma.softApProvisionToken.findUnique({
+    where: { handoffToken: token },
+  });
+  if (
+    !row ||
+    row.handoffUsedAt ||
+    row.expiresAt.getTime() < Date.now()
+  ) {
+    return { ok: false as const, error: "invalid" as const };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: row.userId } });
+  if (!user) return { ok: false as const, error: "invalid" as const };
+
+  await prisma.softApProvisionToken.update({
+    where: { id: row.id },
+    data: { handoffUsedAt: new Date() },
+  });
+
+  return {
+    ok: true as const,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    },
+  };
 }
 
 export async function completeSoftApProvision(input: {

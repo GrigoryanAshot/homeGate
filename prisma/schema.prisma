@@ -110,12 +110,15 @@ model GateShare {
 /// SoftAP portal: email verified → one-time token ESP uses after home Wi‑Fi.
 /// Never used to reassign reserved demo stickers (e.g. demo-gate-001).
 model SoftApProvisionToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
-  userId    String
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
+  id           String    @id @default(cuid())
+  token        String    @unique
+  /// One-time browser handoff → set session cookie and open the app
+  handoffToken String?   @unique
+  userId       String
+  expiresAt    DateTime
+  usedAt       DateTime?
+  handoffUsedAt DateTime?
+  createdAt    DateTime  @default(now())
 
   @@index([userId])
   @@index([expiresAt])

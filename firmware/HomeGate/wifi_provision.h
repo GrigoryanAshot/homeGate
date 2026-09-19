@@ -409,9 +409,10 @@ inline String wifiBuildPortalHtml() {
     "const d=await post('/cloud/verify-code',{"
     "email:$('email').value.trim(),code:$('code').value.trim(),softAp:true},true);"
     "const tok=d.provisionToken||'';"
+    "const hand=d.handoffToken||'';"
     "if(!tok)throw new Error('no_token');"
     "const f=document.createElement('form');f.method='POST';f.action='/save';"
-    "[['ssid_manual',ssid],['pass',pass],['provisionToken',tok]].forEach(([n,v])=>{"
+    "[['ssid_manual',ssid],['pass',pass],['provisionToken',tok],['handoffToken',hand]].forEach(([n,v])=>{"
     "const i=document.createElement('input');i.type='hidden';i.name=n;i.value=v;f.appendChild(i);});"
     "document.body.appendChild(f);f.submit();"
     "}catch(e){$('e3').textContent=e.message==='invalid_code'?'Wrong code':niceErr(e);"
@@ -609,13 +610,17 @@ inline void wifiHandlePortalSave() {
   const String pass = server.hasArg("pass") ? server.arg("pass") : "";
   const String provTok =
     server.hasArg("provisionToken") ? server.arg("provisionToken") : "";
+  const String handoff =
+    server.hasArg("handoffToken") ? server.arg("handoffToken") : "";
 
   Serial.print("SoftAP save SSID=");
   Serial.print(ssid);
   Serial.print(" passLen=");
   Serial.print(pass.length());
   Serial.print(" provTokLen=");
-  Serial.println(provTok.length());
+  Serial.print(provTok.length());
+  Serial.print(" handoffLen=");
+  Serial.println(handoff.length());
 
   wifiSaveCreds(ssid, pass);
   wifiSaveProvisionToken(provTok);
@@ -624,17 +629,35 @@ inline void wifiHandlePortalSave() {
   prefs.putBool("provOk", true);
   prefs.end();
 
-  server.send(
-    200,
-    "text/html",
-    "<!DOCTYPE html><meta name=viewport content=\"width=device-width\">"
-    "<body style=\"font-family:system-ui;padding:24px\">"
-    "<h1>Saved</h1>"
-    "<p>Box is rebooting and joining your home Wi‑Fi…</p>"
-    "<p>Switch this phone back to your <b>home</b> Wi‑Fi, then open the app — "
-    "the new gate appears on your account.</p>"
-    "</body>"
+  String appUrl = String(API_BASE_URL) + "/api/auth/softap-handoff";
+  if (handoff.length() > 0) {
+    appUrl += "?t=";
+    appUrl += handoff;
+  } else {
+    appUrl = String(API_BASE_URL) + "/smartgate-demo";
+  }
+
+  String doneHtml;
+  doneHtml.reserve(1100);
+  doneHtml += F(
+    "<!DOCTYPE html><html><head>"
+    "<meta charset=\"utf-8\"/>"
+    "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>"
+    "<title>Open app</title>"
+    "<style>body{font-family:system-ui;padding:28px;background:#e8f2ff;color:#0f172a}"
+    "h1{font-size:1.5rem}p{color:#475569;line-height:1.45}"
+    "a{display:block;margin-top:22px;padding:18px;border-radius:20px;background:#2563eb;"
+    "color:#fff;text-align:center;font-weight:800;text-decoration:none;font-size:1.1rem}</style>"
+    "</head><body>"
+    "<h1>Almost done</h1>"
+    "<p><b>1.</b> Switch this phone to your <b>home Wi‑Fi</b> (leave TGATE).</p>"
+    "<p><b>2.</b> Tap below to open your account — the new gate will appear.</p>"
+    "<a href=\""
   );
+  doneHtml += appUrl;
+  doneHtml += F("\">Open Touch SmartGate</a></body></html>");
+
+  server.send(200, "text/html", doneHtml);
   delay(1200);
 
   wifiPortalDns().stop();

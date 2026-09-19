@@ -79,9 +79,6 @@ export function GateCardsRow({
                 <span className="line-clamp-2 text-sm font-bold leading-tight text-gate-ink">
                   {gate.name}
                 </span>
-                <span className="max-w-full truncate font-mono text-[0.6rem] text-gate-muted">
-                  {gate.id}
-                </span>
               </button>
             </div>
           );

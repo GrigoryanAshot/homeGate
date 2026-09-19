@@ -27,15 +27,18 @@ export async function POST(req: Request) {
   }
 
   let provisionToken: string | undefined;
+  let handoffToken: string | undefined;
   if (body.softAp) {
     const issued = await issueSoftApProvisionToken(result.user.id);
     provisionToken = issued.token;
+    handoffToken = issued.handoffToken;
   }
 
   const res = jsonWithCors(req, {
     ok: true,
     user: result.user,
     ...(provisionToken ? { provisionToken } : {}),
+    ...(handoffToken ? { handoffToken } : {}),
   });
   return withSessionCookie(res, result.user);
 }

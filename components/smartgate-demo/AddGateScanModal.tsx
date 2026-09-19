@@ -270,11 +270,6 @@ export function AddGateScanModal({
         ) : (
           <>
             <p className="mb-1 text-sm text-green-700">{t.scanGateSuccess}</p>
-            {pair && (
-              <p className="mb-3 font-mono text-[0.7rem] text-gate-muted">
-                ID: {pair.deviceId}
-              </p>
-            )}
             <label className="mb-4 block">
               <span className="mb-1.5 block text-xs font-semibold text-gate-muted">
                 {t.scanGateNameLabel}
