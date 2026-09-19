@@ -9,8 +9,18 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/index.html",
-        destination: "/smartgate-demo",
+        destination: "/gate",
         permanent: false,
+      },
+      {
+        source: "/smartgate-demo",
+        destination: "/gate",
+        permanent: true,
+      },
+      {
+        source: "/smartgate-demo/:path*",
+        destination: "/gate",
+        permanent: true,
       },
     ];
   },

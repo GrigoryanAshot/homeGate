@@ -20,7 +20,7 @@ export default async function InviteQueryPage({
   const q = await searchParams;
   const token = (q.t ?? q.token ?? "").trim();
   if (!token) {
-    redirect("/smartgate-demo");
+    redirect("/gate");
   }
   return <InvitedGateClient token={token} />;
 }

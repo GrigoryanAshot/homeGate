@@ -13,10 +13,6 @@ import { BackButton } from "./BackButton";
 import { DeviceQrScanner } from "./DeviceQrScanner";
 import { WifiSetupGuide } from "./WifiSetupGuide";
 
-/** Kept for offline / desktop testing without a printed QR. */
-const DEMO_FREE_QR =
-  "smartgate://pair?id=demo-gate-001&s=secret-demo-001";
-
 export function AddGateScanModal({
   open,
   onClose,
@@ -90,11 +86,6 @@ export function AddGateScanModal({
 
   function handlePasteClaim() {
     applyPayload(paste);
-  }
-
-  function handleDemoScan() {
-    setCameraOn(false);
-    applyPayload(DEMO_FREE_QR);
   }
 
   async function handleSave() {

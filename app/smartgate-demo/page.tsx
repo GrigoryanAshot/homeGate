@@ -1,16 +1,6 @@
-import type { Metadata } from "next";
-import { SmartGateDemoClient } from "@/components/smartgate-demo/SmartGateDemoClient";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Touch SmartGate",
-  description: "Cloud gate control and access sharing.",
-  robots: {
-    index: false,
-    follow: false,
-    googleBot: { index: false, follow: false },
-  },
-};
-
-export default function SmartGateDemoPage() {
-  return <SmartGateDemoClient />;
+/** Legacy URL — product app lives at /gate */
+export default function SmartGateDemoRedirectPage() {
+  redirect("/gate");
 }

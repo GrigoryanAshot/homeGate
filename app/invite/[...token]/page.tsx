@@ -20,7 +20,7 @@ export default async function InvitePathPage({
   const joined = (parts ?? []).map((p) => decodeURIComponent(p)).join(".");
   if (!joined || joined === "demo") {
     // /invite/demo is a separate route; shouldn't hit here
-    redirect("/smartgate-demo");
+    redirect("/gate");
   }
   // Prefer query form going forward
   redirect(`/invite?t=${encodeURIComponent(joined)}`);

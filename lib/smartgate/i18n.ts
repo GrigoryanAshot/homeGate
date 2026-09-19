@@ -247,7 +247,7 @@ export type SmartGateMessages = {
 
 const en: SmartGateMessages = {
   appTitle: "Touch SmartGate",
-  presentationBadge: "Live demo — simulated gate",
+  presentationBadge: "Practice — simulated gate",
   selectGate: "Gate",
   myGates: "My gates",
   addGate: "Add gate",
@@ -262,7 +262,7 @@ const en: SmartGateMessages = {
   scanGateHintCamera:
     "1) Gate box already on home Wi‑Fi · 2) Point the camera at the QR on the box · 3) Name the gate.",
   scanGateAction: "Open camera",
-  scanGateActionDemo: "Demo: use test gate (no camera)",
+  scanGateActionDemo: "Use test gate (no camera)",
   scanGateScanning: "Scanning…",
   scanCameraStarting: "Starting camera…",
   scanCameraStop: "Stop camera",
@@ -324,7 +324,7 @@ const en: SmartGateMessages = {
   saveAccessChanges: "Save changes",
   toastAccessUpdated: "Access updated",
   shareAgain: "Share",
-  practiceMode: "Demo mode",
+  practiceMode: "Practice mode",
   connected: "Connected",
   connecting: "Connecting",
   offline: "Offline",
@@ -369,7 +369,7 @@ const en: SmartGateMessages = {
   shareInviteIntro:
     "QR is below (same link). WhatsApp sends the text link — use “Send QR image” to attach the code.",
   shareInviteIntroDemo:
-    "Show the partner how sharing works — QR, WhatsApp, or preview the guest screen.",
+    "Show how sharing works — QR, WhatsApp, or preview the guest screen.",
   shareViaWhatsApp: "Share link on WhatsApp",
   copyInviteLink: "Copy link",
   copiedInviteLink: "Link copied",
@@ -428,9 +428,9 @@ const en: SmartGateMessages = {
   mockMode: "Try without real gate (mock mode)",
   mockModeDescription:
     "Use this to practice. Buttons will not control your real gate.",
-  exitDemoMode: "Demo mode (simulated gate)",
+  exitDemoMode: "Practice mode (simulated gate)",
   exitDemoModeDescription:
-    "Turn this off to control your real gate over MQTT.",
+    "Turn this off to control your real gate over the cloud.",
   resetDevice: "Reset gate Wi‑Fi",
   darkMode: "Dark mode",
   biometricLock: "Face ID / Fingerprint",
@@ -543,7 +543,7 @@ const hy: SmartGateMessages = {
   scanGateHintCamera:
     "Ուղղեք տեսախցիկը դարպասի տուփի QR-ին։ Պահանջվում է HTTPS (կամ localhost)։",
   scanGateAction: "Սկանավորել QR",
-  scanGateActionDemo: "Demo FREE սարք (առանց տեսախցիկի)",
+  scanGateActionDemo: "Փորձարկման սարք (առանց տեսախցիկի)",
   scanGateScanning: "Սկանավորում…",
   scanCameraStarting: "Տեսախցիկը միանում է…",
   scanCameraStop: "Անջատել տեսախցիկը",
@@ -551,7 +551,7 @@ const hy: SmartGateMessages = {
   scanCameraPermissionDenied:
     "Տեսախցիկի թույլտվությունը մերժված է։ Թույլատրեք կամ տեղադրեք QR հղումը ներքևում։",
   scanCameraUnavailable:
-    "Տեսախցիկը հասանելի չէ։ Տեղադրեք QR հղումը կամ օգտագործեք demo կոճակը։",
+    "Տեսախցիկը հասանելի չէ։ Տեղադրեք QR հղումը կամ օգտագործեք փորձարկման կոճակը։",
   scanGateSuccess: "Սարքը գտնվեց — անվանեք դարպասը",
   scanGateNameLabel: "Դարպասի անուն",
   scanGateSave: "Ավելացնել դարպաս",
@@ -825,7 +825,7 @@ const ru: SmartGateMessages = {
   scanGateHintCamera:
     "Наведите камеру на QR на корпусе ворот. Нужен HTTPS (или localhost).",
   scanGateAction: "Сканировать QR",
-  scanGateActionDemo: "Demo FREE устройство (без камеры)",
+  scanGateActionDemo: "Тестовое устройство (без камеры)",
   scanGateScanning: "Сканирование…",
   scanCameraStarting: "Включение камеры…",
   scanCameraStop: "Остановить камеру",
@@ -833,7 +833,7 @@ const ru: SmartGateMessages = {
   scanCameraPermissionDenied:
     "Нет доступа к камере. Разрешите камеру для сайта или вставьте ссылку QR ниже.",
   scanCameraUnavailable:
-    "Камера недоступна. Вставьте ссылку QR или нажмите demo.",
+    "Камера недоступна. Вставьте ссылку QR или нажмите кнопку теста.",
   scanGateSuccess: "Устройство найдено — назовите ворота",
   scanGateNameLabel: "Название ворот",
   scanGateSave: "Добавить ворота",
@@ -990,7 +990,7 @@ const ru: SmartGateMessages = {
   mockMode: "Пробовать без реальных ворот (демо)",
   mockModeDescription:
     "Для обучения. Кнопки не будут управлять реальными воротами.",
-  exitDemoMode: "Демо-режим (симуляция)",
+  exitDemoMode: "Режим практики (симуляция)",
   exitDemoModeDescription:
     "Выключите, чтобы управлять реальными воротами по MQTT.",
   resetDevice: "Сбросить Wi‑Fi ворот",

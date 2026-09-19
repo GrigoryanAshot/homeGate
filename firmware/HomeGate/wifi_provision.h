@@ -634,7 +634,7 @@ inline void wifiHandlePortalSave() {
     appUrl += "?t=";
     appUrl += handoff;
   } else {
-    appUrl = String(API_BASE_URL) + "/smartgate-demo";
+    appUrl = String(API_BASE_URL) + "/gate";
   }
 
   String doneHtml;

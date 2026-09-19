@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const ticket = url.searchParams.get("t")?.trim() ?? "";
-  const appPath = "/smartgate-demo";
+  const appPath = "/gate";
 
   const result = await consumeSoftApHandoff(ticket);
   if (!result.ok) {

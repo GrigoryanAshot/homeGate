@@ -5,17 +5,17 @@ import { buildPairQrValue } from "@/lib/smartgate/pair-qr";
 
 const SAMPLES = [
   {
-    label: "FREE — demo-gate-001",
+    label: "FREE — gate 001 (lab)",
     id: "demo-gate-001",
     secret: "secret-demo-001",
   },
   {
-    label: "FREE — demo-gate-002",
+    label: "FREE — gate 002 (lab)",
     id: "demo-gate-002",
     secret: "secret-demo-002",
   },
   {
-    label: "FREE — demo-gate-003",
+    label: "FREE — gate 003 (lab)",
     id: "demo-gate-003",
     secret: "secret-demo-003",
   },
@@ -32,8 +32,8 @@ export function PairQrSamplesClient() {
       <div>
         <h1 className="text-xl font-bold">Pair QR samples</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Open this page on another device, then scan from Touch SmartGate → Add
-          gate. Local only — seed DB first (`npm run db:seed`).
+          Lab only — open on another device, then scan from Touch SmartGate → Add
+          gate. Seed DB first (`npm run db:seed`).
         </p>
       </div>
       {SAMPLES.map((sample) => {
